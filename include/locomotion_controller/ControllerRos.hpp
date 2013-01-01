@@ -73,7 +73,10 @@ class ControllerRos:  public roco::controllers::ControllerAdapterInterface,
   typedef typename Controller::State State;
   typedef typename Controller::Command Command;
  public:
-  ControllerRos(State& state, Command& command);
+  ControllerRos(State& state,
+                Command& command,
+                boost::shared_mutex& stateMutex,
+                boost::shared_mutex& commandMutex);
   virtual ~ControllerRos();
 
   void setControllerManager(ControllerManager* controllerManager);
@@ -97,8 +100,11 @@ class ControllerRos:  public roco::controllers::ControllerAdapterInterface,
   virtual void setIsRealRobotFromManager(bool isRealRobot);
   virtual void setIsRealRobot(bool isRealRobot);
   virtual const State& getState() const;
+  virtual boost::shared_mutex& getStateMutex();
+
   virtual const Command& getCommand() const;
   virtual Command& getCommand();
+  virtual boost::shared_mutex& getCommandMutex();
 
   virtual void emergencyStop();
 
@@ -125,7 +131,9 @@ class ControllerRos:  public roco::controllers::ControllerAdapterInterface,
   boost::atomic<bool> isCheckingState_;
   roco::time::TimeStd time_;
   State& state_;
+  boost::shared_mutex& stateMutex_;
   Command& command_;
+  boost::shared_mutex& commandMutex_;
   ControllerManager* controllerManager_;
   std::string emergencyStopControllerName_;
 

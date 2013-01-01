@@ -123,15 +123,18 @@ class Model
   quadruped_model::Command& getCommand();
 
   const quadruped_model::State& getState() const;
+  boost::shared_mutex& getStateMutex();
   const quadruped_model::Command& getCommand() const;
-
+  boost::shared_mutex& getCommandMutex();
  private:
   ros::Time updateStamp_;
   std::shared_ptr<quadruped_model::QuadrupedModel> quadrupedModel_;
   std::shared_ptr<quadruped_model::QuadrupedModel> quadrupedModelDesired_;
   std::shared_ptr<robotTerrain::TerrainBase> terrain_;
   quadruped_model::State state_;
+  boost::shared_mutex mutexState_;
   quadruped_model::Command command_;
+  boost::shared_mutex mutexCommand_;
 
   quadruped_model::EulerAnglesZyx stateOrientationWorldToBaseEulerAnglesZyx_;
 };

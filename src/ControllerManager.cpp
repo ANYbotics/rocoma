@@ -57,13 +57,17 @@ ControllerManager::~ControllerManager()
 
 
 void ControllerManager::setupControllers(
-    double dt, quadruped_model::State& state, quadruped_model::Command& command,
+    double dt,
+    quadruped_model::State& state,
+    quadruped_model::Command& command,
+    boost::shared_mutex& mutexState,
+    boost::shared_mutex& mutexCommand,
     ros::NodeHandle& nodeHandle)
 {
   timeStep_ = dt;
 
   /* Create controller freeze, which is active until estimator converged*/
-  auto controller = new ControllerRos<robot_controller::RocoFreeze>(state, command);
+  auto controller = new ControllerRos<robot_controller::RocoFreeze>(state, command, mutexState, mutexCommand);
   controller->setControllerManager(this);
   //controller->setIsCheckingState(false);
   addController(controller);
@@ -73,7 +77,7 @@ void ControllerManager::setupControllers(
     ROS_FATAL("Could not initialized NoTask!");
   }
 
-  add_locomotion_controllers(this, state, command, nodeHandle);
+  add_locomotion_controllers(this, state, command, mutexState, mutexCommand, nodeHandle);
 
   emergencyStopStatePublisher_.shutdown();
   emergencyStopStatePublisher_ = nodeHandle.advertise<any_msgs::State>("notify_emergency_stop", 100);
