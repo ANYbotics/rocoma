@@ -94,6 +94,26 @@ catkin_package(
 ## Build ##
 ###########
 
+
+# Exclude dynamics in robot model
+if (NOT RM_EXCLUDE_DYNAMICS) 
+add_definitions( -DRM_EXCLUDE_DYNAMICS) 
+endif()
+add_definitions( -DDISPLAY)
+add_definitions( -DAPP_STARLETH)
+add_definitions( -DSTANDALONE)
+add_definitions( -DSIMANDCONTROL_CMAKEBUILD)
+add_definitions( -DSIMANDCONTROL_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}" )
+add_definitions( -Wwrite-strings)
+set(ARCH x86_64)
+set(STANDALONE ON CACHE BOOL "standalone")
+set(ISSUBDIRECTORY ON CACHE BOOL "issubdir")
+set(EXCLUDE_ROBOTBASE ON CACHE BOOL "exclude robot base")
+
+add_subdirectory($ENV{LAB_ROOT}/starlethTask starlethTask)
+set(EXTRA_LIBS ${EXTRA_LIBS} starlethTask starlethRobotModel robotUtils ${TASK_LIBS} ${ROBOTMODEL_LIBS} ${UTILS_LIBS})
+include_directories(${TASK_INCL} ${ROBOTMODEL_INCL} ${UTILS_INCL})
+
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(include)
@@ -122,6 +142,7 @@ add_executable(locomotion_controller_node ${SRCS})
 target_link_libraries(locomotion_controller_node
    ${catkin_LIBRARIES}
 )
+target_link_libraries(locomotion_controller_node ${EXTRA_LIBS})
 
 #############
 ## Install ##
