@@ -7,11 +7,21 @@
 
 #include "locomotion_controller/LocomotionController.hpp"
 
+#include "robotUtils/terrains/TerrainPlane.hpp"
+
+#ifdef USE_TASK_LOCODEMO
+#include "LocoDemo_Task.hpp"
+#endif
+
 namespace locomotion_controller {
 
 LocomotionController::LocomotionController(ros::NodeHandle& nodeHandle):
     nodeHandle_(nodeHandle),
     timeStep_(0.0025),
+    isInitializingTask_(false),
+    isInitializingNoTask_(false),
+    isTaskActive_(false),
+    time_(0.0),
     robotModel_()
 {
 
@@ -40,6 +50,8 @@ bool LocomotionController::initialize() {
     jointCommands_->commands[i].motorVelocity = 0.0;
   }
 
+  time_ = 0.0;
+
   robotModel_.reset(new robotModel::RobotModel(timeStep_));
   setRobotModelParameters();
   robotModel_->setIsRealRobot(false);
@@ -54,6 +66,11 @@ bool LocomotionController::initialize() {
   /* initialize robot model */
   robotModel_->init();
 
+
+  setupTasks();
+
+  switchControllerService_ = nodeHandle_.advertiseService("switch_controller", &LocomotionController::switchController, this);
+
   return true;
 }
 
@@ -64,23 +81,36 @@ bool LocomotionController::run() {
 
 
 void LocomotionController::publish()  {
+  ros::Time stamp = ros::Time::now();
+  for (int i=0; i<jointCommands_->commands.size(); i++) {
+    jointCommands_->commands[i].header.stamp = stamp;
+    jointCommands_->commands[i].mode = robotModel_->act().getMode()(i);
+    jointCommands_->commands[i].jointPosition = robotModel_->act().getPos()(i);
+    jointCommands_->commands[i].motorVelocity = robotModel_->act().getVel()(i);
+    jointCommands_->commands[i].jointTorque = robotModel_->act().getTau()(i);
+  }
+
   if(jointCommandsPublisher_.getNumSubscribers() > 0u) {
     jointCommandsPublisher_.publish(jointCommands_);
   }
 }
 void LocomotionController::robotStateCallback(const starleth_msgs::RobotState::ConstPtr& msg) {
   updateRobotModelFromRobotState(msg);
+  runTask();
 
 
-  ros::Time stamp = ros::Time::now();
-  for (int i=0; i<jointCommands_->commands.size(); i++) {
-    jointCommands_->commands[i].header.stamp = stamp;
-  }
+
+
   publish();
 }
 
 void LocomotionController::joystickCallback(const sensor_msgs::Joy::ConstPtr& msg) {
-//  robotModel_->sensors().getJoystick()->
+  for (int i=0; i<msg->axes.size();i++) {
+    robotModel_->sensors().getJoystick()->setAxis(i+1, msg->axes[i]);
+  }
+  for (int i=0; i<msg->buttons.size();i++) {
+    robotModel_->sensors().getJoystick()->setButton(i+1, msg->buttons[i]);
+  }
 }
 
 void LocomotionController::setRobotModelParameters() {
@@ -213,4 +243,77 @@ void LocomotionController::updateRobotModelFromRobotState(const starleth_msgs::R
   robotModel_->sensors().setContactFlags(contactFlags);
 
 }
+
+void LocomotionController::setupTasks()  {
+
+  terrain_.reset(new robotTerrain::TerrainPlane());
+
+/* Create no task, which is active until estimator converged*/
+  noTask_.reset(new robotTask::NoTask(robotModel_.get()));
+  noTask_->setTimeStep(timeStep_);
+  if (!noTask_->add()) {
+    throw std::runtime_error("Could not add 'no task'!");
+  }
+  isInitializingNoTask_ = true;
+
+///* Create control task */
+#ifdef USE_TASK_LOCODEMO
+  task_.reset(new robotTask::LocoDemo(robotModel_.get(), terrain_.get()));
+  task_->setTimeStep(timeStep_);
+  ROS_INFO("Added Task LocoDemo.");
+  if (!task_->add()) {
+    throw std::runtime_error("Could not add the task!");
+  }
+#endif
+
+}
+
+void LocomotionController::runTask() {
+
+  if (isInitializingTask_) {
+
+    /* initialize the task */
+    if (!task_->initTask()) {
+      throw std::runtime_error("Could not initialize the task!");
+    }
+    isTaskActive_ = true;
+    isInitializingTask_ = false;
+    printf("Initialized task\n");
+  }
+  else if (isInitializingNoTask_) {
+    if (!noTask_->initTask()) {
+      throw std::runtime_error("Could not initialize the no task!");
+    }
+    isInitializingNoTask_ = false;
+    isTaskActive_ = false;
+    printf("Initialized no task\n");
+  }
+
+   /* run task */
+   if (isTaskActive_) {
+     task_->setTime(time_);
+     task_->runTask();
+   }
+   else {
+     noTask_->setTime(time_);
+     noTask_->runTask();
+
+   }
+}
+
+
+bool LocomotionController::switchController(locomotion_controller::SwitchController::Request  &req,
+                               locomotion_controller::SwitchController::Response &res)
+{
+
+  if (req.name == "LocoDemo") {
+    isInitializingTask_ = true;
+    res.status = res.STATUS_IS_ACTIVE;
+  }
+  else {
+    res.status = res.STATUS_ERROR;
+  }
+  return true;
+}
+
 } /* namespace locomotion_controller */

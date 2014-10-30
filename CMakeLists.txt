@@ -7,6 +7,7 @@ set(CMAKE_CXX_FLAGS "-std=c++11")
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  message_generation
   geometry_msgs
   roscpp
   sensor_msgs
@@ -55,11 +56,10 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files(
+   FILES
+   SwitchController.srv
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -69,10 +69,11 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
+generate_messages(
+   DEPENDENCIES
+   std_msgs
 #   geometry_msgs#   sensor_msgs#   starleth_msgs#   std_msgs
-# )
+)
 
 ###################################
 ## catkin specific configuration ##
@@ -108,7 +109,11 @@ add_definitions( -Wwrite-strings)
 set(ARCH x86_64)
 set(STANDALONE ON CACHE BOOL "standalone")
 set(ISSUBDIRECTORY ON CACHE BOOL "issubdir")
-set(EXCLUDE_ROBOTBASE ON CACHE BOOL "exclude robot base")
+
+if(USE_TASK_LOCODEMO)
+add_definitions(-DUSE_TASK_LOCODEMO)
+endif()
+#set(EXCLUDE_ROBOTBASE ON CACHE BOOL "exclude robot base")
 
 add_subdirectory($ENV{LAB_ROOT}/starlethTask starlethTask)
 set(EXTRA_LIBS ${EXTRA_LIBS} starlethTask starlethRobotModel robotUtils ${TASK_LIBS} ${ROBOTMODEL_LIBS} ${UTILS_LIBS})

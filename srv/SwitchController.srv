@@ -1,0 +1,5 @@
+string name
+---
+uint8 STATUS_IS_ACTIVE=1
+uint8 STATUS_ERROR=2
+uint8 status

@@ -12,14 +12,19 @@
 #include <starleth_msgs/RobotState.h>
 #include <sensor_msgs/Joy.h>
 #include <starleth_msgs/SeActuatorCommands.h>
+#include <locomotion_controller/SwitchController.h>
 
 #include "RobotModel.hpp"
+#include "TaskRobotBase.hpp"
+#include "NoTask_Task.hpp"
 
 #include <kindr/rotations/RotationEigen.hpp>
 #include <kindr/rotations/RotationDiffEigen.hpp>
 #include <kindr/phys_quant/PhysicalQuantitiesEigen.hpp>
 
 #include <memory>
+
+
 
 namespace locomotion_controller {
 
@@ -47,14 +52,33 @@ class LocomotionController
   void joystickCallback(const sensor_msgs::Joy::ConstPtr& msg);
   void setRobotModelParameters();
   void updateRobotModelFromRobotState(const starleth_msgs::RobotState::ConstPtr& robotState);
+  void runTask();
+  void setupTasks();
+  bool switchController(locomotion_controller::SwitchController::Request  &req,
+                                 locomotion_controller::SwitchController::Response &res);
  private:
   ros::NodeHandle& nodeHandle_;
   ros::Subscriber robotStateSubscriber_;
   ros::Subscriber joystickSubscriber_;
   ros::Publisher jointCommandsPublisher_;
+  ros::ServiceServer switchControllerService_;
+
   starleth_msgs::SeActuatorCommandsPtr jointCommands_;
   double timeStep_;
+  bool isInitializingTask_;
+  bool isInitializingNoTask_;
+  bool isTaskActive_;
+  double time_;
   std::shared_ptr<robotModel::RobotModel> robotModel_;
+  std::shared_ptr<robotTerrain::TerrainBase> terrain_;
+  /* Create no task, which is active until estimator converged*/
+  std::shared_ptr<robotTask::NoTask> noTask_;
+
+  /* Create control task */
+  std::shared_ptr<robotTask::TaskRobotBase> task_;
+
+
+
 };
 
 } /* namespace locomotion_controller */
