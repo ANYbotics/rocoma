@@ -1,0 +1,11 @@
+topic:
+  robot_state: /starleth/robot_state/robot_state
+  joy: /joy
+  joint_commands: /starleth/joint_commands
+  
+  imu: /starleth/robot_state/imu
+  joint_states: /starleth/robot_state/joint_states
+  contact_force_lf: /starleth/robot_state/contact_force_lf
+  contact_force_rf: /starleth/robot_state/contact_force_rf
+  contact_force_lh: /starleth/robot_state/contact_force_lh
+  contact_force_rh: /starleth/robot_state/contact_force_rh

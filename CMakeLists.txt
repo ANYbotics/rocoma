@@ -86,7 +86,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
  INCLUDE_DIRS include
 #  LIBRARIES locomotion_controller
-#  CATKIN_DEPENDS geometry_msgs roscpp sensor_msgs starleth_msgs std_msgs
+ CATKIN_DEPENDS geometry_msgs roscpp sensor_msgs starleth_msgs std_msgs
 #  DEPENDS system_lib
 )
 
