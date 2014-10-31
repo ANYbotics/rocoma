@@ -252,7 +252,7 @@ void LocomotionController::setupTasks()  {
   if (!controller->add()) {
     throw std::runtime_error("Could not add 'no task'!");
   }
-  isInitializingNoTask_ = true;
+
 
 
 #ifdef USE_TASK_LOCODEMO
