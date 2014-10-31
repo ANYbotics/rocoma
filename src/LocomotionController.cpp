@@ -19,8 +19,6 @@ LocomotionController::LocomotionController(ros::NodeHandle& nodeHandle):
     nodeHandle_(nodeHandle),
     timeStep_(0.0025),
     isInitializingTask_(false),
-    isInitializingNoTask_(false),
-    isTaskActive_(false),
     time_(0.0),
     robotModel_()
 {
@@ -95,11 +93,9 @@ void LocomotionController::publish()  {
   }
 }
 void LocomotionController::robotStateCallback(const starleth_msgs::RobotState::ConstPtr& msg) {
+//  ROS_INFO("Received state");
   updateRobotModelFromRobotState(msg);
   runTask();
-
-
-
 
   publish();
 }
@@ -249,19 +245,22 @@ void LocomotionController::setupTasks()  {
   terrain_.reset(new robotTerrain::TerrainPlane());
 
 /* Create no task, which is active until estimator converged*/
-  noTask_.reset(new robotTask::NoTask(robotModel_.get()));
-  noTask_->setTimeStep(timeStep_);
-  if (!noTask_->add()) {
+  controllers_.push_back(new robotTask::NoTask(robotModel_.get()));
+  robotTask::TaskRobotBase* controller = &controllers_.back();
+  activeController_ = controller;
+  controller->setTimeStep(timeStep_);
+  if (!controller->add()) {
     throw std::runtime_error("Could not add 'no task'!");
   }
   isInitializingNoTask_ = true;
 
-///* Create control task */
+
 #ifdef USE_TASK_LOCODEMO
-  task_.reset(new robotTask::LocoDemo(robotModel_.get(), terrain_.get()));
-  task_->setTimeStep(timeStep_);
-  ROS_INFO("Added Task LocoDemo.");
-  if (!task_->add()) {
+  controllers_.push_back(new robotTask::LocoDemo(robotModel_.get(), terrain_.get()));
+  controller = &controllers_.back();
+  controller->setTimeStep(timeStep_);
+  ROS_INFO("Added Task %s.", controller->getName().c_str());
+  if (!controller->add()) {
     throw std::runtime_error("Could not add the task!");
   }
 #endif
@@ -273,32 +272,16 @@ void LocomotionController::runTask() {
   if (isInitializingTask_) {
 
     /* initialize the task */
-    if (!task_->initTask()) {
+    if (!activeController_->initTask()) {
       throw std::runtime_error("Could not initialize the task!");
     }
-    isTaskActive_ = true;
     isInitializingTask_ = false;
-    printf("Initialized task\n");
-  }
-  else if (isInitializingNoTask_) {
-    if (!noTask_->initTask()) {
-      throw std::runtime_error("Could not initialize the no task!");
-    }
-    isInitializingNoTask_ = false;
-    isTaskActive_ = false;
-    printf("Initialized no task\n");
+    ROS_INFO("Initialized controller %s", activeController_->getName().c_str());
   }
 
-   /* run task */
-   if (isTaskActive_) {
-     task_->setTime(time_);
-     task_->runTask();
-   }
-   else {
-     noTask_->setTime(time_);
-     noTask_->runTask();
-
-   }
+  activeController_->setTime(time_);
+  activeController_->runTask();
+  time_ += timeStep_;
 }
 
 
@@ -306,13 +289,23 @@ bool LocomotionController::switchController(locomotion_controller::SwitchControl
                                locomotion_controller::SwitchController::Response &res)
 {
 
-  if (req.name == "LocoDemo") {
-    isInitializingTask_ = true;
-    res.status = res.STATUS_IS_ACTIVE;
+  //--- Check if controller is already active
+  if (activeController_->getName() == req.name) {
+    res.status = res.STATUS_RUNNING;
+    return true;
   }
-  else {
-    res.status = res.STATUS_ERROR;
+
+  for (auto& controller : controllers_) {
+    if (req.name == controller.getName()) {
+      activeController_ = &controller;
+      res.status = res.STATUS_SWITCHED;
+      isInitializingTask_ = true;
+      ROS_INFO("Switched to controller %s", activeController_->getName().c_str());
+      return true;
+    }
   }
+  res.status = res.STATUS_NOTFOUND;
+
   return true;
 }
 

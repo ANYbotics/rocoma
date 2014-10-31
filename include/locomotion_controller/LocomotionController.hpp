@@ -22,6 +22,7 @@
 #include <kindr/rotations/RotationDiffEigen.hpp>
 #include <kindr/phys_quant/PhysicalQuantitiesEigen.hpp>
 
+#include <boost/ptr_container/ptr_vector.hpp>
 #include <memory>
 
 
@@ -66,17 +67,11 @@ class LocomotionController
   starleth_msgs::SeActuatorCommandsPtr jointCommands_;
   double timeStep_;
   bool isInitializingTask_;
-  bool isInitializingNoTask_;
-  bool isTaskActive_;
   double time_;
   std::shared_ptr<robotModel::RobotModel> robotModel_;
   std::shared_ptr<robotTerrain::TerrainBase> terrain_;
-  /* Create no task, which is active until estimator converged*/
-  std::shared_ptr<robotTask::NoTask> noTask_;
-
-  /* Create control task */
-  std::shared_ptr<robotTask::TaskRobotBase> task_;
-
+  boost::ptr_vector<robotTask::TaskRobotBase> controllers_;
+  robotTask::TaskRobotBase* activeController_;
 
 
 };

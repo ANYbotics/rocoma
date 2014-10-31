@@ -1,5 +1,7 @@
 string name
 ---
-uint8 STATUS_IS_ACTIVE=1
-uint8 STATUS_ERROR=2
-uint8 status
+int8 STATUS_ERROR=-2
+int8 STATUS_NOTFOUND=-1
+int8 STATUS_SWITCHED=1
+int8 STATUS_RUNNING=2
+int8 status
