@@ -5,6 +5,8 @@
  *      Author: gech
  */
 
+#include <pluginlib/class_list_macros.h>
+
 #include "locomotion_controller/LocomotionController.hpp"
 
 #include "robotUtils/terrains/TerrainPlane.hpp"
@@ -18,10 +20,12 @@
 #include <chrono>
 #include <cstdint>
 
+NODEWRAP_EXPORT_CLASS(locomotion_controller, locomotion_controller::LocomotionController)
+
+
 namespace locomotion_controller {
 
-LocomotionController::LocomotionController(ros::NodeHandle& nodeHandle):
-    nodeHandle_(nodeHandle),
+LocomotionController::LocomotionController():
     timeStep_(0.0025),
     isInitializingTask_(false),
     time_(0.0),
@@ -36,21 +40,21 @@ LocomotionController::~LocomotionController()
 {
 }
 
-bool LocomotionController::initialize() {
+void LocomotionController::init() {
 
-  nodeHandle_.param<double>("controller/time_step", timeStep_, 0.0025);
+  getNodeHandle().param<double>("controller/time_step", timeStep_, 0.0025);
 
   std::string robotStateTopicName;
-  nodeHandle_.param<std::string>("topic/robot_state", robotStateTopicName, "robot_state");
-  robotStateSubscriber_ = nodeHandle_.subscribe(robotStateTopicName, 100, &LocomotionController::robotStateCallback, this);
+  getNodeHandle().param<std::string>("topic/robot_state", robotStateTopicName, "robot_state");
+  robotStateSubscriber_ = getNodeHandle().subscribe(robotStateTopicName, 100, &LocomotionController::robotStateCallback, this);
 
   std::string joystickTopicName;
-  nodeHandle_.param<std::string>("topic/joy", joystickTopicName, "joy");
-  joystickSubscriber_ = nodeHandle_.subscribe(joystickTopicName, 100, &LocomotionController::joystickCallback, this);
+  getNodeHandle().param<std::string>("topic/joy", joystickTopicName, "joy");
+  joystickSubscriber_ = getNodeHandle().subscribe(joystickTopicName, 100, &LocomotionController::joystickCallback, this);
 
   std::string jointCommandsTopicName;
-  nodeHandle_.param<std::string>("topic/joint_commands", jointCommandsTopicName, "joint_commands");
-  jointCommandsPublisher_ = nodeHandle_.advertise<starleth_msgs::SeActuatorCommands>(jointCommandsTopicName, 100);
+  getNodeHandle().param<std::string>("topic/joint_commands", jointCommandsTopicName, "joint_commands");
+  jointCommandsPublisher_ = getNodeHandle().advertise<starleth_msgs::SeActuatorCommands>(jointCommandsTopicName, 100);
 
   jointCommands_.reset(new starleth_msgs::SeActuatorCommands);
   for (int i=0; i<jointCommands_->commands.size(); i++) {
@@ -77,9 +81,8 @@ bool LocomotionController::initialize() {
 
   setupTasks();
 
-  switchControllerService_ = nodeHandle_.advertiseService("switch_controller", &LocomotionController::switchController, this);
+  switchControllerService_ = getNodeHandle().advertiseService("switch_controller", &LocomotionController::switchController, this);
 
-  return true;
 }
 
 bool LocomotionController::run() {

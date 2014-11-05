@@ -1,13 +1,12 @@
 
 #include <ros/ros.h>
+#include <roscpp_nodewrap/Node.h>
 #include "locomotion_controller/LocomotionController.hpp"
 
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "locomotion_controller");
-  ros::NodeHandle nodeHandle("~");
-  locomotion_controller::LocomotionController locomotion_controller(nodeHandle);
-  locomotion_controller.initialize();
-  locomotion_controller.run();
+  nodewrap::Node<locomotion_controller::LocomotionController> node;
+  node.run();
   return 0;
 }

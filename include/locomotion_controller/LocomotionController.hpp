@@ -9,6 +9,9 @@
 #define LOCOMOTIONCONTROLLER_HPP_
 
 #include <ros/ros.h>
+#include <roscpp_nodewrap/NodeImpl.h>
+#include <roscpp_nodewrap/Nodelet.h>
+
 #include <starleth_msgs/RobotState.h>
 #include <sensor_msgs/Joy.h>
 #include <starleth_msgs/SeActuatorCommands.h>
@@ -29,7 +32,7 @@
 
 namespace locomotion_controller {
 
-class LocomotionController
+class LocomotionController : public nodewrap::NodeImpl
 {
  public:
   typedef kindr::rotations::eigen_impl::RotationQuaternionPD RotationQuaternion;
@@ -40,10 +43,10 @@ class LocomotionController
   typedef kindr::phys_quant::eigen_impl::Velocity3D LinearVelocity;
   typedef kindr::phys_quant::eigen_impl::VectorTypeless3D Vector;
  public:
-  LocomotionController(ros::NodeHandle& nodeHandle);
+  LocomotionController();
   virtual ~LocomotionController();
 
-  bool initialize();
+  void init();
   bool run();
 
 
@@ -58,7 +61,6 @@ class LocomotionController
   bool switchController(locomotion_controller::SwitchController::Request  &req,
                                  locomotion_controller::SwitchController::Response &res);
  private:
-  ros::NodeHandle& nodeHandle_;
   ros::Subscriber robotStateSubscriber_;
   ros::Subscriber joystickSubscriber_;
   ros::Publisher jointCommandsPublisher_;

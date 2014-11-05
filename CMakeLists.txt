@@ -13,6 +13,8 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   starleth_msgs
   std_msgs
+  nodelet
+  roscpp_nodewrap
 )
 
 ## System dependencies are found with CMake's conventions
@@ -86,8 +88,8 @@ generate_messages(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
  INCLUDE_DIRS include
-#  LIBRARIES locomotion_controller
- CATKIN_DEPENDS geometry_msgs roscpp sensor_msgs starleth_msgs std_msgs
+ LIBRARIES locomotion_controller
+ CATKIN_DEPENDS geometry_msgs roscpp sensor_msgs starleth_msgs std_msgs roscpp_nodewrap
 #  DEPENDS system_lib
 )
 
@@ -126,25 +128,18 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-## Declare a cpp library
-# add_library(locomotion_controller
-#   src/${PROJECT_NAME}/locomotion_controller.cpp
-# )
-
-set(SRCS
-    src/LocomotionController.cpp
-    src/locomotion_controller_node.cpp
+add_library(locomotion_controller
+  src//LocomotionController.cpp
 )
 
-## Declare a cpp executable
-add_executable(locomotion_controller_node ${SRCS})
+add_executable(locomotion_controller_node src/locomotion_controller_node.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(locomotion_controller_node locomotion_controller_generate_messages_cpp)
 
-## Specify libraries to link a library or executable target against
 target_link_libraries(locomotion_controller_node
+   locomotion_controller
    ${catkin_LIBRARIES}
 )
 target_link_libraries(locomotion_controller_node ${EXTRA_LIBS})
