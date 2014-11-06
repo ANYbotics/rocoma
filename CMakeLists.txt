@@ -129,7 +129,7 @@ include_directories(
 )
 
 add_library(locomotion_controller
-  src//LocomotionController.cpp
+  src/LocomotionController.cpp
 )
 
 add_executable(locomotion_controller_node src/locomotion_controller_node.cpp)
@@ -138,6 +138,9 @@ add_executable(locomotion_controller_node src/locomotion_controller_node.cpp)
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(locomotion_controller_node locomotion_controller_generate_messages_cpp)
 
+target_link_libraries(locomotion_controller
+   ${catkin_LIBRARIES}
+)
 target_link_libraries(locomotion_controller_node
    locomotion_controller
    ${catkin_LIBRARIES}

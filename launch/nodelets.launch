@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<launch>
+  <node pkg="nodelet" type="nodelet" name="locomotion_controller" args="manager" output="screen">
+    <param name="num_worker_threads" value="2"/>
+  </node>
+  <node name="mule_simulator" pkg="nodelet" type="nodelet" args="load mule_simulator/MuleSimulator locomotion_controller" output="screen">
+    <rosparam command="load" file="$(find mule_simulator)/config/default_mule_simulator.yaml"/>
+  </node>
+  <node name="locomotion_controller" pkg="nodelet" type="nodelet" args="load locomotion_controller/LocomotionController locomotion_controller" output="screen">
+    <rosparam command="load" file="$(find locomotion_controller)/config/default_locomotion_controller.yaml"/>
+  </node>
+  <node name="state_estimator" pkg="nodelet" type="nodelet" args="load state_estimator/StateEstimator locomotion_controller" output="screen">
+    <rosparam command="load" file="$(find state_estimator)/config/default_state_estimator.yaml"/>
+  </node>
+</launch>
