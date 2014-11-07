@@ -17,7 +17,7 @@
 #include <starleth_msgs/SeActuatorCommands.h>
 #include <locomotion_controller/SwitchController.h>
 
-#include "RobotModel.hpp"
+#include "locomotion_controller/Model.hpp"
 #include "TaskRobotBase.hpp"
 #include "NoTask_Task.hpp"
 
@@ -54,8 +54,7 @@ class LocomotionController : public nodewrap::NodeImpl
   void publish();
   void robotStateCallback(const starleth_msgs::RobotState::ConstPtr& msg);
   void joystickCallback(const sensor_msgs::Joy::ConstPtr& msg);
-  void setRobotModelParameters();
-  void updateRobotModelFromRobotState(const starleth_msgs::RobotState::ConstPtr& robotState);
+
   void runTask();
   void setupTasks();
   bool switchController(locomotion_controller::SwitchController::Request  &req,
@@ -70,8 +69,7 @@ class LocomotionController : public nodewrap::NodeImpl
   double timeStep_;
   bool isInitializingTask_;
   double time_;
-  std::shared_ptr<robotModel::RobotModel> robotModel_;
-  std::shared_ptr<robotTerrain::TerrainBase> terrain_;
+  model::Model model_;
   boost::ptr_vector<robotTask::TaskRobotBase> controllers_;
   robotTask::TaskRobotBase* activeController_;
 

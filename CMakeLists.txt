@@ -128,24 +128,39 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
+
+add_library(model
+  src/Model.cpp
+)
+target_link_libraries(model
+   ${EXTRA_LIBS}
+   ${catkin_LIBRARIES}
+)
+
+
 add_library(locomotion_controller
   src/LocomotionController.cpp
 )
 
+target_link_libraries(locomotion_controller
+    model
+   ${catkin_LIBRARIES}
+   ${EXTRA_LIBS}
+)
+
 add_executable(locomotion_controller_node src/locomotion_controller_node.cpp)
+
+target_link_libraries(locomotion_controller_node
+   model
+   locomotion_controller
+   ${catkin_LIBRARIES}
+)
+
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(locomotion_controller_node locomotion_controller_generate_messages_cpp)
 
-target_link_libraries(locomotion_controller
-   ${catkin_LIBRARIES}
-)
-target_link_libraries(locomotion_controller_node
-   locomotion_controller
-   ${catkin_LIBRARIES}
-)
-target_link_libraries(locomotion_controller_node ${EXTRA_LIBS})
 
 #############
 ## Install ##
