@@ -43,17 +43,12 @@ void LocomotionController::init() {
 
   getNodeHandle().param<double>("controller/time_step", timeStep_, 0.0025);
 
-  std::string robotStateTopicName;
-  getNodeHandle().param<std::string>("topic/robot_state", robotStateTopicName, "robot_state");
-  robotStateSubscriber_ = getNodeHandle().subscribe(robotStateTopicName, 100, &LocomotionController::robotStateCallback, this);
+  robotStateSubscriber_ = subscribe("robot_state", "/robot", 100, &LocomotionController::robotStateCallback);
+  joystickSubscriber_ = subscribe("joy", "/joy", 100, &LocomotionController::joystickCallback);
 
-  std::string joystickTopicName;
-  getNodeHandle().param<std::string>("topic/joy", joystickTopicName, "joy");
-  joystickSubscriber_ = getNodeHandle().subscribe(joystickTopicName, 100, &LocomotionController::joystickCallback, this);
-
-  std::string jointCommandsTopicName;
-  getNodeHandle().param<std::string>("topic/joint_commands", jointCommandsTopicName, "joint_commands");
-  jointCommandsPublisher_ = getNodeHandle().advertise<starleth_msgs::SeActuatorCommands>(jointCommandsTopicName, 100);
+  ros::AdvertiseOptions opSea;
+  opSea.init<starleth_msgs::SeActuatorCommands>("command_seactuators", 100);
+  jointCommandsPublisher_ = advertise("command_seactuators",opSea);
 
   jointCommands_.reset(new starleth_msgs::SeActuatorCommands);
   for (int i=0; i<jointCommands_->commands.size(); i++) {
@@ -67,7 +62,7 @@ void LocomotionController::init() {
 
 
 
-  setupTasks();
+  setupControllers();
 
   switchControllerService_ = getNodeHandle().advertiseService("switch_controller", &LocomotionController::switchController, this);
 
@@ -87,11 +82,7 @@ bool LocomotionController::run() {
 
 
 void LocomotionController::publish()  {
-//  jointCommands_.reset(new starleth_msgs::SeActuatorCommands);
-//  for (int i=0; i<jointCommands_->commands.size(); i++) {
-//    jointCommands_->commands[i].mode =  jointCommands_->commands[i].MODE_MOTOR_VELOCITY;
-//    jointCommands_->commands[i].motorVelocity = 0.0;
-//  }
+
   model_.getSeActuatorCommands(jointCommands_);
 //  ros::Time stamp = ros::Time::now();
 //  for (int i=0; i<jointCommands_->commands.size(); i++) {
@@ -115,7 +106,7 @@ void LocomotionController::robotStateCallback(const starleth_msgs::RobotState::C
   start = std::chrono::steady_clock::now();
 
   model_.setRobotState(msg);
-  runTask();
+  updateController();
 
   publish();
 
@@ -131,12 +122,6 @@ void LocomotionController::robotStateCallback(const starleth_msgs::RobotState::C
 }
 
 void LocomotionController::joystickCallback(const sensor_msgs::Joy::ConstPtr& msg) {
-//  for (int i=0; i<msg->axes.size();i++) {
-//    robotModel_->sensors().getJoystick()->setAxis(i+1, msg->axes[i]);
-//  }
-//  for (int i=0; i<msg->buttons.size();i++) {
-//    robotModel_->sensors().getJoystick()->setButton(i+1, msg->buttons[i]);
-//  }
 
   model_.setJoystickCommands(msg);
 
@@ -157,12 +142,12 @@ void LocomotionController::joystickCallback(const sensor_msgs::Joy::ConstPtr& ms
     req.name = "EmergencyStop";
     if(!switchController(req,res)) {
     }
-    ROS_INFO("Emergency stop by joystick! (status: %d)",res.status);
+    NODEWRAP_INFO("Emergency stop by joystick! (status: %d)",res.status);
   }
 }
 
 
-void LocomotionController::setupTasks()  {
+void LocomotionController::setupControllers()  {
 
 
 
@@ -189,7 +174,7 @@ void LocomotionController::setupTasks()  {
 
 }
 
-void LocomotionController::runTask() {
+void LocomotionController::updateController() {
 
   if (isInitializingTask_) {
 
@@ -198,7 +183,7 @@ void LocomotionController::runTask() {
       throw std::runtime_error("Could not initialize the task!");
     }
     isInitializingTask_ = false;
-    ROS_INFO("Initialized controller %s", activeController_->getName().c_str());
+    NODEWRAP_INFO("Initialized controller %s", activeController_->getName().c_str());
   }
 
   activeController_->setTime(time_);
@@ -212,13 +197,14 @@ bool LocomotionController::switchController(locomotion_controller::SwitchControl
 {
   std::string reqTaskName = req.name;
   if (req.name == "EmergencyStop") {
+    NODEWRAP_INFO("Emergency Stop!");
     reqTaskName = "No Task";
-    return true;
   }
 
   //--- Check if controller is already active
   if (reqTaskName == activeController_->getName()) {
     res.status = res.STATUS_RUNNING;
+    NODEWRAP_INFO("Controller is already running!");
     return true;
   }
 
@@ -227,12 +213,12 @@ bool LocomotionController::switchController(locomotion_controller::SwitchControl
       activeController_ = &controller;
       res.status = res.STATUS_SWITCHED;
       isInitializingTask_ = true;
-      ROS_INFO("Switched to controller %s", activeController_->getName().c_str());
+      NODEWRAP_INFO("Switched to controller %s", activeController_->getName().c_str());
       return true;
     }
   }
   res.status = res.STATUS_NOTFOUND;
-
+  NODEWRAP_INFO("Controller %s not found!", reqTaskName.c_str());
   return true;
 }
 

@@ -1,5 +1,10 @@
 <?xml version="1.0"?>
 <launch>
+
+  <node name="joystick" pkg="joy" type="joy_node" >
+    <remap from="/joy" to="/locomotion_controller/sensors/joy" />
+  </node>
+  
   <node name="locomotion_controller" pkg="nodelet" type="nodelet"  args="manager" output="screen">
     <param name="num_worker_threads" value="5"/>
   </node>

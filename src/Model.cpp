@@ -146,7 +146,8 @@ void Model::setRobotState(const starleth_msgs::RobotState::ConstPtr& robotState)
   static Eigen::Vector3d normal;
   bool isClosed;
   for (int iFoot = 0; iFoot < 4; iFoot++) {
-    contactFlags(iFoot) =  (robotState->contacts[iFoot].state == robotState->contacts[iFoot].STATE_CLOSED) ? 1: 0;
+    contactFlags(iFoot) =  (robotState->contacts[iFoot].state == robotState->contacts[iFoot].STATE_CLOSED ||
+                            robotState->contacts[iFoot].state == robotState->contacts[iFoot].STATE_SLIPPING ) ? 1 : 0;
 
     normal.x() = robotState->contacts[iFoot].normal.x;
     normal.y() = robotState->contacts[iFoot].normal.y;

@@ -55,8 +55,8 @@ class LocomotionController : public nodewrap::NodeImpl
   void robotStateCallback(const starleth_msgs::RobotState::ConstPtr& msg);
   void joystickCallback(const sensor_msgs::Joy::ConstPtr& msg);
 
-  void runTask();
-  void setupTasks();
+  void updateController();
+  void setupControllers();
   bool switchController(locomotion_controller::SwitchController::Request  &req,
                                  locomotion_controller::SwitchController::Response &res);
  private:
