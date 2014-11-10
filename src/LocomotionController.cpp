@@ -43,8 +43,8 @@ void LocomotionController::init() {
 
   getNodeHandle().param<double>("controller/time_step", timeStep_, 0.0025);
 
-  robotStateSubscriber_ = subscribe("robot_state", "/robot", 100, &LocomotionController::robotStateCallback);
-  joystickSubscriber_ = subscribe("joy", "/joy", 100, &LocomotionController::joystickCallback);
+  robotStateSubscriber_ = subscribe("robot_state", "/robot", 100, &LocomotionController::robotStateCallback, ros::TransportHints().tcpNoDelay());
+  joystickSubscriber_ = subscribe("joy", "/joy", 100, &LocomotionController::joystickCallback, ros::TransportHints().tcpNoDelay());
 
   ros::AdvertiseOptions opSea;
   opSea.init<starleth_msgs::SeActuatorCommands>("command_seactuators", 100);

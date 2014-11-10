@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?> 
-<launch>
-	<include file="$(find mule_simulator)/launch/default_mule_simulator.launch" />
-	<include file="$(find locomotion_controller)/launch/default_locomotion_controller.launch" />
-</launch>
