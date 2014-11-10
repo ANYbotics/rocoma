@@ -139,6 +139,7 @@ target_link_libraries(model
 
 
 add_library(locomotion_controller
+  src/ControllerManager.cpp
   src/LocomotionController.cpp
 )
 

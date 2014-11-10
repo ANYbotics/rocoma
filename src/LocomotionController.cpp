@@ -11,9 +11,6 @@
 
 #include "robotUtils/terrains/TerrainPlane.hpp"
 
-#ifdef USE_TASK_LOCODEMO
-#include "LocoDemo_Task.hpp"
-#endif
 
 #include <ros/callback_queue.h>
 
@@ -27,10 +24,7 @@ namespace locomotion_controller {
 
 LocomotionController::LocomotionController():
     timeStep_(0.0025),
-    isInitializingTask_(false),
-    time_(0.0),
-    controllers_(),
-    activeController_(nullptr)
+    time_(0.0)
 {
 
 }
@@ -62,9 +56,9 @@ void LocomotionController::init() {
   model_.getRobotModel()->params().printParams();
 
 
-  setupControllers();
+  controllerManager_.setupControllers(timeStep_, time_, &model_);
 
-  switchControllerService_ = getNodeHandle().advertiseService("switch_controller", &LocomotionController::switchController, this);
+  switchControllerService_ = getNodeHandle().advertiseService("switch_controller", &ControllerManager::switchController, &this->controllerManager_);
 
 }
 
@@ -106,7 +100,7 @@ void LocomotionController::robotStateCallback(const starleth_msgs::RobotState::C
   start = std::chrono::steady_clock::now();
 
   model_.setRobotState(msg);
-  updateController();
+  controllerManager_.updateController(timeStep_, time_);
 
   publish();
 
@@ -119,6 +113,7 @@ void LocomotionController::robotStateCallback(const starleth_msgs::RobotState::C
     ROS_INFO("Warning: computation is not real-time! Elapsed time: %lf ms\n", (double)elapsedTimeNSecs*1e-6);
   }
 
+  time_ += timeStep_;
 }
 
 void LocomotionController::joystickCallback(const sensor_msgs::Joy::ConstPtr& msg) {
@@ -130,7 +125,7 @@ void LocomotionController::joystickCallback(const sensor_msgs::Joy::ConstPtr& ms
     locomotion_controller::SwitchController::Request  req;
     locomotion_controller::SwitchController::Response res;
     req.name = "LocoDemo";
-    if(!switchController(req,res)) {
+    if(!controllerManager_.switchController(req,res)) {
     }
     ROS_INFO("Switched task by joystick (status: %d)",res.status);
 
@@ -140,87 +135,15 @@ void LocomotionController::joystickCallback(const sensor_msgs::Joy::ConstPtr& ms
     locomotion_controller::SwitchController::Request  req;
     locomotion_controller::SwitchController::Response res;
     req.name = "EmergencyStop";
-    if(!switchController(req,res)) {
+    if(!controllerManager_.switchController(req,res)) {
     }
     NODEWRAP_INFO("Emergency stop by joystick! (status: %d)",res.status);
   }
 }
 
 
-void LocomotionController::setupControllers()  {
 
 
 
-/* Create no task, which is active until estimator converged*/
-  controllers_.push_back(new robotTask::NoTask(model_.getRobotModel()));
-  robotTask::TaskRobotBase* controller = &controllers_.back();
-  activeController_ = controller;
-  controller->setTimeStep(timeStep_);
-  if (!controller->add()) {
-    throw std::runtime_error("Could not add 'no task'!");
-  }
-
-
-
-#ifdef USE_TASK_LOCODEMO
-  controllers_.push_back(new robotTask::LocoDemo(model_.getRobotModel(), model_.getTerrainModel()));
-  controller = &controllers_.back();
-  controller->setTimeStep(timeStep_);
-  ROS_INFO("Added Task %s.", controller->getName().c_str());
-  if (!controller->add()) {
-    throw std::runtime_error("Could not add the task!");
-  }
-#endif
-
-}
-
-void LocomotionController::updateController() {
-
-  if (isInitializingTask_) {
-
-    /* initialize the task */
-    if (!activeController_->initTask()) {
-      throw std::runtime_error("Could not initialize the task!");
-    }
-    isInitializingTask_ = false;
-    NODEWRAP_INFO("Initialized controller %s", activeController_->getName().c_str());
-  }
-
-  activeController_->setTime(time_);
-  activeController_->runTask();
-//  std::cout << "updateController() Qb:\n" << model_.getRobotModel()->q().getQb() << std::endl;
-  time_ += timeStep_;
-}
-
-
-bool LocomotionController::switchController(locomotion_controller::SwitchController::Request  &req,
-                               locomotion_controller::SwitchController::Response &res)
-{
-  std::string reqTaskName = req.name;
-  if (req.name == "EmergencyStop") {
-    NODEWRAP_INFO("Emergency Stop!");
-    reqTaskName = "No Task";
-  }
-
-  //--- Check if controller is already active
-  if (reqTaskName == activeController_->getName()) {
-    res.status = res.STATUS_RUNNING;
-    NODEWRAP_INFO("Controller is already running!");
-    return true;
-  }
-
-  for (auto& controller : controllers_) {
-    if (reqTaskName == controller.getName()) {
-      activeController_ = &controller;
-      res.status = res.STATUS_SWITCHED;
-      isInitializingTask_ = true;
-      NODEWRAP_INFO("Switched to controller %s", activeController_->getName().c_str());
-      return true;
-    }
-  }
-  res.status = res.STATUS_NOTFOUND;
-  NODEWRAP_INFO("Controller %s not found!", reqTaskName.c_str());
-  return true;
-}
 
 } /* namespace locomotion_controller */
