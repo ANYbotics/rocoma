@@ -9,13 +9,12 @@
 #include "locomotion_controller/ControllerManager.hpp"
 
 
-#ifdef USE_TASK_LOCODEMO
-#include "LocoDemo_Task.hpp"
-#endif
 
 namespace locomotion_controller {
 
 ControllerManager::ControllerManager() :
+    time_(0.0),
+    timeStep_(0.0),
     isInitializingTask_(false),
     controllers_(),
     activeController_(nullptr)
@@ -28,36 +27,33 @@ ControllerManager::~ControllerManager()
 }
 
 void ControllerManager::setupControllers(double dt, double time, model::Model* model)  {
+  time_ = time;
+  timeStep_ = dt;
 
+  /* Create no task, which is active until estimator converged*/
+  addController(new robotTask::NoTask(model->getRobotModel()));
+  activeController_ = &controllers_.back();
 
-
-/* Create no task, which is active until estimator converged*/
-  controllers_.push_back(new robotTask::NoTask(model->getRobotModel()));
-  robotTask::TaskRobotBase* controller = &controllers_.back();
-  activeController_ = controller;
-  controller->setTime(time);
-  controller->setTimeStep(dt);
-  if (!controller->add()) {
-    throw std::runtime_error("Could not add 'no task'!");
-  }
-
-
-
-#ifdef USE_TASK_LOCODEMO
-  controllers_.push_back(new robotTask::LocoDemo(model->getRobotModel(), model->getTerrainModel()));
-  controller = &controllers_.back();
-  controller->setTime(time);
-  controller->setTimeStep(dt);
-  ROS_INFO("Added Task %s.", controller->getName().c_str());
-  if (!controller->add()) {
-    throw std::runtime_error("Could not add the task!");
-  }
-#endif
+  add_locomotion_controllers(this, model);
 
 }
 
+void ControllerManager::addController(ControllerPtr controller)  {
+  controllers_.push_back(controller);
+  controller = &controllers_.back();
+  controller->setTime(time_);
+  controller->setTimeStep(timeStep_);
+  ROS_INFO("Added Task %s.", controller->getName().c_str());
+  if (!controller->add()) {
+    std::string error = "Could not add controller " +  controller->getName() + "!";
+    throw std::runtime_error(error);
+  }
+}
 
-void ControllerManager::updateController(double dt, double time) {
+
+
+
+void ControllerManager::updateController() {
 
   if (isInitializingTask_) {
 
@@ -69,7 +65,7 @@ void ControllerManager::updateController(double dt, double time) {
     ROS_INFO("Initialized controller %s", activeController_->getName().c_str());
   }
 
-  activeController_->setTime(time);
+  activeController_->setTime(timeStep_);
   activeController_->runTask();
 //  std::cout << "updateController() Qb:\n" << model_.getRobotModel()->q().getQb() << std::endl;
 

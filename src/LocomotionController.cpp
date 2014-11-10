@@ -100,7 +100,7 @@ void LocomotionController::robotStateCallback(const starleth_msgs::RobotState::C
   start = std::chrono::steady_clock::now();
 
   model_.setRobotState(msg);
-  controllerManager_.updateController(timeStep_, time_);
+  controllerManager_.updateController();
 
   publish();
 

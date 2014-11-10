@@ -112,9 +112,9 @@ set(ARCH x86_64)
 set(STANDALONE ON CACHE BOOL "standalone")
 set(ISSUBDIRECTORY ON CACHE BOOL "issubdir")
 
-if(USE_TASK_LOCODEMO)
-add_definitions(-DUSE_TASK_LOCODEMO)
-endif()
+
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/locomotion_controllers.cmake)
+
 #set(EXCLUDE_ROBOTBASE ON CACHE BOOL "exclude robot base")
 
 add_subdirectory($ENV{LAB_ROOT}/starlethTask starlethTask)
@@ -140,6 +140,7 @@ target_link_libraries(model
 
 add_library(locomotion_controller
   src/ControllerManager.cpp
+  src/locomotion_controllers.cpp
   src/LocomotionController.cpp
 )
 
