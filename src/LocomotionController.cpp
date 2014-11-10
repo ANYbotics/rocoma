@@ -59,7 +59,7 @@ void LocomotionController::init() {
   time_ = 0.0;
 
   model_.initialize(timeStep_);
-
+  model_.getRobotModel()->params().printParams();
 
 
   setupControllers();
@@ -188,6 +188,7 @@ void LocomotionController::updateController() {
 
   activeController_->setTime(time_);
   activeController_->runTask();
+//  std::cout << "updateController() Qb:\n" << model_.getRobotModel()->q().getQb() << std::endl;
   time_ += timeStep_;
 }
 

@@ -58,6 +58,7 @@ void Model::setRobotModelParameters() {
 
   /* main body */
   robotModel_->params().mainbody_.m = 17.1;
+  robotModel_->params().mainbody_.I.setZero();
   robotModel_->params().mainbody_.I(0,0) = 0.226;
   robotModel_->params().mainbody_.I(1,1) = 0.393;
   robotModel_->params().mainbody_.I(2,2) = 0.553;
@@ -70,14 +71,16 @@ void Model::setRobotModelParameters() {
 
   /* hip */
   robotModel_->params().hip_.m = 1.8;
+  robotModel_->params().hip_.I.setZero();
   robotModel_->params().hip_.I(0,0) = 0.009275;
   robotModel_->params().hip_.I(1,1) = 0.003035;
   robotModel_->params().hip_.I(2,2) = 0.007210;
-  robotModel_->params().hip_.s =  -0.1480;
-  robotModel_->params().hip_.l =  -0.2000;
+  robotModel_->params().hip_.s =  -0.055;
+  robotModel_->params().hip_.l =  -0.0685;
 
   /* thigh */
   robotModel_->params().thigh_.m =  0.3100;
+  robotModel_->params().thigh_.I.setZero();
   robotModel_->params().thigh_.I(0,0) = 0.00148976;
   robotModel_->params().thigh_.I(1,1) = 0.00142976;
   robotModel_->params().thigh_.I(2,2) =  0.00021500;
@@ -87,6 +90,7 @@ void Model::setRobotModelParameters() {
 
   /* shank */
   robotModel_->params().shank_.m =  0.3200;
+  robotModel_->params().shank_.I.setZero();
   robotModel_->params().shank_.I(0,0) =  0.00112108;
   robotModel_->params().shank_.I(1,1) =  0.00124208;
   robotModel_->params().shank_.I(2,2) =  0.00020000;
@@ -124,6 +128,7 @@ void Model::setRobotState(const starleth_msgs::RobotState::ConstPtr& robotState)
   dQb(1) = robotState->twist.linear.y;
   dQb(2) = robotState->twist.linear.z;
 
+
 //  static mule::Vector3d globalAngularVelocity;
 //  simulationManager.getRobotBaseAngularVelocityInWorldCoordinates(
 //      globalAngularVelocity, idStarleth);
@@ -135,6 +140,7 @@ void Model::setRobotState(const starleth_msgs::RobotState::ConstPtr& robotState)
     const Eigen::Vector3d drpy = rot::EulerAnglesXyzDiffPD(
         rot::EulerAnglesXyzPD(orientationWorldToBase), angularVelocityKindr)
         .toImplementation();
+
     dQb.tail(3) = drpy;
 
     Eigen::Vector3d globalAngularVelocity = orientationWorldToBase.inverseRotate(angularVelocityKindr.toImplementation());
