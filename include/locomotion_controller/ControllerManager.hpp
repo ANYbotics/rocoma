@@ -36,10 +36,9 @@
 
 #include <ros/ros.h>
 #include <locomotion_controller/SwitchController.h>
+#include <locomotion_controller/EmergencyStop.h>
 
 #include <locomotion_controller/Model.hpp>
-
-
 
 #include "TaskRobotBase.hpp"
 #include "NoTask_Task.hpp"
@@ -63,8 +62,10 @@ class ControllerManager
   void updateController();
   void setupControllers(double dt, double time, model::Model* model);
   void addController(ControllerPtr controller);
-  bool switchController(locomotion_controller::SwitchController::Request  &req,
-                                 locomotion_controller::SwitchController::Response &res);
+  bool switchController(SwitchController::Request  &req,
+                        SwitchController::Response &res);
+  bool emergencyStop(EmergencyStop::Request  &req,
+                        EmergencyStop::Response &res);
  protected:
   double time_;
   double timeStep_;

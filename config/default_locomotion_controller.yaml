@@ -15,3 +15,12 @@ publishers:
   command_seactuators:
     topic: /locomotion_controller/actuators/sea
     queue_size: 100
+    
+servers:
+  switch_controller:
+    service: switch_controller
+    persistent: false
+  emergency_stop:
+    service: emergency_stop
+    persistent: false
+    

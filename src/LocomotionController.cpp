@@ -85,7 +85,11 @@ void LocomotionController::init() {
   controllerManager_.setupControllers(timeStep_, time_, &model_);
 
   switchControllerService_ = getNodeHandle().advertiseService("switch_controller", &ControllerManager::switchController, &this->controllerManager_);
+  ros::AdvertiseServiceOptions defaultOptions;
 
+  defaultOptions.init<EmergencyStop::RequestType, EmergencyStop::ResponseType>("emergency_stop", boost::bind(&ControllerManager::emergencyStop, &this->controllerManager_, _1, _2));
+  emergencyStopService_ = advertiseService("emergency_stop", defaultOptions);
+//  emergencyStopService_ = advertiseService("emergency_stop", &ControllerManager::emergencyStop, &this->controllerManager_);
 }
 
 bool LocomotionController::run() {

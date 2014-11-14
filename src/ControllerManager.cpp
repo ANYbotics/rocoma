@@ -96,8 +96,8 @@ void ControllerManager::updateController() {
 }
 
 
-bool ControllerManager::switchController(locomotion_controller::SwitchController::Request  &req,
-                               locomotion_controller::SwitchController::Response &res)
+bool ControllerManager::switchController(SwitchController::Request  &req,
+                                         SwitchController::Response &res)
 {
   std::string reqTaskName = req.name;
   if (req.name == "EmergencyStop") {
@@ -123,6 +123,18 @@ bool ControllerManager::switchController(locomotion_controller::SwitchController
   }
   res.status = res.STATUS_NOTFOUND;
   ROS_INFO("Controller %s not found!", reqTaskName.c_str());
+  return true;
+}
+
+bool ControllerManager::emergencyStop(EmergencyStop::Request  &req,
+                                      EmergencyStop::Response &res) {
+
+  if (req.stop) {
+    SwitchController::Request  switchControllerReq;
+    SwitchController::Response switchControllerRes;
+    switchControllerReq.name = "EmergencyStop";
+    return switchController(switchControllerReq, switchControllerRes);
+  }
   return true;
 }
 
