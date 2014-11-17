@@ -34,7 +34,7 @@
 #ifndef LOCOMOTION_CONTROLLER_MODEL_HPP_
 #define LOCOMOTION_CONTROLLER_MODEL_HPP_
 
-#include "RobotModel.hpp"
+#include "starlethModel/RobotModel.hpp"
 #include "robotUtils/terrains/TerrainBase.hpp"
 
 #include <ros/ros.h>

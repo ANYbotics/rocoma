@@ -19,7 +19,8 @@ find_package(catkin REQUIRED COMPONENTS
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
-
+find_package(Kindr REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -88,10 +89,10 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
- INCLUDE_DIRS include
- LIBRARIES locomotion_controller
+ INCLUDE_DIRS include $ENV{LAB_ROOT}/starlethModel/include $ENV{LAB_ROOT}/robotUtils/include
+ LIBRARIES locomotion_controller model
  CATKIN_DEPENDS geometry_msgs roscpp sensor_msgs starleth_msgs std_msgs roscpp_nodewrap
-#  DEPENDS system_lib
+# DEPENDS system_lib
 )
 
 ###########
@@ -103,38 +104,35 @@ catkin_package(
 if (NOT RM_EXCLUDE_DYNAMICS) 
 add_definitions( -DRM_EXCLUDE_DYNAMICS) 
 endif()
-add_definitions( -DDISPLAY)
-add_definitions( -DAPP_STARLETH)
-add_definitions( -DSTANDALONE)
-add_definitions( -DSIMANDCONTROL_CMAKEBUILD)
-add_definitions( -DSIMANDCONTROL_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}" )
-add_definitions( -Wwrite-strings)
-set(ARCH x86_64)
 set(STANDALONE ON CACHE BOOL "standalone")
 set(ISSUBDIRECTORY ON CACHE BOOL "issubdir")
 
 
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/locomotion_controllers.cmake)
-
-#set(EXCLUDE_ROBOTBASE ON CACHE BOOL "exclude robot base")
-
+include($ENV{LAB_ROOT}/starlethTask/cmake/tasks_add_definitions.cmake)
 add_subdirectory($ENV{LAB_ROOT}/starlethTask starlethTask)
-set(EXTRA_LIBS ${EXTRA_LIBS} starlethTask starlethRobotModel robotUtils ${TASK_LIBS} ${ROBOTMODEL_LIBS} ${UTILS_LIBS})
-include_directories(${TASK_INCL} ${ROBOTMODEL_INCL} ${UTILS_INCL})
+add_subdirectory($ENV{LAB_ROOT}/starlethModel starlethModel)
+add_subdirectory($ENV{LAB_ROOT}/robotUtils robotUtils)
+
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(include)
-include_directories(
-  ${catkin_INCLUDE_DIRS}
-)
+include_directories(${EIGEN3_INCLUDE_DIR})
+include_directories(${Kindr_INCLUDE_DIRS})
+include_directories(${catkin_INCLUDE_DIRS})
+include_directories($ENV{LAB_ROOT}/starlethTask/include)
+include_directories($ENV{LAB_ROOT}/starlethModel/include)
+include_directories($ENV{LAB_ROOT}/robotUtils/include)
+include_directories(${TASK_INCL})
+
 
 
 add_library(model
   src/Model.cpp
 )
 target_link_libraries(model
-   ${EXTRA_LIBS}
+   starlethRobotModel
+   robotUtils
    ${catkin_LIBRARIES}
 )
 
@@ -148,7 +146,10 @@ add_library(locomotion_controller
 target_link_libraries(locomotion_controller
     model
    ${catkin_LIBRARIES}
-   ${EXTRA_LIBS}
+   starlethTask
+   ${TASK_LIBS}
+   starlethRobotModel
+   robotUtils
 )
 
 add_executable(locomotion_controller_node src/locomotion_controller_node.cpp)
@@ -157,7 +158,12 @@ target_link_libraries(locomotion_controller_node
    model
    locomotion_controller
    ${catkin_LIBRARIES}
+   starlethTask
+   ${TASK_LIBS}
+   starlethRobotModel
+   robotUtils
 )
+
 
 
 ## Add cmake target dependencies of the executable/library
