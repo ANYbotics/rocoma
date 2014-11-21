@@ -2,5 +2,8 @@
 <launch>
 	<node pkg="locomotion_controller" type="locomotion_controller_node" name="locomotion_controller" output="screen">
 	  <rosparam file="$(find locomotion_controller)/config/default_locomotion_controller.yaml" command="load" />
+	  <rosparam file="$(find locomotion_controller)/config/default_publishers.yaml" command="load" />
+	  <rosparam file="$(find locomotion_controller)/config/default_subscribers.yaml" command="load" />
+	  <rosparam file="$(find locomotion_controller)/config/default_servers.yaml" command="load" />	  
 	</node>
 </launch>

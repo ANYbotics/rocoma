@@ -1,0 +1,4 @@
+publishers:
+  command_seactuators:
+    topic: /locomotion_controller/actuators/sea
+    queue_size: 100

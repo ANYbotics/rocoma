@@ -1,0 +1,9 @@
+subscribers:
+  robot_state: 
+    topic: /locomotion_controller/state/robot
+    queue_size: 100
+    latch: false
+  joy:
+    topic: /locomotion_controller/sensors/joy
+    queue_size: 100
+    latch: false

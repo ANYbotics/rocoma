@@ -1,26 +1,2 @@
 controller:
   time_step: 0.0025
-
-subscribers:
-  robot_state: 
-    topic: /locomotion_controller/state/robot
-    queue_size: 100
-    latch: false
-  joy:
-    topic: /locomotion_controller/sensors/joy
-    queue_size: 100
-    latch: false
-      
-publishers:
-  command_seactuators:
-    topic: /locomotion_controller/actuators/sea
-    queue_size: 100
-    
-servers:
-  switch_controller:
-    service: switch_controller
-    persistent: false
-  emergency_stop:
-    service: emergency_stop
-    persistent: false
-    
