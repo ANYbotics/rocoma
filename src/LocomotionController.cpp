@@ -79,7 +79,7 @@ void LocomotionController::init() {
 
   time_ = 0.0;
 
-  model_.initialize(timeStep_);
+  model_.initializeForController(timeStep_);
   model_.getRobotModel()->params().printParams();
 
 

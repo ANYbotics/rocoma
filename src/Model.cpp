@@ -58,7 +58,7 @@ robotTerrain::TerrainBase* Model::getTerrainModel() {
   return terrain_.get();
 }
 
-void Model::initialize(double dt) {
+void Model::initializeForController(double dt) {
   robotModel_.reset(new robotModel::RobotModel(dt));
   setRobotModelParameters();
   robotModel_->setIsRealRobot(false);

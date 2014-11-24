@@ -70,7 +70,7 @@ class Model
  public:
   Model();
   virtual ~Model();
-  void initialize(double dt);
+  void initializeForController(double dt);
   void initializeForStateEstimator(double dt);
   void reinitialize(double dt);
 
