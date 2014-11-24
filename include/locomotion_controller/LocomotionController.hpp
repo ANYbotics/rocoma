@@ -83,7 +83,8 @@ class LocomotionController : public nodewrap::NodeImpl
   void publish();
   void robotStateCallback(const starleth_msgs::RobotState::ConstPtr& msg);
   void joystickCallback(const sensor_msgs::Joy::ConstPtr& msg);
-
+  bool emergencyStop(locomotion_controller_msgs::EmergencyStop::Request  &req,
+                     locomotion_controller_msgs::EmergencyStop::Response &res);
 
  private:
   ros::Subscriber robotStateSubscriber_;
@@ -91,6 +92,8 @@ class LocomotionController : public nodewrap::NodeImpl
   ros::Publisher jointCommandsPublisher_;
   ros::ServiceServer switchControllerService_;
   ros::ServiceServer emergencyStopService_;
+  ros::ServiceClient resetStateEstimatorClient_;
+
   starleth_msgs::SeActuatorCommandsPtr jointCommands_;
   double timeStep_;
   double time_;

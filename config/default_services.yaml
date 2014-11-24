@@ -5,3 +5,8 @@ servers:
   emergency_stop:
     service: emergency_stop
     persistent: false
+    
+clients:
+  reset_state_estimator:
+    service: /locomotion_controller/state_estimator/reset
+    persistent: false

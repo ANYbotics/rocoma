@@ -38,6 +38,9 @@
 #include "robotUtils/terrains/TerrainBase.hpp"
 
 #include <ros/ros.h>
+#include <sensor_msgs/Imu.h>
+#include <sensor_msgs/JointState.h>
+#include <geometry_msgs/WrenchStamped.h>
 #include <starleth_msgs/RobotState.h>
 #include <sensor_msgs/Joy.h>
 #include <starleth_msgs/SeActuatorCommands.h>
@@ -51,6 +54,7 @@ namespace model {
 class Model
 {
  public:
+  static constexpr int numberOfJoints_ = 12;
   typedef kindr::rotations::eigen_impl::RotationQuaternionPD RotationQuaternion;
   typedef kindr::rotations::eigen_impl::EulerAnglesZyxPD EulerAnglesZyx;
   typedef kindr::rotations::eigen_impl::LocalAngularVelocityPD LocalAngularVelocity;
@@ -58,13 +62,32 @@ class Model
   typedef kindr::phys_quant::eigen_impl::Position3D Position;
   typedef kindr::phys_quant::eigen_impl::Velocity3D LinearVelocity;
   typedef kindr::phys_quant::eigen_impl::VectorTypeless3D Vector;
+  typedef kindr::phys_quant::eigen_impl::Force3D Force;
+
+  typedef kindr::phys_quant::eigen_impl::Position<double, numberOfJoints_> JointPositions;
+  typedef kindr::phys_quant::eigen_impl::Velocity<double, numberOfJoints_> JointVelocities;
+  typedef kindr::phys_quant::eigen_impl::Torque<double, numberOfJoints_> JointTorques;
  public:
   Model();
   virtual ~Model();
   void initialize(double dt);
+  void initializeForStateEstimator(double dt);
+  void reinitialize(double dt);
+
+  void advance(double dt);
 
   void setRobotModelParameters();
   void setRobotState(const starleth_msgs::RobotState::ConstPtr& robotState);
+  void setRobotState(const sensor_msgs::ImuPtr& imu,
+                     const sensor_msgs::JointStatePtr& jointState,
+                     const geometry_msgs::WrenchStampedPtr& contactForceLf,
+                     const geometry_msgs::WrenchStampedPtr& contactForceRf,
+                     const geometry_msgs::WrenchStampedPtr& contactForceLh,
+                     const geometry_msgs::WrenchStampedPtr& contactForceRh);
+  void initializeRobotState(starleth_msgs::RobotStatePtr& robotState) const;
+  void initializeJointState(sensor_msgs::JointState& jointState) const;
+
+  void getRobotState(starleth_msgs::RobotStatePtr& robotState);
   void getSeActuatorCommands(starleth_msgs::SeActuatorCommandsPtr& actuatorCommands);
   void setJoystickCommands(const sensor_msgs::Joy::ConstPtr& msg);
 
@@ -72,8 +95,10 @@ class Model
   robotModel::RobotModel* getRobotModel();
   robotTerrain::TerrainBase* getTerrainModel();
  private:
+  ros::Time updateStamp_;
   std::shared_ptr<robotModel::RobotModel> robotModel_;
   std::shared_ptr<robotTerrain::TerrainBase> terrain_;
+
 };
 
 } /* namespace model */

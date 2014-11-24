@@ -35,8 +35,8 @@
 #define LOCOMOTION_CONTROLLER_CONTROLLERMANAGER_HPP_
 
 #include <ros/ros.h>
-#include <locomotion_controller/SwitchController.h>
-#include <locomotion_controller/EmergencyStop.h>
+#include <locomotion_controller_msgs/SwitchController.h>
+#include <locomotion_controller_msgs/EmergencyStop.h>
 
 #include <locomotion_controller/Model.hpp>
 
@@ -62,10 +62,9 @@ class ControllerManager
   void updateController();
   void setupControllers(double dt, double time, model::Model* model);
   void addController(ControllerPtr controller);
-  bool switchController(SwitchController::Request  &req,
-                        SwitchController::Response &res);
-  bool emergencyStop(EmergencyStop::Request  &req,
-                        EmergencyStop::Response &res);
+  bool switchController(locomotion_controller_msgs::SwitchController::Request  &req,
+                        locomotion_controller_msgs::SwitchController::Response &res);
+
  protected:
   double time_;
   double timeStep_;

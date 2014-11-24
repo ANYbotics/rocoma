@@ -7,14 +7,10 @@ set(CMAKE_CXX_FLAGS "-std=c++11")
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  message_generation
-  geometry_msgs
   roscpp
-  sensor_msgs
-  starleth_msgs
-  std_msgs
   nodelet
   roscpp_nodewrap
+  locomotion_controller_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -59,11 +55,9 @@ find_package(Eigen3 REQUIRED)
 # )
 
 ## Generate services in the 'srv' folder
-add_service_files(
-   FILES
-   SwitchController.srv
-   EmergencyStop.srv
-)
+#add_service_files(
+#   FILES
+#)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -73,11 +67,11 @@ add_service_files(
 # )
 
 ## Generate added messages and services with any dependencies listed here
-generate_messages(
-   DEPENDENCIES
-   std_msgs
+#generate_messages(
+#   DEPENDENCIES
+#   std_msgs
 #   geometry_msgs#   sensor_msgs#   starleth_msgs#   std_msgs
-)
+#)
 
 ###################################
 ## catkin specific configuration ##
@@ -91,7 +85,7 @@ generate_messages(
 catkin_package(
  INCLUDE_DIRS include $ENV{LAB_ROOT}/starlethModel/include $ENV{LAB_ROOT}/robotUtils/include
  LIBRARIES locomotion_controller model
- CATKIN_DEPENDS geometry_msgs roscpp sensor_msgs starleth_msgs std_msgs roscpp_nodewrap
+ CATKIN_DEPENDS roscpp_nodewrap locomotion_controller_msgs 
 # DEPENDS system_lib
 )
 
@@ -168,7 +162,7 @@ target_link_libraries(locomotion_controller_node
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-# add_dependencies(locomotion_controller_node locomotion_controller_generate_messages_cpp)
+#add_dependencies(locomotion_controller_node locomotion_controller_generate_messages_cpp)
 
 
 #############

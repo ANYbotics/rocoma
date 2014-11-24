@@ -96,12 +96,13 @@ void ControllerManager::updateController() {
 }
 
 
-bool ControllerManager::switchController(SwitchController::Request  &req,
-                                         SwitchController::Response &res)
+bool ControllerManager::switchController(locomotion_controller_msgs::SwitchController::Request  &req,
+                                         locomotion_controller_msgs::SwitchController::Response &res)
 {
   std::string reqTaskName = req.name;
   if (req.name == "EmergencyStop") {
     ROS_INFO("Emergency Stop!");
+
     reqTaskName = "No Task";
   }
 
@@ -126,16 +127,6 @@ bool ControllerManager::switchController(SwitchController::Request  &req,
   return true;
 }
 
-bool ControllerManager::emergencyStop(EmergencyStop::Request  &req,
-                                      EmergencyStop::Response &res) {
 
-  if (req.stop) {
-    SwitchController::Request  switchControllerReq;
-    SwitchController::Response switchControllerRes;
-    switchControllerReq.name = "EmergencyStop";
-    return switchController(switchControllerReq, switchControllerRes);
-  }
-  return true;
-}
 
 } /* namespace locomotion_controller */

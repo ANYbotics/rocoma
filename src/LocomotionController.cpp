@@ -37,8 +37,9 @@
 
 #include "robotUtils/terrains/TerrainPlane.hpp"
 
-
 #include <ros/callback_queue.h>
+
+#include <locomotion_controller_msgs/ResetStateEstimator.h>
 
 #include <chrono>
 #include <cstdint>
@@ -87,9 +88,15 @@ void LocomotionController::init() {
   switchControllerService_ = getNodeHandle().advertiseService("switch_controller", &ControllerManager::switchController, &this->controllerManager_);
   ros::AdvertiseServiceOptions defaultOptions;
 
-  defaultOptions.init<EmergencyStop::RequestType, EmergencyStop::ResponseType>("emergency_stop", boost::bind(&ControllerManager::emergencyStop, &this->controllerManager_, _1, _2));
+  defaultOptions.init<locomotion_controller_msgs::EmergencyStop::RequestType, locomotion_controller_msgs::EmergencyStop::ResponseType>("emergency_stop", boost::bind(&LocomotionController::emergencyStop, this, _1, _2));
   emergencyStopService_ = advertiseService("emergency_stop", defaultOptions);
 //  emergencyStopService_ = advertiseService("emergency_stop", &ControllerManager::emergencyStop, &this->controllerManager_);
+
+
+  std::string ns = std::string("clients/")+std::string("reset_state_estimator");
+  std::string serviceResetStateEstimator;
+  getNodeHandle().param(ns+"/service", serviceResetStateEstimator, std::string("reset_state_estimator"));
+  resetStateEstimatorClient_ = getNodeHandle().serviceClient<locomotion_controller_msgs::ResetStateEstimator>(serviceResetStateEstimator);
 }
 
 bool LocomotionController::run() {
@@ -152,8 +159,8 @@ void LocomotionController::joystickCallback(const sensor_msgs::Joy::ConstPtr& ms
 
   // START + LF buttons
   if (msg->buttons[4] == 1 && msg->buttons[7] == 1 ) {
-    locomotion_controller::SwitchController::Request  req;
-    locomotion_controller::SwitchController::Response res;
+    locomotion_controller_msgs::SwitchController::Request  req;
+    locomotion_controller_msgs::SwitchController::Response res;
     req.name = "LocoDemo";
     if(!controllerManager_.switchController(req,res)) {
     }
@@ -162,16 +169,37 @@ void LocomotionController::joystickCallback(const sensor_msgs::Joy::ConstPtr& ms
   }
   // RB button
   if (msg->buttons[5] == 1 ) {
-    locomotion_controller::SwitchController::Request  req;
-    locomotion_controller::SwitchController::Response res;
-    req.name = "EmergencyStop";
-    if(!controllerManager_.switchController(req,res)) {
-    }
-    NODEWRAP_INFO("Emergency stop by joystick! (status: %d)",res.status);
+    NODEWRAP_INFO("Emergency stop by joystick!");
+    locomotion_controller_msgs::EmergencyStop::Request  req;
+    locomotion_controller_msgs::EmergencyStop::Response res;
+    emergencyStop(req, res);
+
   }
 }
 
+bool LocomotionController::emergencyStop(locomotion_controller_msgs::EmergencyStop::Request  &req,
+                                         locomotion_controller_msgs::EmergencyStop::Response &res) {
 
+  bool result = true;
+
+  //---  Switch controller.
+  locomotion_controller_msgs::SwitchController::Request  switchControllerReq;
+  locomotion_controller_msgs::SwitchController::Response switchControllerRes;
+  switchControllerReq.name = "EmergencyStop";
+  if(!controllerManager_.switchController(switchControllerReq, switchControllerRes)) {
+    result = false;
+  }
+  //---
+
+  //---  Reset estimator.
+  locomotion_controller_msgs::ResetStateEstimator resetEstimatorService;
+  if(!resetStateEstimatorClient_.call(resetEstimatorService)) {
+    result = false;
+  }
+  //---
+
+  return result;
+}
 
 
 

@@ -37,6 +37,7 @@
 namespace model {
 
 Model::Model():
+  updateStamp_(0.0),
   robotModel_(),
   terrain_()
 {
@@ -75,6 +76,31 @@ void Model::initialize(double dt) {
   terrain_.reset(new robotTerrain::TerrainPlane());
 
 }
+
+
+void Model::initializeForStateEstimator(double dt) {
+  robotModel_.reset(new robotModel::RobotModel(dt));
+  setRobotModelParameters();
+  robotModel_->setIsRealRobot(false);
+  /* Select estimator: */
+  robotModel_->est().setActualEstimator(robotModel::PE_ObservabilityConstrainedEKF); // feed through of simulated states
+  //  robotModel.est().setActualEstimator(robotModel::PE_ObservabilityConstrainedEKF); // activate this estimator
+  //  robotModel.est().setActualEstimator(robotModel::PE_LSE); // not used
+
+  /* activate sensor noise */
+  robotModel_->sensors().setIsAddingSensorNoise(false);
+  robotModel_->act().setUseLimitsInSimFlag(false); // do not change! see jointController for activating limits
+  /* initialize robot model */
+  robotModel_->init();
+
+  terrain_.reset(new robotTerrain::TerrainPlane());
+
+}
+
+void Model::reinitialize(double dt) {
+  robotModel_->init();
+}
+
 
 void Model::setRobotModelParameters() {
 #ifdef I
@@ -214,6 +240,201 @@ void Model::setRobotState(const starleth_msgs::RobotState::ConstPtr& robotState)
 
 }
 
+void Model::setRobotState(const sensor_msgs::ImuPtr& imu,
+                   const sensor_msgs::JointStatePtr& jointState,
+                   const geometry_msgs::WrenchStampedPtr& contactForceLf,
+                   const geometry_msgs::WrenchStampedPtr& contactForceRf,
+                   const geometry_msgs::WrenchStampedPtr& contactForceLh,
+                   const geometry_msgs::WrenchStampedPtr& contactForceRh) {
+
+
+
+  namespace rot = kindr::rotations::eigen_impl;
+
+  static robotModel::VectorQb Qb = robotModel::VectorQb::Zero();
+  static robotModel::VectorQb dQb = robotModel::VectorQb::Zero();
+  static robotModel::VectorAct jointTorques;
+  static robotModel::VectorQj jointPositions;
+  static robotModel::VectorQj jointVelocities;
+
+  Eigen::Vector3d force;
+  Eigen::Vector3d normal = Eigen::Vector3d::UnitZ();
+  Eigen::Vector4i contactFlags = Eigen::Vector4i::Zero();
+  for (int i=0; i<4; i++) {
+    force.x() = contactForceLf->wrench.force.x;
+    force.y() = contactForceLf->wrench.force.y;
+    force.z() = contactForceLf->wrench.force.z;
+    robotModel_->sensors().setContactForceCSw(i, force);
+    robotModel_->sensors().setContactNormalCSw(i, normal);
+    contactFlags(i) = force.norm() >= 10.0 ? 1 : 0;
+  }
+  robotModel_->sensors().setContactFlags(contactFlags);
+
+  for (int i = 0; i < jointPositions.size(); i++) {
+    jointTorques(i) =  jointState->effort[i];
+    jointPositions(i) = jointState->position[i];
+    jointVelocities(i) = jointState->velocity[i];
+  }
+
+
+  Eigen::Vector3d accData;
+  accData.x() = imu->linear_acceleration.x;
+  accData.y() = imu->linear_acceleration.y;
+  accData.z() = imu->linear_acceleration.z;
+  robotModel_->sensors().getIMU()->setAccelerometerData(accData);
+  Eigen::Vector3d gyrData;
+  gyrData.x() = imu->angular_velocity.x;
+  gyrData.y() = imu->angular_velocity.y;
+  gyrData.z() = imu->angular_velocity.z;
+  robotModel_->sensors().getIMU()->setGyrometerData(gyrData);
+
+  /* update robot model */
+  robotModel_->sensors().setJointTorques(jointTorques);
+  robotModel_->sensors().setJointPos(jointPositions);
+  robotModel_->sensors().setJointVel(jointVelocities);
+
+}
+
+void Model::initializeRobotState(starleth_msgs::RobotStatePtr& robotState) const {
+  robotState->contacts.clear();
+  robotState->contacts.push_back(starleth_msgs::Contact());
+  robotState->contacts.push_back(starleth_msgs::Contact());
+  robotState->contacts.push_back(starleth_msgs::Contact());
+  robotState->contacts.push_back(starleth_msgs::Contact());
+  robotState->contacts[0].name = "LF";
+  robotState->contacts[1].name = "RF";
+  robotState->contacts[2].name = "LH";
+  robotState->contacts[3].name = "RH";
+  robotState->contacts[0].header.frame_id = "World";
+  robotState->contacts[1].header.frame_id = "World";
+  robotState->contacts[2].header.frame_id = "World";
+  robotState->contacts[3].header.frame_id = "World";
+
+  for (int i=0; i<robotState->contacts.size() ; i++) {
+    robotState->contacts[i].frictionCoefficient = 0.8;
+    robotState->contacts[i].restitutionCoefficient = 0.0;
+  }
+
+  initializeJointState(robotState->joints);
+
+
+
+}
+
+void Model::initializeJointState(sensor_msgs::JointState& jointState) const {
+
+  jointState.name.clear();
+  jointState.position.clear();
+  jointState.velocity.clear();
+  jointState.effort.clear();
+
+  jointState.name.push_back("LF_HAA");
+  jointState.name.push_back("LF_HFE");
+  jointState.name.push_back("LF_KFE");
+  jointState.name.push_back("RF_HAA");
+  jointState.name.push_back("RF_HFE");
+  jointState.name.push_back("RF_KFE");
+  jointState.name.push_back("LH_HAA");
+  jointState.name.push_back("LH_HFE");
+  jointState.name.push_back("LH_KFE");
+  jointState.name.push_back("RH_HAA");
+  jointState.name.push_back("RH_HFE");
+  jointState.name.push_back("RH_KFE");
+
+  for (int i=0; i<12;i++) {
+    jointState.position.push_back(0.0);
+    jointState.velocity.push_back(0.0);
+    jointState.effort.push_back(0.0);
+  }
+}
+
+void Model::getRobotState(starleth_msgs::RobotStatePtr& robotState) {
+  namespace rot = kindr::rotations::eigen_impl;
+
+  kindr::rotations::eigen_impl::RotationQuaternionAD rquatWorldToBaseActive(
+      robotModel_->est().getActualEstimator()->getQuat());
+  const RotationQuaternion  orientationWorldToBase = rquatWorldToBaseActive.getPassive();
+
+  const Position positionWorldToBaseInWorldFrame = Position(
+      robotModel_->kin()[robotModel::JT_World2Base_CSw]->getPos());
+
+
+  const LinearVelocity linearVelocityBaseInWorldFrame(robotModel_->kin()[robotModel::JT_World2Base_CSw]->getVel());
+  const LocalAngularVelocity angularVelocityBaseInBaseFrame(orientationWorldToBase.rotate(robotModel_->est().getOmega()));
+
+
+  robotState->header.stamp = updateStamp_;
+
+  robotState->pose.position.x = positionWorldToBaseInWorldFrame.x();
+  robotState->pose.position.y = positionWorldToBaseInWorldFrame.y();
+  robotState->pose.position.z = positionWorldToBaseInWorldFrame.z();
+
+
+  robotState->pose.orientation.w = orientationWorldToBase.w();
+  robotState->pose.orientation.x = orientationWorldToBase.x();
+  robotState->pose.orientation.y = orientationWorldToBase.y();
+  robotState->pose.orientation.z = orientationWorldToBase.z();
+
+  robotState->twist.linear.x = linearVelocityBaseInWorldFrame.x();
+  robotState->twist.linear.y = linearVelocityBaseInWorldFrame.y();
+  robotState->twist.linear.z = linearVelocityBaseInWorldFrame.z();
+
+  robotState->twist.angular.x = angularVelocityBaseInBaseFrame.x();
+  robotState->twist.angular.y = angularVelocityBaseInBaseFrame.y();
+  robotState->twist.angular.z = angularVelocityBaseInBaseFrame.z();
+
+  robotState->joints.header.stamp = updateStamp_;
+
+  JointPositions jointPositions(robotModel_->q().getQj());
+  JointVelocities jointVelocities(robotModel_->q().getdQj());
+  JointTorques jointTorques(robotModel_->sensors().getJointTorques());
+  for (int i=0; i<jointPositions.Dimension; i++) {
+    robotState->joints.position[i]= jointPositions(i);
+    robotState->joints.velocity[i] = jointVelocities(i);
+    robotState->joints.effort[i]= jointTorques(i);
+  }
+
+
+  for (int i=0; i<robotState->contacts.size(); i++) {
+
+
+    robotState->contacts[i].header.stamp = updateStamp_;
+
+    const Force force(robotModel_->sensors().getContactForceCSw(i));
+    robotState->contacts[i].wrench.force.x = force.x();
+    robotState->contacts[i].wrench.force.y = force.y();
+    robotState->contacts[i].wrench.force.z = force.z();
+
+    Vector normal(robotModel_->sensors().getContactNormalCSw(i));
+    robotState->contacts[i].normal.x = normal.x();
+    robotState->contacts[i].normal.y = normal.y();
+    robotState->contacts[i].normal.z = normal.z();
+
+    Position position(robotModel_->contacts().getCP(robotModel::CP_LF_World2Foot_CSw+i)->getPos());
+    robotState->contacts[i].position.x = position.x();
+    robotState->contacts[i].position.y = position.y();
+    robotState->contacts[i].position.z = position.z();
+
+    if (robotModel_->contacts().getCP(robotModel::CP_LF_World2Foot_CSw+i)->getFlag()) {
+//      std::cout << "leg " << std::to_string(i) << "vel: " << getLinearVelocityFootInBaseFrame(i).norm() << std::endl;
+      if (robotModel_->contacts().getCP(robotModel::CP_LF_World2Foot_CSw+i)->getVel().norm() < 0.01) {
+        robotState->contacts[i].state = robotState->contacts[i].STATE_CLOSED;
+      }
+      else {
+        robotState->contacts[i].state = robotState->contacts[i].STATE_SLIPPING;
+      }
+    } else {
+      robotState->contacts[i].state = robotState->contacts[i].STATE_OPEN;
+    }
+  }
+
+
+
+
+}
+
+
+
 void Model::getSeActuatorCommands(starleth_msgs::SeActuatorCommandsPtr& actuatorCommands) {
   ros::Time stamp = ros::Time::now();
   for (int i=0; i<actuatorCommands->commands.size(); i++) {
@@ -232,6 +453,11 @@ void Model::setJoystickCommands(const sensor_msgs::Joy::ConstPtr& msg) {
   for (int i=0; i<msg->buttons.size();i++) {
     robotModel_->sensors().getJoystick()->setButton(i+1, msg->buttons[i]);
   }
+}
+
+void Model::advance(double dt) {
+  robotModel_->update();
+  updateStamp_ = ros::Time::now();
 }
 
 } /* namespace model */
