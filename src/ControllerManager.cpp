@@ -55,7 +55,7 @@ void ControllerManager::setupControllers(double dt, double time, model::Model* m
   timeStep_ = dt;
 
   /* Create no task, which is active until estimator converged*/
-  addController(new robotTask::NoTask(model->getRobotModel()));
+  addController(new robotTask::NoTaskRos(model->getRobotModel()));
   activeController_ = &controllers_.back();
 
   add_locomotion_controllers(this, model);

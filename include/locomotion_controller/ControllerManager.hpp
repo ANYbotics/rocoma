@@ -41,7 +41,7 @@
 #include <locomotion_controller/Model.hpp>
 
 #include "robotTask/tasks/TaskRobotBase.hpp"
-#include "robotTask/noTask/NoTask_Task.hpp"
+#include "robotTask/tasks/tasks.hpp"
 
 
 #include <boost/ptr_container/ptr_vector.hpp>

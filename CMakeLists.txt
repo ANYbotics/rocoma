@@ -100,7 +100,7 @@ add_definitions( -DRM_EXCLUDE_DYNAMICS)
 endif()
 set(STANDALONE ON CACHE BOOL "standalone")
 set(ISSUBDIRECTORY ON CACHE BOOL "issubdir")
-
+set(USE_TASK_NOTASKROS ON CACHE BOOL "notask")
 
 include($ENV{LAB_ROOT}/starlethTask/cmake/tasks_add_definitions.cmake)
 add_subdirectory($ENV{LAB_ROOT}/starlethTask starlethTask)
