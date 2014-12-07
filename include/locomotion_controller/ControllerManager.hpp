@@ -42,25 +42,28 @@
 
 #include "robotTask/tasks/TaskRobotBase.hpp"
 #include "robotTask/tasks/tasks.hpp"
-
+#include <roco/controllers/ControllerInterface.hpp>
+#include <starlethModel/State.hpp>
+#include <starlethModel/Command.hpp>
 
 #include <boost/ptr_container/ptr_vector.hpp>
 
 namespace locomotion_controller {
 
 class ControllerManager;
-void add_locomotion_controllers(locomotion_controller::ControllerManager* manager, model::Model* model);
+void add_locomotion_controllers(locomotion_controller::ControllerManager* manager, robotModel::State& state, robotModel::Command& command);
 
 class ControllerManager
 {
  public:
-  typedef robotTask::TaskRobotBase* ControllerPtr;
+  typedef roco::controllers::ControllerInterface Controller;
+  typedef roco::controllers::ControllerInterface* ControllerPtr;
  public:
   ControllerManager();
   virtual ~ControllerManager();
 
   void updateController();
-  void setupControllers(double dt, double time, model::Model* model);
+  void setupControllers(double dt, double time, robotModel::State& state, robotModel::Command& command);
   void addController(ControllerPtr controller);
   bool switchController(locomotion_controller_msgs::SwitchController::Request  &req,
                         locomotion_controller_msgs::SwitchController::Response &res);
@@ -69,8 +72,8 @@ class ControllerManager
   double time_;
   double timeStep_;
   bool isInitializingTask_;
-  boost::ptr_vector<robotTask::TaskRobotBase> controllers_;
-  robotTask::TaskRobotBase* activeController_;
+  boost::ptr_vector<Controller> controllers_;
+  ControllerPtr activeController_;
 };
 
 } /* namespace locomotion_controller */

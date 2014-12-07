@@ -61,6 +61,9 @@ robotTerrain::TerrainBase* Model::getTerrainModel() {
 void Model::initializeForController(double dt) {
   robotModel_.reset(new robotModel::RobotModel(dt));
   setRobotModelParameters();
+
+
+
   robotModel_->setIsRealRobot(false);
   /* Select estimator: */
   robotModel_->est().setActualEstimator(robotModel::PE_SL); // feed through of simulated states

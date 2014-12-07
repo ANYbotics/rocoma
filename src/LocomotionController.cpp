@@ -41,6 +41,8 @@
 
 #include <locomotion_controller_msgs/ResetStateEstimator.h>
 
+#include <starlethModel/starleth/starleth.hpp>
+
 #include <chrono>
 #include <cstdint>
 
@@ -51,8 +53,12 @@ namespace locomotion_controller {
 
 LocomotionController::LocomotionController():
     timeStep_(0.0025),
-    time_(0.0)
+    time_(0.0),
+    model_(),
+    state_(),
+    command_()
 {
+
 
 }
 
@@ -80,10 +86,17 @@ void LocomotionController::init() {
   time_ = 0.0;
 
   model_.initializeForController(timeStep_);
+
+  state_.setRobotModelPtr(model_.getRobotModel());
+  state_.setTerrainPtr(model_.getTerrainModel());
+  command_.setRobotModelPtr(model_.getRobotModel());
+  robotModel::initializeStateForStarlETH(state_);
+  robotModel::initializeCommandForStarlETH(command_);
+
   model_.getRobotModel()->params().printParams();
 
 
-  controllerManager_.setupControllers(timeStep_, time_, &model_);
+  controllerManager_.setupControllers(timeStep_, time_, state_, command_);
 
   switchControllerService_ = getNodeHandle().advertiseService("switch_controller", &ControllerManager::switchController, &this->controllerManager_);
   ros::AdvertiseServiceOptions defaultOptions;

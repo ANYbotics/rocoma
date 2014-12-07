@@ -31,7 +31,7 @@
  * @date    Oct, 2014
  */
 #include "locomotion_controller/ControllerManager.hpp"
-
+#include "locomotion_controller/ControllerRos.hpp"
 
 
 namespace locomotion_controller {
@@ -50,25 +50,27 @@ ControllerManager::~ControllerManager()
 {
 }
 
-void ControllerManager::setupControllers(double dt, double time, model::Model* model)  {
+void ControllerManager::setupControllers(double dt, double time, robotModel::State& state, robotModel::Command& command)  {
   time_ = time;
   timeStep_ = dt;
 
   /* Create no task, which is active until estimator converged*/
-  addController(new robotTask::NoTaskRos(model->getRobotModel()));
+  addController(new ControllerRos<robotTask::NoTaskRos>(state, command));
   activeController_ = &controllers_.back();
+  if (!activeController_->initializeController(timeStep_)) {
+    ROS_FATAL("Could not initialized NoTask!");
+  }
 
-  add_locomotion_controllers(this, model);
+  add_locomotion_controllers(this, state, command);
 
 }
 
 void ControllerManager::addController(ControllerPtr controller)  {
   controllers_.push_back(controller);
   controller = &controllers_.back();
-  controller->setTime(time_);
-  controller->setTimeStep(timeStep_);
+
   ROS_INFO("Added Task %s.", controller->getName().c_str());
-  if (!controller->add()) {
+  if (!controller->createController(timeStep_)) {
     std::string error = "Could not add controller " +  controller->getName() + "!";
     throw std::runtime_error(error);
   }
@@ -79,18 +81,16 @@ void ControllerManager::addController(ControllerPtr controller)  {
 
 void ControllerManager::updateController() {
 
-  if (isInitializingTask_) {
-
-    /* initialize the task */
-    if (!activeController_->initTask()) {
-      throw std::runtime_error("Could not initialize the task!");
-    }
-    isInitializingTask_ = false;
-    ROS_INFO("Initialized controller %s", activeController_->getName().c_str());
-  }
-
-  activeController_->setTime(timeStep_);
-  activeController_->runTask();
+//  if (isInitializingTask_) {
+//
+//    /* initialize the task */
+//    if (!activeController_->initializeController(timeStep_)) {
+//      throw std::runtime_error("Could not initialize the task!");
+//    }
+//    isInitializingTask_ = false;
+////    ROS_INFO("Initialized controller %s", activeController_->getName().c_str());
+//  }
+  activeController_->advanceController(timeStep_);
 //  std::cout << "updateController() Qb:\n" << model_.getRobotModel()->q().getQb() << std::endl;
 
 }
@@ -117,7 +117,11 @@ bool ControllerManager::switchController(locomotion_controller_msgs::SwitchContr
     if (reqTaskName == controller.getName()) {
       activeController_ = &controller;
       res.status = res.STATUS_SWITCHED;
-      isInitializingTask_ = true;
+//      isInitializingTask_ = true;
+      if (!activeController_->initializeController(timeStep_)) {
+        throw std::runtime_error("Could not initialize the task!");
+      }
+
       ROS_INFO("Switched to controller %s", activeController_->getName().c_str());
       return true;
     }

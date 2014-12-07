@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?> 
 <launch>
-	<node pkg="locomotion_controller" type="locomotion_controller_node" name="locomotion_controller" output="screen">
+	<node pkg="locomotion_controller" type="locomotion_controller_node" name="locomotion_controller" output="screen" launch-prefix="">
 	  <rosparam file="$(find locomotion_controller)/config/default_locomotion_controller.yaml" command="load" />
 	  <rosparam file="$(find locomotion_controller)/config/default_publishers.yaml" command="load" />
 	  <rosparam file="$(find locomotion_controller)/config/default_subscribers.yaml" command="load" />

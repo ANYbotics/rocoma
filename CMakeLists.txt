@@ -106,7 +106,7 @@ include($ENV{LAB_ROOT}/starlethTask/cmake/tasks_add_definitions.cmake)
 add_subdirectory($ENV{LAB_ROOT}/starlethTask starlethTask)
 add_subdirectory($ENV{LAB_ROOT}/starlethModel starlethModel)
 add_subdirectory($ENV{LAB_ROOT}/robotUtils robotUtils)
-
+add_subdirectory($ENV{LAB_ROOT}/roco roco)
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
@@ -117,6 +117,7 @@ include_directories(${catkin_INCLUDE_DIRS})
 include_directories($ENV{LAB_ROOT}/starlethTask/include)
 include_directories($ENV{LAB_ROOT}/starlethModel/include)
 include_directories($ENV{LAB_ROOT}/robotUtils/include)
+include_directories($ENV{LAB_ROOT}/roco/include)
 include_directories(${TASK_INCL})
 
 
@@ -127,6 +128,7 @@ add_library(model
 target_link_libraries(model
    starlethRobotModel
    robotUtils
+   roco
    ${catkin_LIBRARIES}
 )
 
@@ -143,6 +145,7 @@ target_link_libraries(locomotion_controller
    starlethTask
    ${TASK_LIBS}
    starlethRobotModel
+   roco
    robotUtils
 )
 

@@ -46,7 +46,8 @@
 #include "locomotion_controller/Model.hpp"
 #include "locomotion_controller/ControllerManager.hpp"
 
-
+#include <starlethModel/State.hpp>
+#include <starlethModel/Command.hpp>
 
 #include <kindr/rotations/RotationEigen.hpp>
 
@@ -98,7 +99,10 @@ class LocomotionController : public nodewrap::NodeImpl
   double timeStep_;
   double time_;
   model::Model model_;
+  robotModel::State state_;
+  robotModel::Command command_;
   ControllerManager controllerManager_;
+
 
 
 

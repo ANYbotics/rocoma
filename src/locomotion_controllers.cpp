@@ -31,6 +31,7 @@
  * @date    Oct, 2014
  */
 #include <locomotion_controller/ControllerManager.hpp>
+#include <locomotion_controller/ControllerRos.hpp>
 
 #ifdef USE_TASK_LOCODEMO
 #include "LocoDemo_Task.hpp"
@@ -38,10 +39,10 @@
 
 namespace locomotion_controller {
 
-void add_locomotion_controllers(locomotion_controller::ControllerManager* manager, model::Model* model) {
+void add_locomotion_controllers(locomotion_controller::ControllerManager* manager, robotModel::State& state, robotModel::Command& command) {
 
 #ifdef USE_TASK_LOCODEMO
-   manager->addController(new robotTask::LocoDemo(model->getRobotModel(), model->getTerrainModel()));
+   manager->addController(new ControllerRos<robotTask::LocoDemo>(state, command));
 #endif
 
 

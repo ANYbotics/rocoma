@@ -17,8 +17,8 @@
   </node>
   
   <node name="simulator" pkg="nodelet" type="nodelet" args="load mule_simulator/MuleSimulator locomotion_controller" output="screen">
-    <rosparam command="load" file="$(find mule_simulator)/config/callback_simulator.yaml"/>
-    <rosparam command="load" file="$(find mule_simulator)/config/default_publishers.yaml"/>
+    <rosparam command="load" file="$(find mule_simulator)/config/default_mule_simulator.yaml"/>
+    <rosparam command="load" file="$(find mule_simulator)/config/all_publishers.yaml"/>
     <rosparam command="load" file="$(find mule_simulator)/config/default_subscribers.yaml"/>
   </node>
   
