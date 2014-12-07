@@ -128,19 +128,11 @@ bool LocomotionController::run() {
 void LocomotionController::publish()  {
 
   model_.getSeActuatorCommands(jointCommands_);
-//  ros::Time stamp = ros::Time::now();
-//  for (int i=0; i<jointCommands_->commands.size(); i++) {
-//    jointCommands_->commands[i].header.stamp = stamp;
-//    jointCommands_->commands[i].mode = robotModel_->act().getMode()(i);
-//    jointCommands_->commands[i].jointPosition = robotModel_->act().getPos()(i);
-//    jointCommands_->commands[i].motorVelocity = robotModel_->act().getVel()(i);
-//    jointCommands_->commands[i].jointTorque = robotModel_->act().getTau()(i);
-//  }
+
 
   if(jointCommandsPublisher_.getNumSubscribers() > 0u) {
     jointCommandsPublisher_.publish(jointCommands_);
     ros::spinOnce();
-//    ROS_INFO("Publish");
   }
 
 }
@@ -195,19 +187,18 @@ bool LocomotionController::emergencyStop(locomotion_controller_msgs::EmergencySt
 
   bool result = true;
 
-  //---  Switch controller.
-  locomotion_controller_msgs::SwitchController::Request  switchControllerReq;
-  locomotion_controller_msgs::SwitchController::Response switchControllerRes;
-  switchControllerReq.name = "EmergencyStop";
-  if(!controllerManager_.switchController(switchControllerReq, switchControllerRes)) {
+  //---
+  if(!controllerManager_.emergencyStop()) {
     result = false;
   }
   //---
 
   //---  Reset estimator.
-  locomotion_controller_msgs::ResetStateEstimator resetEstimatorService;
-  if(!resetStateEstimatorClient_.call(resetEstimatorService)) {
-    result = false;
+  if (resetStateEstimatorClient_.exists()) {
+    locomotion_controller_msgs::ResetStateEstimator resetEstimatorService;
+    if(!resetStateEstimatorClient_.call(resetEstimatorService)) {
+      result = false;
+    }
   }
   //---
 

@@ -42,7 +42,10 @@ namespace locomotion_controller {
 void add_locomotion_controllers(locomotion_controller::ControllerManager* manager, robotModel::State& state, robotModel::Command& command) {
 
 #ifdef USE_TASK_LOCODEMO
-   manager->addController(new ControllerRos<robotTask::LocoDemo>(state, command));
+   auto controller = new ControllerRos<robotTask::LocoDemo>(state, command);
+   controller->setControllerManager(manager);
+   manager->addController(controller);
+
 #endif
 
 

@@ -67,6 +67,7 @@ class ControllerManager
   void addController(ControllerPtr controller);
   bool switchController(locomotion_controller_msgs::SwitchController::Request  &req,
                         locomotion_controller_msgs::SwitchController::Response &res);
+  bool emergencyStop();
 
  protected:
   double time_;

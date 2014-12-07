@@ -67,7 +67,8 @@ void ControllerManager::setupControllers(double dt, double time, robotModel::Sta
 
 void ControllerManager::addController(ControllerPtr controller)  {
   controllers_.push_back(controller);
-  controller = &controllers_.back();
+//  controller = &controllers_.back();
+
 
   ROS_INFO("Added Task %s.", controller->getName().c_str());
   if (!controller->createController(timeStep_)) {
@@ -80,19 +81,14 @@ void ControllerManager::addController(ControllerPtr controller)  {
 
 
 void ControllerManager::updateController() {
-
-//  if (isInitializingTask_) {
-//
-//    /* initialize the task */
-//    if (!activeController_->initializeController(timeStep_)) {
-//      throw std::runtime_error("Could not initialize the task!");
-//    }
-//    isInitializingTask_ = false;
-////    ROS_INFO("Initialized controller %s", activeController_->getName().c_str());
-//  }
   activeController_->advanceController(timeStep_);
-//  std::cout << "updateController() Qb:\n" << model_.getRobotModel()->q().getQb() << std::endl;
+}
 
+bool ControllerManager::emergencyStop() {
+ locomotion_controller_msgs::SwitchController::Request req;
+ locomotion_controller_msgs::SwitchController::Response res;
+ req.name = "EmergencyStop";
+ return switchController(req, res);
 }
 
 

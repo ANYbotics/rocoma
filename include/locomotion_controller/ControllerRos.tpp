@@ -421,6 +421,9 @@ void ControllerRos<Controller_>::sendEmergencyCommand()
       Command::AM_MotorVelocity);
   command_.getDesiredMotorVelocities().setZero();
   writeCommandToRos();
+
+
+  controllerManager_->emergencyStop();
 }
 
 template<typename Controller_>
@@ -433,6 +436,11 @@ void ControllerRos<Controller_>::emergencyStop(bool saveLog)
   command_.getDesiredMotorVelocities().setZero();
   sendEmergencyCommand();
   robotUtils::logger->stopLogger();
+}
+
+template<typename Controller_>
+void ControllerRos<Controller_>::setControllerManager(ControllerManager* controllerManager) {
+  controllerManager_ = controllerManager;
 }
 
 }  // namespace locomotion_controller

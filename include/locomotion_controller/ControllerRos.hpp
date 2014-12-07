@@ -47,6 +47,7 @@
 #include <roco/controllers/ControllerAdapterInterface.hpp>
 #include <robotUtils/loggers/logger.hpp>
 
+#include "locomotion_controller/ControllerManager.hpp"
 
 #include <iostream>
 #include <exception>      // std::exception
@@ -64,6 +65,9 @@ class ControllerRos:  public roco::controllers::ControllerAdapterInterface, publ
  public:
   ControllerRos(State& state, Command& command);
   virtual ~ControllerRos();
+
+  void setControllerManager(ControllerManager* controllerManager);
+
 
   virtual bool createController(double dt);
   virtual bool initializeController(double dt);
@@ -106,6 +110,7 @@ class ControllerRos:  public roco::controllers::ControllerAdapterInterface, publ
   State& state_;
   Command& command_;
   typename Command::ControlModes prevControlModes_;
+  ControllerManager* controllerManager_;
 };
 
 
