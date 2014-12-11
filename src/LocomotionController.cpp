@@ -74,9 +74,7 @@ void LocomotionController::init() {
   robotStateSubscriber_ = subscribe("robot_state", "/robot", 100, &LocomotionController::robotStateCallback, ros::TransportHints().tcpNoDelay());
   joystickSubscriber_ = subscribe("joy", "/joy", 100, &LocomotionController::joystickCallback, ros::TransportHints().tcpNoDelay());
 
-  ros::AdvertiseOptions opSea;
-  opSea.init<starleth_msgs::SeActuatorCommands>("command_seactuators", 100);
-  jointCommandsPublisher_ = advertise("command_seactuators",opSea);
+  jointCommandsPublisher_ = advertise<starleth_msgs::SeActuatorCommands>("command_seactuators","/command_seactuators", 100);
 
   jointCommands_.reset(new starleth_msgs::SeActuatorCommands);
   starleth_robot_description::initializeSeActuatorCommandsForStarlETH(*jointCommands_);
