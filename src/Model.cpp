@@ -33,6 +33,7 @@
 
 #include "locomotion_controller/Model.hpp"
 #include "robotUtils/terrains/TerrainPlane.hpp"
+#include <starleth_robot_description/starleth_robot_state.hpp>
 
 namespace model {
 
@@ -162,6 +163,7 @@ void Model::setRobotState(const starleth_msgs::RobotState::ConstPtr& robotState)
 
   static robotModel::VectorQb Qb = robotModel::VectorQb::Zero();
   static robotModel::VectorQb dQb = robotModel::VectorQb::Zero();
+  static robotModel::VectorQb ddQb = robotModel::VectorQb::Zero();
   static robotModel::VectorAct jointTorques;
   static robotModel::VectorQj jointPositions;
   static robotModel::VectorQj jointVelocities;
@@ -189,16 +191,16 @@ void Model::setRobotState(const starleth_msgs::RobotState::ConstPtr& robotState)
 //      globalAngularVelocity, idStarleth);
 
 
-   LocalAngularVelocity angularVelocityKindr(robotState->twist.angular.x,
+   LocalAngularVelocity localAngularVelocityKindr(robotState->twist.angular.x,
                                              robotState->twist.angular.y,
                                              robotState->twist.angular.z);
     const Eigen::Vector3d drpy = rot::EulerAnglesXyzDiffPD(
-        rot::EulerAnglesXyzPD(orientationWorldToBase), angularVelocityKindr)
+        rot::EulerAnglesXyzPD(orientationWorldToBase), localAngularVelocityKindr)
         .toImplementation();
 
     dQb.tail(3) = drpy;
 
-    Eigen::Vector3d globalAngularVelocity = orientationWorldToBase.inverseRotate(angularVelocityKindr.toImplementation());
+    Eigen::Vector3d globalAngularVelocity = orientationWorldToBase.inverseRotate(localAngularVelocityKindr.toImplementation());
 
 
   /* set contacts */
@@ -235,8 +237,17 @@ void Model::setRobotState(const starleth_msgs::RobotState::ConstPtr& robotState)
 //  robotModel_->sensors().setJointAcc(jointAccelerations);
   robotModel_->sensors().getSimMainBodyPose()->setQb(Qb);
   robotModel_->sensors().getSimMainBodyPose()->setdQb(dQb);
-//  robotModel.sensors().getSimMainBodyPose()->setddQb(ddQb);
-  robotModel_->sensors().getSimMainBodyPose()->setOmega(globalAngularVelocity);
+  // todo: acceleration is missing!
+//  robotModel_.sensors().getSimMainBodyPose()->setddQb(ddQb);
+
+  const Eigen::Vector3d I_v_B = dQb.block<3,1>(0,0);
+  const Eigen::Vector3d B_v_B = orientationWorldToBase.rotate(I_v_B);
+  robotModel_->sensors().getSimMainBodyPose()->setLinearVelocityBaseInWorldFrame(I_v_B);
+  robotModel_->sensors().getSimMainBodyPose()->setLinearVelocityBaseInBaseFrame(B_v_B);
+  robotModel_->sensors().getSimMainBodyPose()->setAngularVelocityBaseInWorldFrame(globalAngularVelocity);
+  robotModel_->sensors().getSimMainBodyPose()->setAngularVelocityBaseInBaseFrame(localAngularVelocityKindr.toImplementation());
+  // todo: acceleration is missing!
+//  robotModel_->sensors().getSimMainBodyPose()->setLinearAccelerationBaseInWorldFrame(I_a_B);
 
   robotModel_->sensors().updateSimulatedIMU();
   robotModel_->sensors().setContactFlags(contactFlags);
@@ -256,6 +267,7 @@ void Model::setRobotState(const sensor_msgs::ImuPtr& imu,
 
   static robotModel::VectorQb Qb = robotModel::VectorQb::Zero();
   static robotModel::VectorQb dQb = robotModel::VectorQb::Zero();
+  static robotModel::VectorQb ddQb = robotModel::VectorQb::Zero();
   static robotModel::VectorAct jointTorques;
   static robotModel::VectorQj jointPositions;
   static robotModel::VectorQj jointVelocities;
@@ -299,56 +311,56 @@ void Model::setRobotState(const sensor_msgs::ImuPtr& imu,
 }
 
 void Model::initializeRobotState(starleth_msgs::RobotStatePtr& robotState) const {
-  robotState->contacts.clear();
-  robotState->contacts.push_back(starleth_msgs::Contact());
-  robotState->contacts.push_back(starleth_msgs::Contact());
-  robotState->contacts.push_back(starleth_msgs::Contact());
-  robotState->contacts.push_back(starleth_msgs::Contact());
-  robotState->contacts[0].name = "LF";
-  robotState->contacts[1].name = "RF";
-  robotState->contacts[2].name = "LH";
-  robotState->contacts[3].name = "RH";
-  robotState->contacts[0].header.frame_id = "World";
-  robotState->contacts[1].header.frame_id = "World";
-  robotState->contacts[2].header.frame_id = "World";
-  robotState->contacts[3].header.frame_id = "World";
-
-  for (int i=0; i<robotState->contacts.size() ; i++) {
-    robotState->contacts[i].frictionCoefficient = 0.8;
-    robotState->contacts[i].restitutionCoefficient = 0.0;
-  }
-
-  initializeJointState(robotState->joints);
-
+//  robotState->contacts.clear();
+//  robotState->contacts.push_back(starleth_msgs::Contact());
+//  robotState->contacts.push_back(starleth_msgs::Contact());
+//  robotState->contacts.push_back(starleth_msgs::Contact());
+//  robotState->contacts.push_back(starleth_msgs::Contact());
+//  robotState->contacts[0].name = "LF";
+//  robotState->contacts[1].name = "RF";
+//  robotState->contacts[2].name = "LH";
+//  robotState->contacts[3].name = "RH";
+//  robotState->contacts[0].header.frame_id = "World";
+//  robotState->contacts[1].header.frame_id = "World";
+//  robotState->contacts[2].header.frame_id = "World";
+//  robotState->contacts[3].header.frame_id = "World";
+//
+//  for (int i=0; i<robotState->contacts.size() ; i++) {
+//    robotState->contacts[i].frictionCoefficient = 0.8;
+//    robotState->contacts[i].restitutionCoefficient = 0.0;
+//  }
+//
+//  initializeJointState(robotState->joints);
+  initializeRobotStateForStarlETH(*robotState);
 
 
 }
 
 void Model::initializeJointState(sensor_msgs::JointState& jointState) const {
-
-  jointState.name.clear();
-  jointState.position.clear();
-  jointState.velocity.clear();
-  jointState.effort.clear();
-
-  jointState.name.push_back("LF_HAA");
-  jointState.name.push_back("LF_HFE");
-  jointState.name.push_back("LF_KFE");
-  jointState.name.push_back("RF_HAA");
-  jointState.name.push_back("RF_HFE");
-  jointState.name.push_back("RF_KFE");
-  jointState.name.push_back("LH_HAA");
-  jointState.name.push_back("LH_HFE");
-  jointState.name.push_back("LH_KFE");
-  jointState.name.push_back("RH_HAA");
-  jointState.name.push_back("RH_HFE");
-  jointState.name.push_back("RH_KFE");
-
-  for (int i=0; i<12;i++) {
-    jointState.position.push_back(0.0);
-    jointState.velocity.push_back(0.0);
-    jointState.effort.push_back(0.0);
-  }
+  initializeJointStateForStarlETH(jointState);
+//  jointState.name.clear();
+//  jointState.position.clear();
+//  jointState.velocity.clear();
+//  jointState.effort.clear();
+//
+//  jointState.name.push_back("LF_HAA");
+//  jointState.name.push_back("LF_HFE");
+//  jointState.name.push_back("LF_KFE");
+//  jointState.name.push_back("RF_HAA");
+//  jointState.name.push_back("RF_HFE");
+//  jointState.name.push_back("RF_KFE");
+//  jointState.name.push_back("LH_HAA");
+//  jointState.name.push_back("LH_HFE");
+//  jointState.name.push_back("LH_KFE");
+//  jointState.name.push_back("RH_HAA");
+//  jointState.name.push_back("RH_HFE");
+//  jointState.name.push_back("RH_KFE");
+//
+//  for (int i=0; i<12;i++) {
+//    jointState.position.push_back(0.0);
+//    jointState.velocity.push_back(0.0);
+//    jointState.effort.push_back(0.0);
+//  }
 }
 
 void Model::getRobotState(starleth_msgs::RobotStatePtr& robotState) {
