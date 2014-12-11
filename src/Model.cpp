@@ -331,13 +331,13 @@ void Model::initializeRobotState(starleth_msgs::RobotStatePtr& robotState) const
 //  }
 //
 //  initializeJointState(robotState->joints);
-  initializeRobotStateForStarlETH(*robotState);
+  starleth_robot_description::initializeRobotStateForStarlETH(*robotState);
 
 
 }
 
 void Model::initializeJointState(sensor_msgs::JointState& jointState) const {
-  initializeJointStateForStarlETH(jointState);
+  starleth_robot_description::initializeJointStateForStarlETH(jointState);
 //  jointState.name.clear();
 //  jointState.position.clear();
 //  jointState.velocity.clear();

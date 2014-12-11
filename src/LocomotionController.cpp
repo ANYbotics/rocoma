@@ -42,6 +42,7 @@
 #include <locomotion_controller_msgs/ResetStateEstimator.h>
 
 #include <starlethModel/starleth/starleth.hpp>
+#include <starleth_robot_description/starleth_se_actuator_commands.hpp>
 
 #include <chrono>
 #include <cstdint>
@@ -78,10 +79,7 @@ void LocomotionController::init() {
   jointCommandsPublisher_ = advertise("command_seactuators",opSea);
 
   jointCommands_.reset(new starleth_msgs::SeActuatorCommands);
-  for (int i=0; i<jointCommands_->commands.size(); i++) {
-    jointCommands_->commands[i].mode =  jointCommands_->commands[i].MODE_MOTOR_VELOCITY;
-    jointCommands_->commands[i].motorVelocity = 0.0;
-  }
+  starleth_robot_description::initializeSeActuatorCommandsForStarlETH(*jointCommands_);
 
   time_ = 0.0;
 
@@ -99,17 +97,8 @@ void LocomotionController::init() {
   controllerManager_.setupControllers(timeStep_, time_, state_, command_);
 
   switchControllerService_ = getNodeHandle().advertiseService("switch_controller", &ControllerManager::switchController, &this->controllerManager_);
-  ros::AdvertiseServiceOptions defaultOptions;
-
-  defaultOptions.init<locomotion_controller_msgs::EmergencyStop::RequestType, locomotion_controller_msgs::EmergencyStop::ResponseType>("emergency_stop", boost::bind(&LocomotionController::emergencyStop, this, _1, _2));
-  emergencyStopService_ = advertiseService("emergency_stop", defaultOptions);
-//  emergencyStopService_ = advertiseService("emergency_stop", &ControllerManager::emergencyStop, &this->controllerManager_);
-
-
-  std::string ns = std::string("clients/")+std::string("reset_state_estimator");
-  std::string serviceResetStateEstimator;
-  getNodeHandle().param(ns+"/service", serviceResetStateEstimator, std::string("reset_state_estimator"));
-  resetStateEstimatorClient_ = getNodeHandle().serviceClient<locomotion_controller_msgs::ResetStateEstimator>(serviceResetStateEstimator);
+  emergencyStopService_ = advertiseService("emergency_stop", "/emergency_stop", &LocomotionController::emergencyStop);
+  resetStateEstimatorClient_ = serviceClient<locomotion_controller_msgs::ResetStateEstimator>("reset_state_estimator", "/reset_state_estimator");
 }
 
 bool LocomotionController::run() {
