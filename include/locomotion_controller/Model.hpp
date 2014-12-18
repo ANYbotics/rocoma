@@ -45,6 +45,10 @@
 #include <sensor_msgs/Joy.h>
 #include <starleth_msgs/SeActuatorCommands.h>
 
+#include <starlethModel/State.hpp>
+#include <starlethModel/Command.hpp>
+
+
 #include <kindr/rotations/RotationEigen.hpp>
 #include <kindr/rotations/RotationDiffEigen.hpp>
 #include <kindr/phys_quant/PhysicalQuantitiesEigen.hpp>
@@ -73,8 +77,7 @@ class Model
   void initializeForController(double dt);
   void initializeForStateEstimator(double dt);
   void reinitialize(double dt);
-
-  void advance(double dt);
+  void addVariablesToLog();
 
   void setRobotModelParameters();
   void setRobotState(const starleth_msgs::RobotState::ConstPtr& robotState);
@@ -94,11 +97,17 @@ class Model
 
   robotModel::RobotModel* getRobotModel();
   robotTerrain::TerrainBase* getTerrainModel();
+  robotModel::State& getState();
+  robotModel::Command& getCommand();
+
+  const robotModel::State& getState() const;
+  const robotModel::Command& getCommand() const;
  private:
   ros::Time updateStamp_;
   std::shared_ptr<robotModel::RobotModel> robotModel_;
   std::shared_ptr<robotTerrain::TerrainBase> terrain_;
-
+  robotModel::State state_;
+  robotModel::Command command_;
 };
 
 } /* namespace model */

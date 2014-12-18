@@ -5,5 +5,5 @@
     </node>
 	<include file="$(find locomotion_controller)/launch/default_locomotion_controller.launch" />
     <include file="$(find mule_simulator)/launch/default_mule_simulator.launch" />
-    <include file="$(find state_estimator)/launch/default_state_estimator.launch" />
+    <include file="$(find state_estimator_rm)/launch/default_state_estimator_rm.launch" />
 </launch>

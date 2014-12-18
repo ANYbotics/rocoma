@@ -55,11 +55,17 @@ void ControllerManager::setupControllers(double dt, double time, robotModel::Sta
   timeStep_ = dt;
 
   /* Create no task, which is active until estimator converged*/
-  addController(new ControllerRos<robotTask::NoTaskRos>(state, command));
+  auto controller = new ControllerRos<robotTask::NoTaskRos>(state, command);
+  controller->setControllerManager(this);
+  //controller->setIsCheckingState(false);
+  addController(controller);
   activeController_ = &controllers_.back();
+
   if (!activeController_->initializeController(timeStep_)) {
     ROS_FATAL("Could not initialized NoTask!");
   }
+
+
 
   add_locomotion_controllers(this, state, command);
 
@@ -85,45 +91,59 @@ void ControllerManager::updateController() {
 }
 
 bool ControllerManager::emergencyStop() {
- locomotion_controller_msgs::SwitchController::Request req;
- locomotion_controller_msgs::SwitchController::Response res;
- req.name = "EmergencyStop";
- return switchController(req, res);
+ activeController_->stopController();
+ return true;
+}
+
+bool ControllerManager::switchControllerAfterEmergencyStop() {
+  this->switchToEmergencyTask();
+ return true;
+}
+
+void ControllerManager::switchToEmergencyTask() {
+  for (auto& controller : controllers_) {
+    if (controller.getName() == "No Task") {
+      activeController_ = &controller;
+      activeController_->initializeController(timeStep_);
+      return;
+    }
+  }
+  throw std::runtime_error("No Task not found!");
 }
 
 
 bool ControllerManager::switchController(locomotion_controller_msgs::SwitchController::Request  &req,
                                          locomotion_controller_msgs::SwitchController::Response &res)
 {
-  std::string reqTaskName = req.name;
-  if (req.name == "EmergencyStop") {
-    ROS_INFO("Emergency Stop!");
-
-    reqTaskName = "No Task";
-  }
 
   //--- Check if controller is already active
-  if (reqTaskName == activeController_->getName()) {
+  if (req.name == activeController_->getName()) {
     res.status = res.STATUS_RUNNING;
     ROS_INFO("Controller is already running!");
     return true;
   }
 
   for (auto& controller : controllers_) {
-    if (reqTaskName == controller.getName()) {
+    if (req.name == controller.getName()) {
       activeController_ = &controller;
-      res.status = res.STATUS_SWITCHED;
-//      isInitializingTask_ = true;
-      if (!activeController_->initializeController(timeStep_)) {
-        throw std::runtime_error("Could not initialize the task!");
-      }
 
-      ROS_INFO("Switched to controller %s", activeController_->getName().c_str());
+//      isInitializingTask_ = true;
+      activeController_->initializeController(timeStep_);
+      if (activeController_->isInitialized()) {
+        res.status = res.STATUS_SWITCHED;
+        ROS_INFO("Switched to controller %s", activeController_->getName().c_str());
+      }
+      else {
+        // switch to no task
+        switchToEmergencyTask();
+        res.status = res.STATUS_ERROR;
+        ROS_INFO("Could not switched to controller %s", activeController_->getName().c_str());
+      }
       return true;
     }
   }
   res.status = res.STATUS_NOTFOUND;
-  ROS_INFO("Controller %s not found!", reqTaskName.c_str());
+  ROS_INFO("Controller %s not found!", req.name.c_str());
   return true;
 }
 

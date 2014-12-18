@@ -34,13 +34,17 @@
 #include "locomotion_controller/Model.hpp"
 #include "robotUtils/terrains/TerrainPlane.hpp"
 #include <starleth_robot_description/starleth_robot_state.hpp>
+#include <starlethModel/starleth/starleth.hpp>
+#include <robotUtils/loggers/logger.hpp>
 
 namespace model {
 
 Model::Model():
   updateStamp_(0.0),
   robotModel_(),
-  terrain_()
+  terrain_(),
+  state_(),
+  command_()
 {
 
 
@@ -59,9 +63,31 @@ robotTerrain::TerrainBase* Model::getTerrainModel() {
   return terrain_.get();
 }
 
+robotModel::State& Model::getState() {
+  return state_;
+}
+robotModel::Command& Model::getCommand() {
+  return command_;
+}
+
+const robotModel::State& Model::getState() const {
+  return state_;
+}
+const robotModel::Command& Model::getCommand() const {
+  return command_;
+}
+
 void Model::initializeForController(double dt) {
   robotModel_.reset(new robotModel::RobotModel(dt));
-  setRobotModelParameters();
+
+
+  state_.setRobotModelPtr(this->getRobotModel());
+  state_.setTerrainPtr(this->getTerrainModel());
+  command_.setRobotModelPtr(this->getRobotModel());
+  robotModel::initializeStateForStarlETH(state_);
+  robotModel::initializeCommandForStarlETH(command_);
+
+//  setRobotModelParameters();
 
 
 
@@ -84,7 +110,14 @@ void Model::initializeForController(double dt) {
 
 void Model::initializeForStateEstimator(double dt) {
   robotModel_.reset(new robotModel::RobotModel(dt));
-  setRobotModelParameters();
+  //setRobotModelParameters();
+  state_.setRobotModelPtr(this->getRobotModel());
+  state_.setTerrainPtr(this->getTerrainModel());
+  command_.setRobotModelPtr(this->getRobotModel());
+  robotModel::initializeStateForStarlETH(state_);
+  robotModel::initializeCommandForStarlETH(command_);
+
+
   robotModel_->setIsRealRobot(false);
   /* Select estimator: */
   robotModel_->est().setActualEstimator(robotModel::PE_ObservabilityConstrainedEKF); // feed through of simulated states
@@ -105,55 +138,58 @@ void Model::reinitialize(double dt) {
   robotModel_->init();
 }
 
-
-void Model::setRobotModelParameters() {
-#ifdef I
-#undef I
-#endif
-  robotModel_->params().gravity_ = 9.81;
-
-  /* main body */
-  robotModel_->params().mainbody_.m = 17.1;
-  robotModel_->params().mainbody_.I.setZero();
-  robotModel_->params().mainbody_.I(0,0) = 0.226;
-  robotModel_->params().mainbody_.I(1,1) = 0.393;
-  robotModel_->params().mainbody_.I(2,2) = 0.553;
-  robotModel_->params().mainbody_.s = 0.0;
-  robotModel_->params().mainbody_.b2hx = 0.505/2.0;
-  robotModel_->params().mainbody_.b2hy = 0.37/2.0;
-  robotModel_->params().mainbody_.l = 2.0 * robotModel_->params().mainbody_.b2hx ;
-  robotModel_->params().mainbody_.b = 2.0 * robotModel_->params().mainbody_.b2hy;
+void Model::addVariablesToLog() {
+  robotModel_->addVariablesToLog();
 
 
-  /* hip */
-  robotModel_->params().hip_.m = 1.8;
-  robotModel_->params().hip_.I.setZero();
-  robotModel_->params().hip_.I(0,0) = 0.009275;
-  robotModel_->params().hip_.I(1,1) = 0.003035;
-  robotModel_->params().hip_.I(2,2) = 0.007210;
-  robotModel_->params().hip_.s =  -0.055;
-  robotModel_->params().hip_.l =  -0.0685;
+  Eigen::Matrix<std::string, 12,1> names;
+  names << "LF_HAA_des_th", "LF_HFE_des_th", "LF_KFE_des_th",
+       "RF_HAA_des_th", "RF_HFE_des_th", "RF_KFE_des_th",
+       "LH_HAA_des_th", "LH_HFE_des_th", "LH_KFE_des_th",
+       "RH_HAA_des_th", "RH_HFE_des_th", "RH_KFE_des_th";
+  robotUtils::logger->addDoubleEigenMatrixToLog(command_.getDesiredJointPositions().toImplementation(), names);
 
-  /* thigh */
-  robotModel_->params().thigh_.m =  0.3100;
-  robotModel_->params().thigh_.I.setZero();
-  robotModel_->params().thigh_.I(0,0) = 0.00148976;
-  robotModel_->params().thigh_.I(1,1) = 0.00142976;
-  robotModel_->params().thigh_.I(2,2) =  0.00021500;
-  robotModel_->params().thigh_.s = -0.1480;
-  robotModel_->params().thigh_.l = -0.2000;
-//   printf("thigh length: %lf", robotModel_->params().thigh_.l);
+  names << "LF_HAA_des_thd", "LF_HFE_des_thd", "LF_KFE_des_thd",
+      "RF_HAA_des_thd", "RF_HFE_des_thd", "RF_KFE_des_thd",
+      "LH_HAA_des_thd", "LH_HFE_des_thd", "LH_KFE_des_thd",
+      "RH_HAA_des_thd", "RH_HFE_des_thd", "RH_KFE_des_thd";
+  robotUtils::logger->addDoubleEigenMatrixToLog(command_.getDesiredMotorVelocities().toImplementation(), names);
 
-  /* shank */
-  robotModel_->params().shank_.m =  0.3200;
-  robotModel_->params().shank_.I.setZero();
-  robotModel_->params().shank_.I(0,0) =  0.00112108;
-  robotModel_->params().shank_.I(1,1) =  0.00124208;
-  robotModel_->params().shank_.I(2,2) =  0.00020000;
-  robotModel_->params().shank_.s =  -0.0840;
-  robotModel_->params().shank_.l = -0.2350;
-//   printf("shank length: %lf", robotModel_->params().shank_.l);
-  robotModel_->params().computeTotalMass();
+  names << "LF_HAA_uff", "LF_HFE_uff", "LF_KFE_uff",
+       "RF_HAA_uff", "RF_HFE_uff", "RF_KFE_uff",
+       "LH_HAA_uff", "LH_HFE_uff", "LH_KFE_uff",
+       "RH_HAA_uff", "RH_HFE_uff", "RH_KFE_uff";
+  robotUtils::logger->addDoubleEigenMatrixToLog(command_.getDesiredJointTorques().toImplementation(), names);
+
+
+  names << "LF_HAA_th", "LF_HFE_th", "LF_KFE_th",
+       "RF_HAA_th", "RF_HFE_th", "RF_KFE_th",
+       "LH_HAA_th", "LH_HFE_th", "LH_KFE_th",
+       "RH_HAA_th", "RH_HFE_th", "RH_KFE_th";
+//  robotUtils::logger->addToLog(measPositions, names);
+  robotUtils::logger->addDoubleEigenMatrixToLog(state_.getJointPositions().toImplementation(), names);
+
+  names << "LF_HAA_thd", "LF_HFE_thd", "LF_KFE_thd",
+       "RF_HAA_thd", "RF_HFE_thd", "RF_KFE_thd",
+       "LH_HAA_thd", "LH_HFE_thd", "LH_KFE_thd",
+       "RH_HAA_thd", "RH_HFE_thd", "RH_KFE_thd";
+//  robotUtils::logger->addToLog(measVelocities, names);
+  robotUtils::logger->addDoubleEigenMatrixToLog(state_.getJointVelocities().toImplementation(), names);
+
+  names << "LF_HAA_load", "LF_HFE_load", "LF_KFE_load",
+       "RF_HAA_load", "RF_HFE_load", "RF_KFE_load",
+       "LH_HAA_load", "LH_HFE_load", "LH_KFE_load",
+       "RH_HAA_load", "RH_HFE_load", "RH_KFE_load";
+//  robotUtils::logger->addToLog(measJointTorques_, names);
+  robotUtils::logger->addDoubleEigenMatrixToLog(state_.getJointTorques().toImplementation(), names);
+
+
+  Eigen::Matrix<std::string, 4,1> contactNames;
+  contactNames << "LF_CONTACT_FLAG", "RF_CONTACT_FLAG", "LH_CONTACT_FLAG", "RH_CONTACT_FLAG";
+  robotUtils::logger->addIntEigenMatrixToLog(robotModel_->contacts().getCA(), contactNames);
+
+  robotUtils::logger->updateLogger(true);
+
 
 }
 
@@ -252,6 +288,8 @@ void Model::setRobotState(const starleth_msgs::RobotState::ConstPtr& robotState)
   robotModel_->sensors().updateSimulatedIMU();
   robotModel_->sensors().setContactFlags(contactFlags);
 
+  robotModel_->update();
+  state_.copyStateFromRobotModel();
 }
 
 void Model::setRobotState(const sensor_msgs::ImuPtr& imu,
@@ -275,14 +313,37 @@ void Model::setRobotState(const sensor_msgs::ImuPtr& imu,
   Eigen::Vector3d force;
   Eigen::Vector3d normal = Eigen::Vector3d::UnitZ();
   Eigen::Vector4i contactFlags = Eigen::Vector4i::Zero();
-  for (int i=0; i<4; i++) {
-    force.x() = contactForceLf->wrench.force.x;
-    force.y() = contactForceLf->wrench.force.y;
-    force.z() = contactForceLf->wrench.force.z;
-    robotModel_->sensors().setContactForceCSw(i, force);
-    robotModel_->sensors().setContactNormalCSw(i, normal);
-    contactFlags(i) = force.norm() >= 10.0 ? 1 : 0;
-  }
+
+  const double contactForceThreshold = 2.0;
+
+  force.x() = contactForceLf->wrench.force.x;
+  force.y() = contactForceLf->wrench.force.y;
+  force.z() = contactForceLf->wrench.force.z;
+  robotModel_->sensors().setContactForceCSw(0, force);
+  robotModel_->sensors().setContactNormalCSw(0, normal);
+  contactFlags(0) = force.norm() >= contactForceThreshold ? 1 : 0;
+
+  force.x() = contactForceRf->wrench.force.x;
+  force.y() = contactForceRf->wrench.force.y;
+  force.z() = contactForceRf->wrench.force.z;
+  robotModel_->sensors().setContactForceCSw(1, force);
+  robotModel_->sensors().setContactNormalCSw(1, normal);
+  contactFlags(1) = force.norm() >= contactForceThreshold ? 1 : 0;
+
+  force.x() = contactForceLh->wrench.force.x;
+  force.y() = contactForceLh->wrench.force.y;
+  force.z() = contactForceLh->wrench.force.z;
+  robotModel_->sensors().setContactForceCSw(2, force);
+  robotModel_->sensors().setContactNormalCSw(2, normal);
+  contactFlags(2) = force.norm() >= contactForceThreshold ? 1 : 0;
+
+  force.x() = contactForceRh->wrench.force.x;
+  force.y() = contactForceRh->wrench.force.y;
+  force.z() = contactForceRh->wrench.force.z;
+  robotModel_->sensors().setContactForceCSw(3, force);
+  robotModel_->sensors().setContactNormalCSw(3, normal);
+  contactFlags(3) = force.norm() >= contactForceThreshold ? 1 : 0;
+
   robotModel_->sensors().setContactFlags(contactFlags);
 
   for (int i = 0; i < jointPositions.size(); i++) {
@@ -308,6 +369,8 @@ void Model::setRobotState(const sensor_msgs::ImuPtr& imu,
   robotModel_->sensors().setJointPos(jointPositions);
   robotModel_->sensors().setJointVel(jointVelocities);
 
+  robotModel_->update();
+  state_.copyStateFromRobotModel();
 }
 
 void Model::initializeRobotState(starleth_msgs::RobotStatePtr& robotState) const {
@@ -454,10 +517,10 @@ void Model::getSeActuatorCommands(starleth_msgs::SeActuatorCommandsPtr& actuator
   ros::Time stamp = ros::Time::now();
   for (int i=0; i<actuatorCommands->commands.size(); i++) {
     actuatorCommands->commands[i].header.stamp = stamp;
-    actuatorCommands->commands[i].mode = robotModel_->act().getMode()(i);
-    actuatorCommands->commands[i].jointPosition = robotModel_->act().getPos()(i);
-    actuatorCommands->commands[i].motorVelocity = robotModel_->act().getVel()(i);
-    actuatorCommands->commands[i].jointTorque = robotModel_->act().getTau()(i);
+    actuatorCommands->commands[i].mode = command_.getDesiredControlModes()(i);
+    actuatorCommands->commands[i].jointPosition = command_.getDesiredJointPositions()(i);
+    actuatorCommands->commands[i].motorVelocity = command_.getDesiredMotorVelocities()(i);
+    actuatorCommands->commands[i].jointTorque = command_.getDesiredJointTorques()(i);
   }
 }
 
@@ -470,9 +533,6 @@ void Model::setJoystickCommands(const sensor_msgs::Joy::ConstPtr& msg) {
   }
 }
 
-void Model::advance(double dt) {
-  robotModel_->update();
-  updateStamp_ = ros::Time::now();
-}
+
 
 } /* namespace model */

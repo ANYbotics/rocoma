@@ -44,6 +44,11 @@
 #include <starlethModel/starleth/starleth.hpp>
 #include <starleth_robot_description/starleth_se_actuator_commands.hpp>
 
+#include <robotUtils/loggers/logger.hpp>
+#include <robotUtils/loggers/LoggerStd.hpp>
+
+#include <ros/package.h>
+
 #include <chrono>
 #include <cstdint>
 
@@ -55,9 +60,7 @@ namespace locomotion_controller {
 LocomotionController::LocomotionController():
     timeStep_(0.0025),
     time_(0.0),
-    model_(),
-    state_(),
-    command_()
+    model_()
 {
 
 
@@ -70,6 +73,13 @@ LocomotionController::~LocomotionController()
 void LocomotionController::init() {
 
   getNodeHandle().param<double>("controller/time_step", timeStep_, 0.0025);
+  std::string loggingScriptFileName = ros::package::getPath("locomotion_controller") + std::string{"/config/logging.script"};
+  robotUtils::logger.reset(new robotUtils::LoggerStd);
+  robotUtils::LoggerStd* loggerStd = static_cast<robotUtils::LoggerStd*>(robotUtils::logger.get());
+
+  loggerStd->setVerboseLevel(robotUtils::LoggerStd::VL_DEBUG);
+
+  robotUtils::logger->initLogger((int)(1.0/timeStep_), (int)(1.0/timeStep_), 60, loggingScriptFileName);
 
   robotStateSubscriber_ = subscribe("robot_state", "/robot", 100, &LocomotionController::robotStateCallback, ros::TransportHints().tcpNoDelay());
   joystickSubscriber_ = subscribe("joy", "/joy", 100, &LocomotionController::joystickCallback, ros::TransportHints().tcpNoDelay());
@@ -83,16 +93,15 @@ void LocomotionController::init() {
 
   model_.initializeForController(timeStep_);
 
-  state_.setRobotModelPtr(model_.getRobotModel());
-  state_.setTerrainPtr(model_.getTerrainModel());
-  command_.setRobotModelPtr(model_.getRobotModel());
-  robotModel::initializeStateForStarlETH(state_);
-  robotModel::initializeCommandForStarlETH(command_);
+
+  // todo: should be true
+
 
   model_.getRobotModel()->params().printParams();
+  model_.addVariablesToLog();
 
 
-  controllerManager_.setupControllers(timeStep_, time_, state_, command_);
+  controllerManager_.setupControllers(timeStep_, time_, model_.getState(), model_.getCommand());
 
   switchControllerService_ = getNodeHandle().advertiseService("switch_controller", &ControllerManager::switchController, &this->controllerManager_);
   emergencyStopService_ = advertiseService("emergency_stop", "/emergency_stop", &LocomotionController::emergencyStop);
@@ -162,10 +171,7 @@ void LocomotionController::joystickCallback(const sensor_msgs::Joy::ConstPtr& ms
   // RB button
   if (msg->buttons[5] == 1 ) {
     NODEWRAP_INFO("Emergency stop by joystick!");
-    locomotion_controller_msgs::EmergencyStop::Request  req;
-    locomotion_controller_msgs::EmergencyStop::Response res;
-    emergencyStop(req, res);
-
+    controllerManager_.emergencyStop();
   }
 }
 

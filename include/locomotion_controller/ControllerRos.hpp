@@ -75,6 +75,7 @@ class ControllerRos:  public roco::controllers::ControllerAdapterInterface, publ
   virtual bool advanceController(double dt);
   virtual bool changeController();
   virtual bool cleanupController();
+  virtual bool stopController();
 
   virtual const roco::time::Time& getTime() const;
   virtual void setTime(const roco::time::Time& time);
@@ -89,15 +90,11 @@ class ControllerRos:  public roco::controllers::ControllerAdapterInterface, publ
   virtual const Command& getCommand() const;
   virtual Command& getCommand();
 
-
+  virtual void emergencyStop();
  protected:
-  void updateStateFromRos(State& state);
   bool updateState(double dt);
-
   bool updateCommand(double dt, bool forceSendingControlModes);
   void sendEmergencyCommand();
-  void emergencyStop(bool saveLog = false);
-  bool writeCommandToRos();
 
  private:
   //! Indicates if the real robot is controller or only a simulated version.

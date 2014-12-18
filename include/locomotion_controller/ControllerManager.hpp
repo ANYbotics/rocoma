@@ -68,7 +68,9 @@ class ControllerManager
   bool switchController(locomotion_controller_msgs::SwitchController::Request  &req,
                         locomotion_controller_msgs::SwitchController::Response &res);
   bool emergencyStop();
-
+  bool switchControllerAfterEmergencyStop();
+ protected:
+  void switchToEmergencyTask();
  protected:
   double time_;
   double timeStep_;

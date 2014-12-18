@@ -52,7 +52,8 @@ ControllerRos<Controller_>::ControllerRos(State& state, Command& command)
       time_(),
       state_(state),
       command_(command),
-      prevControlModes_()
+      prevControlModes_(),
+      controllerManager_(nullptr)
 {
   if (isRealRobot_) {
     isCheckingCommand_ = true;
@@ -194,6 +195,7 @@ bool ControllerRos<Controller_>::initializeController(double dt)
   getCommand().setIsReadingCommandFromRobotModel(true);
   isEmergencyStopActive_ = false;
 
+
   //--- Check if the controller was created.
   if (!this->isCreated()) {
     ROCO_WARN_STREAM("Controller was not created!");
@@ -218,7 +220,6 @@ bool ControllerRos<Controller_>::initializeController(double dt)
   try {
     // Update the state.
     updateState(dt);
-    time_.fromSec(0.0);
     robotUtils::logger->stopLogger();
     if (!this->initialize(dt)) {
       ROCO_WARN_STREAM("Controller could not be initialized!");
@@ -235,6 +236,7 @@ bool ControllerRos<Controller_>::initializeController(double dt)
   }
   //---
 
+  this->isRunning_ = true;
   robotUtils::logger->startLogger();
   ROCO_INFO_STREAM(
       "Initialized controller " << this->getName() << " successfully!");
@@ -259,7 +261,6 @@ bool ControllerRos<Controller_>::resetController(double dt)
   try {
 
     updateState(dt);
-    time_.fromSec(0.0);
     if (!this->reset(dt)) {
       ROCO_WARN_STREAM("Could not reset controller!");
       emergencyStop();
@@ -272,6 +273,7 @@ bool ControllerRos<Controller_>::resetController(double dt)
     return false;
   }
 
+  this->isRunning_ = true;
   ROCO_INFO_STREAM("Reset controller " << this->getName() << "!");
   return true;
 }
@@ -293,6 +295,7 @@ bool ControllerRos<Controller_>::advanceController(double dt)
       return true;
     }
     updateCommand(dt, false);
+    robotUtils::logger->collectLoggerData();
   } catch (std::exception& e) {
     ROCO_WARN_STREAM("Exception caught: " << e.what());
     emergencyStop();
@@ -349,13 +352,8 @@ bool ControllerRos<Controller_>::cleanupController()
 template<typename Controller_>
 bool ControllerRos<Controller_>::updateState(double dt)
 {
-  time_ += dt;
+  time_.setNow();
 
-  updateStateFromRos(state_);
-
-  getState().getRobotModelPtr()->params().gravity_ = 9.81;
-  getState().getRobotModelPtr()->update();
-  state_.copyStateFromRobotModel();
 
   if (isSafetyController_) {
     if (!getState().getRobotModelPtr()->est().isInit()
@@ -378,11 +376,7 @@ bool ControllerRos<Controller_>::updateState(double dt)
   return true;
 }
 
-template<typename Controller_>
-void ControllerRos<Controller_>::updateStateFromRos(State& state)
-{
 
-}
 
 template<typename Controller_>
 bool ControllerRos<Controller_>::updateCommand(double dt,
@@ -397,19 +391,6 @@ bool ControllerRos<Controller_>::updateCommand(double dt,
       ROCO_ERROR("Found Inf or NaN in one of the commands!");
     }
   }
-//    std::cout << "---\n";
-//    std::cout << command_ << std::endl;
-
-  if (!writeCommandToRos()) {
-    ROCO_FATAL("Wrong control mode!");
-  }
-
-  return true;
-}
-
-template<typename Controller_>
-bool ControllerRos<Controller_>::writeCommandToRos()
-{
 
   return true;
 }
@@ -420,22 +401,24 @@ void ControllerRos<Controller_>::sendEmergencyCommand()
   command_.getDesiredControlModes().toImplementation().fill(
       Command::AM_MotorVelocity);
   command_.getDesiredMotorVelocities().setZero();
-  writeCommandToRos();
-
-
-  controllerManager_->emergencyStop();
 }
 
 template<typename Controller_>
-void ControllerRos<Controller_>::emergencyStop(bool saveLog)
+bool ControllerRos<Controller_>::stopController()
+{
+  this->isRunning_ = false;
+  this->emergencyStop();
+  return true;
+}
+template<typename Controller_>
+void ControllerRos<Controller_>::emergencyStop()
 {
   isEmergencyStopActive_ = true;
   ROCO_INFO("Controller: emergency stop!");
-  command_.getDesiredControlModes().toImplementation().fill(
-      Command::AM_MotorVelocity);
-  command_.getDesiredMotorVelocities().setZero();
   sendEmergencyCommand();
   robotUtils::logger->stopLogger();
+  robotUtils::logger->saveLoggerData();
+  controllerManager_->switchControllerAfterEmergencyStop();
 }
 
 template<typename Controller_>

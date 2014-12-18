@@ -34,8 +34,25 @@
 #include <roscpp_nodewrap/Node.h>
 #include "locomotion_controller/LocomotionController.hpp"
 
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
+#include <iostream>
+
+
 int main(int argc, char **argv)
 {
+
+  namespace fs = boost::filesystem;
+
+  fs::path full_path( fs::initial_path<fs::path>() );
+
+  full_path = fs::system_complete( fs::path( argv[0] ) );
+
+  std::cout << full_path << std::endl;
+
+  //Without file name
+  std::cout << full_path.stem() << std::endl;
+
   ros::init(argc, argv, "locomotion_controller");
   nodewrap::Node<locomotion_controller::LocomotionController> node;
   node.run();
