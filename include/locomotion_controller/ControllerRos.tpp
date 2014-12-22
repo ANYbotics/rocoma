@@ -47,12 +47,9 @@ ControllerRos<Controller_>::ControllerRos(State& state, Command& command)
       isRealRobot_(false),
       isCheckingCommand_(true),
       isCheckingState_(true),
-      isEmergencyStopActive_(false),
-      isSafetyController_(false),
       time_(),
       state_(state),
       command_(command),
-      prevControlModes_(),
       controllerManager_(nullptr)
 {
   if (isRealRobot_) {
@@ -60,10 +57,9 @@ ControllerRos<Controller_>::ControllerRos(State& state, Command& command)
     isCheckingState_ = true;
   }
   if (this->getName() == "No Task") {
-    isSafetyController_ = true;
+    isCheckingState_ = false;
+    isCheckingCommand_ = true;
   }
-  prevControlModes_.toImplementation().fill(
-      Command::ActuatorControlMode::AM_MotorVelocity);
 
 }
 ;
@@ -182,18 +178,15 @@ bool ControllerRos<Controller_>::createController(double dt)
     emergencyStop();
     return true;
   }
-  isEmergencyStopActive_ = false;
   return true;
 }
 
 template<typename Controller_>
 bool ControllerRos<Controller_>::initializeController(double dt)
 {
-  /* In case this method returns false,
-   * SL won't start this task, but will switch to the task "No Task".
-   */
+
+  // Default is reading commands from robot model
   getCommand().setIsReadingCommandFromRobotModel(true);
-  isEmergencyStopActive_ = false;
 
 
   //--- Check if the controller was created.
@@ -209,12 +202,6 @@ bool ControllerRos<Controller_>::initializeController(double dt)
     return resetController(dt);
   }
   //---
-
-  if (isSafetyController_) {
-    if (!state_.getRobotModelPtr()->isInitialized()) {
-      state_.getRobotModelPtr()->init();
-    }
-  }
 
   //--- Initialize the controller now.
   try {
@@ -256,7 +243,6 @@ bool ControllerRos<Controller_>::resetController(double dt)
   }
 
   getCommand().setIsReadingCommandFromRobotModel(true);
-  isEmergencyStopActive_ = false;
 
   try {
 
@@ -345,7 +331,6 @@ bool ControllerRos<Controller_>::cleanupController()
   }
   this->isInitialized_ = false;
   this->isCreated_ = false;
-  isEmergencyStopActive_ = false;
   return true;
 }
 
@@ -354,25 +339,12 @@ bool ControllerRos<Controller_>::updateState(double dt)
 {
   time_.setNow();
 
-
-  if (isSafetyController_) {
-    if (!getState().getRobotModelPtr()->est().isInit()
-        && !getState().getRobotModelPtr()->est().isGood()) {
-      ROCO_WARN_THROTTLE(5.0, "Estimator is not initialized!");
-    }
-  } else if (isCheckingState_) {
-    if (!getState().getRobotModelPtr()->est().isGood()) {
-      getState().getRobotModelPtr()->init();
-      ROCO_ERROR("Estimator is in a bad condition!");
-      return false;
-    }
+  if (isCheckingState_) {
     if (!state_.checkState()) {
       ROCO_ERROR("Bad state!");
       return false;
     }
-
   }
-
   return true;
 }
 
@@ -382,7 +354,7 @@ template<typename Controller_>
 bool ControllerRos<Controller_>::updateCommand(double dt,
                                                bool forceSendingControlModes)
 {
-  if (command_.isReadingCommandFromRobotModel() && !isEmergencyStopActive_) {
+  if (command_.isReadingCommandFromRobotModel()) {
     command_.copyCommandFromRobotModel();
   }
 
@@ -413,7 +385,6 @@ bool ControllerRos<Controller_>::stopController()
 template<typename Controller_>
 void ControllerRos<Controller_>::emergencyStop()
 {
-  isEmergencyStopActive_ = true;
   ROCO_INFO("Controller: emergency stop!");
   sendEmergencyCommand();
   robotUtils::logger->stopLogger();

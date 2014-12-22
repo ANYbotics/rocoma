@@ -97,6 +97,8 @@ void Model::initializeForController(double dt) {
   //  robotModel.est().setActualEstimator(robotModel::PE_ObservabilityConstrainedEKF); // activate this estimator
   //  robotModel.est().setActualEstimator(robotModel::PE_LSE); // not used
 
+  robotModel_->est().getActualEstimator()->setVerboseLevel(0);
+
   /* activate sensor noise */
   robotModel_->sensors().setIsAddingSensorNoise(false);
   robotModel_->act().setUseLimitsInSimFlag(false); // do not change! see jointController for activating limits
@@ -290,6 +292,9 @@ void Model::setRobotState(const starleth_msgs::RobotState::ConstPtr& robotState)
 
   robotModel_->update();
   state_.copyStateFromRobotModel();
+
+  state_.setStatus((robotModel::State::Status)robotState->state);
+
 }
 
 void Model::setRobotState(const sensor_msgs::ImuPtr& imu,
@@ -371,6 +376,8 @@ void Model::setRobotState(const sensor_msgs::ImuPtr& imu,
 
   robotModel_->update();
   state_.copyStateFromRobotModel();
+
+
 }
 
 void Model::initializeRobotState(starleth_msgs::RobotStatePtr& robotState) const {
@@ -505,8 +512,6 @@ void Model::getRobotState(starleth_msgs::RobotStatePtr& robotState) {
       robotState->contacts[i].state = robotState->contacts[i].STATE_OPEN;
     }
   }
-
-
 
 
 }

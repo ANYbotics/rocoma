@@ -101,12 +101,9 @@ class ControllerRos:  public roco::controllers::ControllerAdapterInterface, publ
   bool isRealRobot_;
   bool isCheckingCommand_;
   bool isCheckingState_;
-  bool isEmergencyStopActive_;
-  bool isSafetyController_;
   roco::time::TimeStd time_;
   State& state_;
   Command& command_;
-  typename Command::ControlModes prevControlModes_;
   ControllerManager* controllerManager_;
 };
 
