@@ -42,7 +42,7 @@
 #include <locomotion_controller_msgs/ResetStateEstimator.h>
 
 #include <starlethModel/starleth/starleth.hpp>
-#include <starleth_robot_description/starleth_se_actuator_commands.hpp>
+#include <starleth_description/starleth_se_actuator_commands.hpp>
 
 #include <robotUtils/loggers/logger.hpp>
 #include <robotUtils/loggers/LoggerStd.hpp>
@@ -87,7 +87,7 @@ void LocomotionController::init() {
   jointCommandsPublisher_ = advertise<starleth_msgs::SeActuatorCommands>("command_seactuators","/command_seactuators", 100);
 
   jointCommands_.reset(new starleth_msgs::SeActuatorCommands);
-  starleth_robot_description::initializeSeActuatorCommandsForStarlETH(*jointCommands_);
+  starleth_description::initializeSeActuatorCommandsForStarlETH(*jointCommands_);
 
   time_ = 0.0;
 
