@@ -1,6 +1,6 @@
 subscribers:
   robot_state: 
-    topic: /locomotion_controller/state/robot
+    topic: /estimator/robot_state
     queue_size: 100
     latch: false
   joy:
