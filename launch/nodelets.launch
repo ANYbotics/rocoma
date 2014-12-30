@@ -22,11 +22,11 @@
     <rosparam command="load" file="$(find mule_simulator)/config/default_subscribers.yaml"/>
   </node>
   
-  <node name="estimator" pkg="nodelet" type="nodelet" args="load state_estimator/StateEstimatorRm locomotion_controller" output="screen">
-    <rosparam command="load" file="$(find state_estimator_rm)/config/default_state_estimator.yaml"/>
-    <rosparam command="load" file="$(find state_estimator_rm)/config/default_publishers.yaml"/>
-    <rosparam command="load" file="$(find state_estimator_rm)/config/default_subscribers.yaml"/>
-    <rosparam command="load" file="$(find state_estimator_rm)/config/default_services.yaml" />
+  <node name="estimator" pkg="nodelet" type="nodelet" args="load state_estimator_rm/StateEstimatorRm locomotion_controller" output="screen">
+    <rosparam command="load" file="$(find state_estimator)/config/default_state_estimator.yaml"/>
+    <rosparam command="load" file="$(find state_estimator)/config/default_publishers.yaml"/>
+    <rosparam command="load" file="$(find state_estimator)/config/default_subscribers.yaml"/>
+    <rosparam command="load" file="$(find state_estimator)/config/default_services.yaml" />
   </node>
 
 
