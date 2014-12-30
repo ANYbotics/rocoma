@@ -10,8 +10,8 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   nodelet
   roscpp_nodewrap
+  starleth_description
   locomotion_controller_msgs
-  starleth_robot_description
 )
 
 ## System dependencies are found with CMake's conventions
@@ -86,7 +86,7 @@ find_package(Eigen3 REQUIRED)
 catkin_package(
  INCLUDE_DIRS include $ENV{LAB_ROOT}/starlethModel/include $ENV{LAB_ROOT}/robotUtils/include
  LIBRARIES locomotion_controller model
- CATKIN_DEPENDS roscpp_nodewrap locomotion_controller_msgs starleth_robot_description
+ CATKIN_DEPENDS roscpp_nodewrap locomotion_controller_msgs starleth_description
 # DEPENDS system_lib
 )
 

@@ -11,13 +11,13 @@
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>locomotion_controller_msgs</build_depend>
-  <build_depend>starleth_robot_description</build_depend>
+  <build_depend>starleth_description</build_depend>
   <build_depend>roscpp_nodewrap</build_depend>
   <build_depend>nodelet</build_depend>
 
   <run_depend>roscpp</run_depend>
   <run_depend>locomotion_controller_msgs</run_depend>
-  <run_depend>starleth_robot_description</run_depend>
+  <run_depend>starleth_description</run_depend>
   <run_depend>roscpp_nodewrap</run_depend>
   <run_depend>nodelet</run_depend>
 

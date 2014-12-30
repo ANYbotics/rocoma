@@ -33,7 +33,7 @@
 
 #include "locomotion_controller/Model.hpp"
 #include "robotUtils/terrains/TerrainPlane.hpp"
-#include <starleth_robot_description/starleth_robot_state.hpp>
+#include <starleth_description/starleth_robot_state.hpp>
 #include <starlethModel/starleth/starleth.hpp>
 #include <robotUtils/loggers/logger.hpp>
 
@@ -401,13 +401,13 @@ void Model::initializeRobotState(starleth_msgs::RobotStatePtr& robotState) const
 //  }
 //
 //  initializeJointState(robotState->joints);
-  starleth_robot_description::initializeRobotStateForStarlETH(*robotState);
+  starleth_description::initializeRobotStateForStarlETH(*robotState);
 
 
 }
 
 void Model::initializeJointState(sensor_msgs::JointState& jointState) const {
-  starleth_robot_description::initializeJointStateForStarlETH(jointState);
+  starleth_description::initializeJointStateForStarlETH(jointState);
 //  jointState.name.clear();
 //  jointState.position.clear();
 //  jointState.velocity.clear();
