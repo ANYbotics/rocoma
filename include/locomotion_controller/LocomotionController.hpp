@@ -96,6 +96,7 @@ class LocomotionController : public nodewrap::NodeImpl
   starleth_msgs::SeActuatorCommandsPtr jointCommands_;
   double timeStep_;
   double time_;
+  bool isRealRobot_;
   model::Model model_;
   ControllerManager controllerManager_;
 

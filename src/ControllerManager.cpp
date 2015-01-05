@@ -41,7 +41,8 @@ ControllerManager::ControllerManager() :
     timeStep_(0.0),
     isInitializingTask_(false),
     controllers_(),
-    activeController_(nullptr)
+    activeController_(nullptr),
+    isRealRobot_(false)
 {
 
 }
@@ -147,6 +148,11 @@ bool ControllerManager::switchController(locomotion_controller_msgs::SwitchContr
   return true;
 }
 
-
+bool ControllerManager::isRealRobot() const {
+	return isRealRobot_;
+}
+void ControllerManager::setIsRealRobot(bool isRealRobot) {
+	isRealRobot_ = isRealRobot;
+}
 
 } /* namespace locomotion_controller */
