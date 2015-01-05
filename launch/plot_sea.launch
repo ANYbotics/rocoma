@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+	<node pkg="rqt_plot" type="rqt_plot" name="plot_sea_lf_mode" output="screen" args="/locomotion_controller/actuators/sea/commands[0]/mode /locomotion_controller/actuators/sea/commands[1]/mode /locomotion_controller/actuators/sea/commands[2]/mode" />
+	<node pkg="rqt_plot" type="rqt_plot" name="plot_sea_rf_mode" output="screen" args="/locomotion_controller/actuators/sea/commands[3]/mode /locomotion_controller/actuators/sea/commands[4]/mode /locomotion_controller/actuators/sea/commands[5]/mode" />
+        <node pkg="rqt_plot" type="rqt_plot" name="plot_sea_haa" output="screen" args="/locomotion_controller/actuators/sea/commands[0]/jointTorque /locomotion_controller/actuators/sea/commands[3]/jointTorque /locomotion_controller/actuators/sea/commands[6]/jointTorque /locomotion_controller/actuators/sea/commands[9]/jointTorque" />
+	<node pkg="rqt_plot" type="rqt_plot" name="plot_sea_hfe" output="screen" args="/locomotion_controller/actuators/sea/commands[1]/jointTorque" />
+	<node pkg="rqt_plot" type="rqt_plot" name="plot_sea_kfe" output="screen" args="/locomotion_controller/actuators/sea/commands[2]/jointTorque" />
+</launch>
+
