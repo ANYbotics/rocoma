@@ -69,6 +69,8 @@ class ControllerManager
                         locomotion_controller_msgs::SwitchController::Response &res);
   bool emergencyStop();
   bool switchControllerAfterEmergencyStop();
+  bool isRealRobot() const;
+  void setIsRealRobot(bool isRealRobot);
  protected:
   void switchToEmergencyTask();
  protected:
@@ -77,6 +79,7 @@ class ControllerManager
   bool isInitializingTask_;
   boost::ptr_vector<Controller> controllers_;
   ControllerPtr activeController_;
+  bool isRealRobot_;
 };
 
 } /* namespace locomotion_controller */

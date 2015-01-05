@@ -60,7 +60,9 @@ namespace locomotion_controller {
 LocomotionController::LocomotionController():
     timeStep_(0.0025),
     time_(0.0),
-    model_()
+    isRealRobot_(false),
+    model_(),
+    controllerManager_()
 {
 
 
@@ -73,6 +75,8 @@ LocomotionController::~LocomotionController()
 void LocomotionController::init() {
 
   getNodeHandle().param<double>("controller/time_step", timeStep_, 0.0025);
+  getNodeHandle().param<bool>("controller/is_real_robot", isRealRobot_, false);
+  controllerManager_.setIsRealRobot(isRealRobot_);
   std::string loggingScriptFileName = ros::package::getPath("locomotion_controller") + std::string{"/config/logging.script"};
   robotUtils::logger.reset(new robotUtils::LoggerStd);
   robotUtils::LoggerStd* loggerStd = static_cast<robotUtils::LoggerStd*>(robotUtils::logger.get());
@@ -91,7 +95,7 @@ void LocomotionController::init() {
 
   time_ = 0.0;
 
-  model_.initializeForController(timeStep_);
+  model_.initializeForController(timeStep_,isRealRobot_);
 
 
   // todo: should be true
