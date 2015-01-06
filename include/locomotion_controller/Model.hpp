@@ -74,8 +74,8 @@ class Model
  public:
   Model();
   virtual ~Model();
-  void initializeForController(double dt);
-  void initializeForStateEstimator(double dt);
+  void initializeForController(double dt,bool isRealRobot);
+  void initializeForStateEstimator(double dt, bool isRealRobot);
   void reinitialize(double dt);
   void addVariablesToLog();
 
@@ -102,12 +102,15 @@ class Model
 
   const robotModel::State& getState() const;
   const robotModel::Command& getCommand() const;
+
+  void setContactForceThreshold(double value);
  private:
   ros::Time updateStamp_;
   std::shared_ptr<robotModel::RobotModel> robotModel_;
   std::shared_ptr<robotTerrain::TerrainBase> terrain_;
   robotModel::State state_;
   robotModel::Command command_;
+  double contactForceThreshold_;
 };
 
 } /* namespace model */
