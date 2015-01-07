@@ -37,17 +37,28 @@
 #include "LocoDemo_Task.hpp"
 #endif
 
+#ifdef USE_TASK_LOCOCRAWLING
+#include "Crawling_Task.hpp"
+#endif
+
 namespace locomotion_controller {
 
 void add_locomotion_controllers(locomotion_controller::ControllerManager* manager, robotModel::State& state, robotModel::Command& command) {
 
 #ifdef USE_TASK_LOCODEMO
-   auto controller = new ControllerRos<robotTask::LocoDemo>(state, command);
-   controller->setControllerManager(manager);
-   controller->setIsCheckingState(false);
-   controller->setIsRealRobotFromSl(manager->isRealRobot());
-   manager->addController(controller);
+   auto controllerLocoDemo = new ControllerRos<robotTask::LocoDemo>(state, command);
+   controllerLocoDemo->setControllerManager(manager);
+   controllerLocoDemo->setIsCheckingState(false);
+   controllerLocoDemo->setIsRealRobotFromSl(manager->isRealRobot());
+   manager->addController(controllerLocoDemo);
+#endif
 
+#ifdef USE_TASK_LOCOCRAWLING
+   auto controllerCrawling = new ControllerRos<robotTask::Crawling>(state, command);
+   controllerCrawling->setControllerManager(manager);
+   controllerCrawling->setIsCheckingState(false);
+   controllerCrawling->setIsRealRobotFromSl(manager->isRealRobot());
+   manager->addController(controllerCrawling);
 #endif
 
 
