@@ -140,6 +140,9 @@ add_library(locomotion_controller
   src/LocomotionController.cpp
 )
 
+add_dependencies(locomotion_controller locomotion_controller_msgs_generate_messages_cpp)
+
+
 target_link_libraries(locomotion_controller
     model
    ${catkin_LIBRARIES}
