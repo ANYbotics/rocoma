@@ -112,6 +112,10 @@ void LocomotionController::init() {
   resetStateEstimatorClient_ = serviceClient<locomotion_controller_msgs::ResetStateEstimator>("reset_state_estimator", "/reset_state_estimator");
 }
 
+void LocomotionController::cleanup() {
+
+}
+
 bool LocomotionController::run() {
 //  ros::Rate loop_rate(800);
 //  while (ros::ok())

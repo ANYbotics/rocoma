@@ -75,6 +75,7 @@ class LocomotionController : public nodewrap::NodeImpl
   virtual ~LocomotionController();
 
   void init();
+  void cleanup();
   bool run();
 
 
