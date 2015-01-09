@@ -7,21 +7,21 @@
     <!-- <param name="num_worker_threads" value="5"/> -->
   </node>
   
-    <node name="controller" pkg="nodelet" type="nodelet" args="load locomotion_controller/LocomotionController locomotion_controller" output="screen" launch-prefix="">
+    <node name="controller" pkg="nodelet" type="nodelet" args="load locomotion_controller/LocomotionController locomotion_controller" output="screen" launch-prefix="nice -n -20">
 	  <rosparam file="$(find locomotion_controller)/config/starleth_nodelet_locomotion_controller.yaml" command="load" />
 	  <rosparam file="$(find locomotion_controller)/config/default_publishers.yaml" command="load" />
 	  <rosparam file="$(find locomotion_controller)/config/default_subscribers.yaml" command="load" />
 	  <rosparam file="$(find locomotion_controller)/config/default_services.yaml" command="load" />	  
 	</node>
   
-  	<node name="state_estimator" pkg="nodelet" type="nodelet" args="load state_estimator_rm/StateEstimatorRm locomotion_controller" output="screen" launch-prefix="">
+  	<node name="state_estimator" pkg="nodelet" type="nodelet" args="load state_estimator_rm/StateEstimatorRm locomotion_controller" output="screen" launch-prefix="nice -n -20">
 	  <rosparam command="load" file="$(find state_estimator)/config/starleth_nodelet_state_estimator.yaml" />
 	  <rosparam command="load" file="$(find state_estimator)/config/default_publishers.yaml" />
 	  <rosparam command="load" file="$(find state_estimator)/config/default_subscribers.yaml" />
 	  <rosparam command="load" file="$(find state_estimator)/config/default_services.yaml" />
 	</node>
   
- 	<node name="lowlevel_controller" pkg="nodelet" type="nodelet" args="load lowlevel_controller/LowLevelController locomotion_controller --no-bond" output="screen" launch-prefix="xterm -e">
+ 	<node name="lowlevel_controller" pkg="nodelet" type="nodelet" args="load lowlevel_controller/LowLevelController locomotion_controller --no-bond" output="screen" launch-prefix="xterm -e nice -n -20">
 	  <rosparam file="$(find lowlevel_controller)/config/starleth_nodelet_lowlevel_controller.yaml" command="load" />
 	  <rosparam file="$(find lowlevel_controller)/config/default_publishers.yaml" command="load" />
 	  <rosparam file="$(find lowlevel_controller)/config/default_subscribers.yaml" command="load" />

@@ -141,25 +141,29 @@ void LocomotionController::publish()  {
 
 }
 void LocomotionController::robotStateCallback(const starleth_msgs::RobotState::ConstPtr& msg) {
-//  ROS_INFO("Received state");
+  //-- Start measuring computation time.
   std::chrono::time_point<std::chrono::steady_clock> start, end;
   start = std::chrono::steady_clock::now();
+  //---
+  NODEWRAP_DEBUG("Update locomotion controller.");
 
   model_.setRobotState(msg);
   controllerManager_.updateController();
 
   publish();
 
+  time_ += timeStep_;
+
+  //-- Measure computation time.
   end = std::chrono::steady_clock::now();
   int64_t elapsedTimeNSecs = std::chrono::duration_cast<std::chrono::nanoseconds>(end -
       start).count();
-
   int64_t timeStep = (int64_t)(timeStep_*1e9);
   if (elapsedTimeNSecs > timeStep) {
-    ROS_INFO("Warning: computation is not real-time! Elapsed time: %lf ms\n", (double)elapsedTimeNSecs*1e-6);
+	  NODEWRAP_WARN("Computation of locomotion controller is not real-time! Elapsed time: %lf ms\n", (double)elapsedTimeNSecs*1e-6);
   }
+  //---
 
-  time_ += timeStep_;
 }
 
 void LocomotionController::joystickCallback(const sensor_msgs::Joy::ConstPtr& msg) {
