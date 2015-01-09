@@ -4,6 +4,6 @@ subscribers:
     queue_size: 100
     latch: false
   joy:
-    topic: /locomotion_controller/sensors/joy
+    topic: /joy
     queue_size: 100
     latch: false
