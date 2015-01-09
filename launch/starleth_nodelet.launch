@@ -4,7 +4,7 @@
 
     	
   <node name="locomotion_controller" pkg="nodelet" type="nodelet"  args="manager" output="screen" launch-prefix="">
-    <param name="num_worker_threads" value="5"/>
+    <!-- <param name="num_worker_threads" value="5"/> -->
   </node>
   
     <node name="controller" pkg="nodelet" type="nodelet" args="load locomotion_controller/LocomotionController locomotion_controller" output="screen" launch-prefix="">
