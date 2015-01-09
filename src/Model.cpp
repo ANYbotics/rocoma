@@ -294,7 +294,7 @@ void Model::setRobotState(const starleth_msgs::RobotState::ConstPtr& robotState)
   robotModel_->update();
   state_.copyStateFromRobotModel();
 
-  state_.setStatus((robotModel::State::Status)robotState->state);
+  state_.setStatus((robotModel::State::StateStatus)robotState->state);
 
 }
 
