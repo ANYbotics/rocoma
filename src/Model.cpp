@@ -276,6 +276,8 @@ void Model::setRobotState(const starleth_msgs::RobotState::ConstPtr& robotState)
 //  robotModel_->sensors().setJointAcc(jointAccelerations);
   robotModel_->sensors().getSimMainBodyPose()->setQb(Qb);
   robotModel_->sensors().getSimMainBodyPose()->setdQb(dQb);
+
+  //ROS_INFO_STREAM("Qb: " << Qb.transpose());
   // todo: acceleration is missing!
 //  robotModel_.sensors().getSimMainBodyPose()->setddQb(ddQb);
 
@@ -295,6 +297,8 @@ void Model::setRobotState(const starleth_msgs::RobotState::ConstPtr& robotState)
   state_.copyStateFromRobotModel();
 
   state_.setStatus((robotModel::State::StateStatus)robotState->state);
+
+  //ROS_INFO_STREAM("q.Qb: " << robotModel_->q().getQb().transpose());
 
 }
 
