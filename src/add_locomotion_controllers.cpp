@@ -44,8 +44,7 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
 #ifdef USE_TASK_LOCODEMO
    auto controller = new ControllerRos<robotTask::LocoDemo>(state, command);
    controller->setControllerManager(manager);
-   controller->setIsCheckingState(false);
-   controller->setIsRealRobotFromSl(manager->isRealRobot());
+   controller->setIsRealRobotFromManager(manager->isRealRobot());
    manager->addController(controller);
 
 #endif

@@ -126,7 +126,7 @@ bool ControllerRos<Controller_>::isRealRobot() const
 }
 
 template<typename Controller_>
-void ControllerRos<Controller_>::setIsRealRobotFromSl(bool isRealRobot)
+void ControllerRos<Controller_>::setIsRealRobotFromManager(bool isRealRobot)
 {
   isRealRobot_ = isRealRobot;
 }
