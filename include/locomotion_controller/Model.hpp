@@ -41,6 +41,7 @@
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/JointState.h>
 #include <geometry_msgs/WrenchStamped.h>
+#include <geometry_msgs/Twist.h>
 #include <starleth_msgs/RobotState.h>
 #include <sensor_msgs/Joy.h>
 #include <starleth_msgs/SeActuatorCommands.h>
@@ -93,7 +94,7 @@ class Model
   void getRobotState(starleth_msgs::RobotStatePtr& robotState);
   void getSeActuatorCommands(starleth_msgs::SeActuatorCommandsPtr& actuatorCommands);
   void setJoystickCommands(const sensor_msgs::Joy::ConstPtr& msg);
-
+  void setCommandVelocity(const geometry_msgs::Twist::ConstPtr& msg);
 
   robotModel::RobotModel* getRobotModel();
   robotTerrain::TerrainBase* getTerrainModel();

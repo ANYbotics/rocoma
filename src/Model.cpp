@@ -551,4 +551,10 @@ void Model::setContactForceThreshold(double value) {
 }
 
 
+void Model::setCommandVelocity(const geometry_msgs::Twist::ConstPtr& msg) {
+	 robotModel_->sensors().getDesRobotVelocity()->setDesSagittalVelocity(msg->linear.x);
+	 robotModel_->sensors().getDesRobotVelocity()->setDesCoronalVelocity(msg->linear.y);
+	 robotModel_->sensors().getDesRobotVelocity()->setDesTurningRate(msg->angular.z);
+}
+
 } /* namespace model */

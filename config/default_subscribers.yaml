@@ -1,9 +1,13 @@
 subscribers:
   robot_state: 
-    topic: /locomotion_controller/state/robot
+    topic: /state_estimator/robot_state
     queue_size: 100
     latch: false
   joy:
     topic: /joy
+    queue_size: 100
+    latch: false
+  command_velocity: 
+    topic: /locomotion_controller/command_velocity
     queue_size: 100
     latch: false

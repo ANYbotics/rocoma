@@ -74,6 +74,7 @@ LocomotionController::~LocomotionController()
 
 void LocomotionController::init() {
 
+
   getNodeHandle().param<double>("controller/time_step", timeStep_, 0.0025);
   getNodeHandle().param<bool>("controller/is_real_robot", isRealRobot_, false);
   controllerManager_.setIsRealRobot(isRealRobot_);
@@ -87,6 +88,9 @@ void LocomotionController::init() {
 
   robotStateSubscriber_ = subscribe("robot_state", "/robot", 100, &LocomotionController::robotStateCallback, ros::TransportHints().tcpNoDelay());
   joystickSubscriber_ = subscribe("joy", "/joy", 100, &LocomotionController::joystickCallback, ros::TransportHints().tcpNoDelay());
+  commandVelocitySubscriber_ = subscribe("command_velocity", "/command_velocity", 100, &LocomotionController::commandVelocityCallback, ros::TransportHints().tcpNoDelay());
+
+
 
   jointCommandsPublisher_ = advertise<starleth_msgs::SeActuatorCommands>("command_seactuators","/command_seactuators", 100);
 
@@ -210,7 +214,9 @@ bool LocomotionController::emergencyStop(locomotion_controller_msgs::EmergencySt
   return result;
 }
 
-
+void LocomotionController::commandVelocityCallback(const geometry_msgs::Twist::ConstPtr& msg) {
+	model_.setCommandVelocity(msg);
+}
 
 
 } /* namespace locomotion_controller */
