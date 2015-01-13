@@ -8,5 +8,5 @@ servers:
     
 clients:
   reset_state_estimator:
-    service: /locomotion_controller/state_estimator/reset
+    service: /state_estimator/reset
     persistent: false
