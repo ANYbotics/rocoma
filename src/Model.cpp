@@ -99,6 +99,7 @@ void Model::initializeForController(double dt, bool isRealRobot) {
   //  robotModel.est().setActualEstimator(robotModel::PE_LSE); // not used
 
   robotModel_->est().getActualEstimator()->setVerboseLevel(0);
+  robotModel_->est().getActualEstimator()->setIsPlayingAudio(false);
 
   /* activate sensor noise */
   robotModel_->sensors().setIsAddingSensorNoise(false);
@@ -126,6 +127,8 @@ void Model::initializeForStateEstimator(double dt, bool isRealRobot) {
   robotModel_->est().setActualEstimator(robotModel::PE_ObservabilityConstrainedEKF); // feed through of simulated states
   //  robotModel.est().setActualEstimator(robotModel::PE_ObservabilityConstrainedEKF); // activate this estimator
   //  robotModel.est().setActualEstimator(robotModel::PE_LSE); // not used
+
+  robotModel_->est().getActualEstimator()->setIsPlayingAudio(true);
 
   /* activate sensor noise */
   robotModel_->sensors().setIsAddingSensorNoise(false);
