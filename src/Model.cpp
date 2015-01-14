@@ -129,7 +129,7 @@ void Model::initializeForStateEstimator(double dt, bool isRealRobot) {
   //  robotModel.est().setActualEstimator(robotModel::PE_LSE); // not used
 
   robotModel_->est().getActualEstimator()->setIsPlayingAudio(true);
-  robotModel_->est().getActualEstimator()->setPathToAudioFiles(std::string(getenv("LAB_ROOT")) + std::string{"/starlethUser/sound/"});
+  robotModel_->est().getActualEstimator()->setPathToAudioFiles(std::string(getenv("LAB_ROOT")) + std::string{"/starleth_audio_files/locomotion_controller/"});
   /* activate sensor noise */
   robotModel_->sensors().setIsAddingSensorNoise(false);
   robotModel_->act().setUseLimitsInSimFlag(false); // do not change! see jointController for activating limits
