@@ -41,6 +41,10 @@
 #include "Crawling_Task.hpp"
 #endif
 
+#ifdef USE_TASK_LOCOFREEGAIT
+#include "FreeGait_Task.hpp"
+#endif
+
 namespace locomotion_controller {
 
 void add_locomotion_controllers(locomotion_controller::ControllerManager* manager, robotModel::State& state, robotModel::Command& command) {
@@ -61,6 +65,13 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
    manager->addController(controllerCrawling);
 #endif
 
+#ifdef USE_TASK_LOCOFREEGAIT
+   auto controllerFreeGait = new ControllerRos<robotTask::FreeGait>(state, command);
+   controllerFreeGait->setControllerManager(manager);
+   controllerFreeGait->setIsCheckingState(false);
+   controllerFreeGait->setIsRealRobotFromSl(manager->isRealRobot());
+   manager->addController(controllerFreeGait);
+#endif
 
 }
 
