@@ -85,7 +85,7 @@ find_package(Eigen3 REQUIRED)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
  INCLUDE_DIRS include $ENV{LAB_ROOT}/starlethModel/include $ENV{LAB_ROOT}/robotUtils/include
- LIBRARIES locomotion_controller model
+ LIBRARIES locomotion_controller model robotUtils
  CATKIN_DEPENDS roscpp_nodewrap locomotion_controller_msgs starleth_description
 # DEPENDS system_lib
 )
