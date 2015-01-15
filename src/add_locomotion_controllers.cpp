@@ -47,7 +47,7 @@
 
 namespace locomotion_controller {
 
-void add_locomotion_controllers(locomotion_controller::ControllerManager* manager, robotModel::State& state, robotModel::Command& command) {
+void add_locomotion_controllers(locomotion_controller::ControllerManager* manager, robotModel::State& state, robotModel::Command& command, ros::NodeHandle& nodeHandle) {
 
 #ifdef USE_TASK_LOCODEMO
    auto controllerLocoDemo = new ControllerRos<robotTask::LocoDemo>(state, command);
@@ -62,6 +62,7 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
    controllerCrawling->setControllerManager(manager);
    controllerCrawling->setIsCheckingState(false);
    controllerCrawling->setIsRealRobotFromSl(manager->isRealRobot());
+   controllerCrawling->setNodeHandle(nodeHandle);
    manager->addController(controllerCrawling);
 #endif
 

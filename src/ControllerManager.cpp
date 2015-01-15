@@ -51,7 +51,7 @@ ControllerManager::~ControllerManager()
 {
 }
 
-void ControllerManager::setupControllers(double dt, double time, robotModel::State& state, robotModel::Command& command)  {
+void ControllerManager::setupControllers(double dt, double time, robotModel::State& state, robotModel::Command& command, ros::NodeHandle& nodeHandle)  {
   time_ = time;
   timeStep_ = dt;
 
@@ -68,7 +68,7 @@ void ControllerManager::setupControllers(double dt, double time, robotModel::Sta
 
 
 
-  add_locomotion_controllers(this, state, command);
+  add_locomotion_controllers(this, state, command, nodeHandle);
 
 }
 

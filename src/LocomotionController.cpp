@@ -105,7 +105,7 @@ void LocomotionController::init() {
   model_.addVariablesToLog();
 
 
-  controllerManager_.setupControllers(timeStep_, time_, model_.getState(), model_.getCommand());
+  controllerManager_.setupControllers(timeStep_, time_, model_.getState(), model_.getCommand(), getNodeHandle());
 
   switchControllerService_ = getNodeHandle().advertiseService("switch_controller", &ControllerManager::switchController, &this->controllerManager_);
   emergencyStopService_ = advertiseService("emergency_stop", "/emergency_stop", &LocomotionController::emergencyStop);

@@ -51,7 +51,7 @@
 namespace locomotion_controller {
 
 class ControllerManager;
-void add_locomotion_controllers(locomotion_controller::ControllerManager* manager, robotModel::State& state, robotModel::Command& command);
+void add_locomotion_controllers(locomotion_controller::ControllerManager* manager, robotModel::State& state, robotModel::Command& command, ros::NodeHandle& nodeHandle);
 
 class ControllerManager
 {
@@ -63,7 +63,7 @@ class ControllerManager
   virtual ~ControllerManager();
 
   void updateController();
-  void setupControllers(double dt, double time, robotModel::State& state, robotModel::Command& command);
+  void setupControllers(double dt, double time, robotModel::State& state, robotModel::Command& command, ros::NodeHandle& nodeHandle);
   void addController(ControllerPtr controller);
   bool switchController(locomotion_controller_msgs::SwitchController::Request  &req,
                         locomotion_controller_msgs::SwitchController::Response &res);
