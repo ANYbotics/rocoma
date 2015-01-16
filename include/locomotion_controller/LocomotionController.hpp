@@ -55,7 +55,7 @@
 
 
 #include <memory>
-
+#include <mutex>
 
 
 namespace locomotion_controller {
@@ -76,7 +76,6 @@ class LocomotionController : public nodewrap::NodeImpl
 
   void init();
   void cleanup();
-  bool run();
 
 
  protected:
@@ -87,7 +86,19 @@ class LocomotionController : public nodewrap::NodeImpl
                      locomotion_controller_msgs::EmergencyStop::Response &res);
   void commandVelocityCallback(const geometry_msgs::Twist::ConstPtr& msg);
 
+  void initializeMessages();
+  void initializeServices();
+  void initializePublishers();
+  void initializeSubscribers();
+
+  void updateControllerAndPublish(const starleth_msgs::RobotState::ConstPtr& robotState);
+
  private:
+  double timeStep_;
+  bool isRealRobot_;
+  model::Model model_;
+  ControllerManager controllerManager_;
+
   ros::Subscriber robotStateSubscriber_;
   ros::Subscriber joystickSubscriber_;
   ros::Subscriber commandVelocitySubscriber_;
@@ -97,13 +108,11 @@ class LocomotionController : public nodewrap::NodeImpl
   ros::ServiceClient resetStateEstimatorClient_;
 
   starleth_msgs::SeActuatorCommandsPtr jointCommands_;
-  double timeStep_;
-  double time_;
-  bool isRealRobot_;
-  model::Model model_;
-  ControllerManager controllerManager_;
 
 
+
+  std::mutex mutexJointCommands_;
+  std::mutex mutexModelAndControllerManager_;
 
 };
 

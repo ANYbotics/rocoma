@@ -37,7 +37,6 @@
 namespace locomotion_controller {
 
 ControllerManager::ControllerManager() :
-    time_(0.0),
     timeStep_(0.0),
     isInitializingTask_(false),
     controllers_(),
@@ -51,8 +50,7 @@ ControllerManager::~ControllerManager()
 {
 }
 
-void ControllerManager::setupControllers(double dt, double time, robotModel::State& state, robotModel::Command& command)  {
-  time_ = time;
+void ControllerManager::setupControllers(double dt, robotModel::State& state, robotModel::Command& command)  {
   timeStep_ = dt;
 
   /* Create no task, which is active until estimator converged*/

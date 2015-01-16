@@ -59,7 +59,6 @@ namespace locomotion_controller {
 
 LocomotionController::LocomotionController():
     timeStep_(0.0025),
-    time_(0.0),
     isRealRobot_(false),
     model_(),
     controllerManager_()
@@ -73,90 +72,110 @@ LocomotionController::~LocomotionController()
 }
 
 void LocomotionController::init() {
-
-
+  //--- Read parameters.
   getNodeHandle().param<double>("controller/time_step", timeStep_, 0.0025);
   getNodeHandle().param<bool>("controller/is_real_robot", isRealRobot_, false);
-  controllerManager_.setIsRealRobot(isRealRobot_);
+  //---
+
+  //--- Configure logger.
   std::string loggingScriptFileName = ros::package::getPath("locomotion_controller") + std::string{"/config/logging.script"};
   robotUtils::logger.reset(new robotUtils::LoggerStd);
   robotUtils::LoggerStd* loggerStd = static_cast<robotUtils::LoggerStd*>(robotUtils::logger.get());
-
   loggerStd->setVerboseLevel(robotUtils::LoggerStd::VL_DEBUG);
-
   robotUtils::logger->initLogger((int)(1.0/timeStep_), (int)(1.0/timeStep_), 60, loggingScriptFileName);
+  //---
 
-  robotStateSubscriber_ = subscribe("robot_state", "/robot", 100, &LocomotionController::robotStateCallback, ros::TransportHints().tcpNoDelay());
-  joystickSubscriber_ = subscribe("joy", "/joy", 100, &LocomotionController::joystickCallback, ros::TransportHints().tcpNoDelay());
-  commandVelocitySubscriber_ = subscribe("command_velocity", "/command_velocity", 100, &LocomotionController::commandVelocityCallback, ros::TransportHints().tcpNoDelay());
+  //--- Configure controllers
+  {
+    std::lock_guard<std::mutex> lockControllerManager(mutexModelAndControllerManager_);
 
-
-
-  jointCommandsPublisher_ = advertise<starleth_msgs::SeActuatorCommands>("command_seactuators","/command_seactuators", 100);
-
-  jointCommands_.reset(new starleth_msgs::SeActuatorCommands);
-  starleth_description::initializeSeActuatorCommandsForStarlETH(*jointCommands_);
-
-  time_ = 0.0;
-
-  model_.initializeForController(timeStep_,isRealRobot_);
+    // Initialize robot and terrain models
+    model_.initializeForController(timeStep_,isRealRobot_);
+    model_.getRobotModel()->params().printParams();
+    model_.addVariablesToLog();
 
 
-  // todo: should be true
+    controllerManager_.setIsRealRobot(isRealRobot_);
+    controllerManager_.setupControllers(timeStep_, model_.getState(), model_.getCommand());
+  }
+  //---
 
-
-  model_.getRobotModel()->params().printParams();
-  model_.addVariablesToLog();
-
-
-  controllerManager_.setupControllers(timeStep_, time_, model_.getState(), model_.getCommand());
-
-  switchControllerService_ = getNodeHandle().advertiseService("switch_controller", &ControllerManager::switchController, &this->controllerManager_);
-  emergencyStopService_ = advertiseService("emergency_stop", "/emergency_stop", &LocomotionController::emergencyStop);
-  resetStateEstimatorClient_ = serviceClient<locomotion_controller_msgs::ResetStateEstimator>("reset_state_estimator", "/reset_state_estimator");
+  initializeMessages();
+  initializeServices();
+  initializePublishers();
+  initializeSubscribers();
 }
 
 void LocomotionController::cleanup() {
 
 }
 
-bool LocomotionController::run() {
-//  ros::Rate loop_rate(800);
-//  while (ros::ok())
-//  {
-//    ros::getGlobalCallbackQueue()->callAvailable(ros::WallDuration(0.0));
-////    ros::spinOnce();
-////    loop_rate.sleep();
-//  }
-  ros::spin();
-  return true;
+void LocomotionController::initializeMessages() {
+  //--- Initialize joint commands.
+  {
+    std::lock_guard<std::mutex> lock(mutexJointCommands_);
+    jointCommands_.reset(new starleth_msgs::SeActuatorCommands);
+    starleth_description::initializeSeActuatorCommandsForStarlETH(*jointCommands_);
+  }
+  //---
 }
+
+void LocomotionController::initializeServices() {
+  switchControllerService_ = getNodeHandle().advertiseService("switch_controller", &ControllerManager::switchController, &this->controllerManager_);
+  emergencyStopService_ = advertiseService("emergency_stop", "/emergency_stop", &LocomotionController::emergencyStop);
+  resetStateEstimatorClient_ = serviceClient<locomotion_controller_msgs::ResetStateEstimator>("reset_state_estimator", "/reset_state_estimator");
+}
+
+void LocomotionController::initializePublishers() {
+  jointCommandsPublisher_ = advertise<starleth_msgs::SeActuatorCommands>("command_seactuators","/command_seactuators", 100);
+}
+
+void LocomotionController::initializeSubscribers() {
+  joystickSubscriber_ = subscribe("joy", "/joy", 100, &LocomotionController::joystickCallback, ros::TransportHints().tcpNoDelay());
+  commandVelocitySubscriber_ = subscribe("command_velocity", "/command_velocity", 100, &LocomotionController::commandVelocityCallback, ros::TransportHints().tcpNoDelay());
+
+  // this should be last since it will start the controller loop
+  robotStateSubscriber_ = subscribe("robot_state", "/robot", 100, &LocomotionController::robotStateCallback, ros::TransportHints().tcpNoDelay());
+
+}
+
 
 
 void LocomotionController::publish()  {
 
-  model_.getSeActuatorCommands(jointCommands_);
-
-
   if(jointCommandsPublisher_.getNumSubscribers() > 0u) {
-    jointCommandsPublisher_.publish(jointCommands_);
-    ros::spinOnce();
+    std::lock_guard<std::mutex> lock(mutexJointCommands_);
+    {
+      std::lock_guard<std::mutex> lockControllerManager(mutexModelAndControllerManager_);
+      model_.getSeActuatorCommands(jointCommands_);
+    }
+
+    starleth_msgs::SeActuatorCommandsConstPtr jointCommands(new starleth_msgs::SeActuatorCommands(*jointCommands_));
+    jointCommandsPublisher_.publish(jointCommands);
+    //ros::spinOnce(); // todo: required?
   }
 
 }
 void LocomotionController::robotStateCallback(const starleth_msgs::RobotState::ConstPtr& msg) {
+  updateControllerAndPublish(msg);
+}
+
+void LocomotionController::updateControllerAndPublish(const starleth_msgs::RobotState::ConstPtr& robotState) {
   //-- Start measuring computation time.
   std::chrono::time_point<std::chrono::steady_clock> start, end;
   start = std::chrono::steady_clock::now();
   //---
+
   NODEWRAP_DEBUG("Update locomotion controller.");
 
-  model_.setRobotState(msg);
-  controllerManager_.updateController();
-
+  {
+    std::lock_guard<std::mutex> lock(mutexModelAndControllerManager_);
+    model_.setRobotState(robotState);
+    controllerManager_.updateController();
+  }
   publish();
 
-  time_ += timeStep_;
+
 
   //-- Measure computation time.
   end = std::chrono::steady_clock::now();
@@ -164,15 +183,15 @@ void LocomotionController::robotStateCallback(const starleth_msgs::RobotState::C
       start).count();
   int64_t timeStep = (int64_t)(timeStep_*1e9);
   if (elapsedTimeNSecs > timeStep) {
-	  NODEWRAP_WARN("Computation of locomotion controller is not real-time! Elapsed time: %lf ms\n", (double)elapsedTimeNSecs*1e-6);
+    NODEWRAP_WARN("Computation of locomotion controller is not real-time! Elapsed time: %lf ms\n", (double)elapsedTimeNSecs*1e-6);
   }
   //---
-
 }
 
 void LocomotionController::joystickCallback(const sensor_msgs::Joy::ConstPtr& msg) {
-
+  std::lock_guard<std::mutex> lockControllerManager(mutexModelAndControllerManager_);
   model_.setJoystickCommands(msg);
+
 
   // START + LF buttons
   if (msg->buttons[4] == 1 && msg->buttons[7] == 1 ) {
@@ -194,15 +213,19 @@ void LocomotionController::joystickCallback(const sensor_msgs::Joy::ConstPtr& ms
 bool LocomotionController::emergencyStop(locomotion_controller_msgs::EmergencyStop::Request  &req,
                                          locomotion_controller_msgs::EmergencyStop::Response &res) {
 
+
   bool result = true;
 
-  //---
-  if(!controllerManager_.emergencyStop()) {
-    result = false;
+  //--- Stop the controller.
+  {
+    std::lock_guard<std::mutex> lock(mutexModelAndControllerManager_);
+    if(!controllerManager_.emergencyStop()) {
+      result = false;
+    }
   }
   //---
 
-  //---  Reset estimator.
+  //---  Reset the estimator.
   if (resetStateEstimatorClient_.exists()) {
     locomotion_controller_msgs::ResetStateEstimator resetEstimatorService;
     if(!resetStateEstimatorClient_.call(resetEstimatorService)) {
@@ -215,6 +238,7 @@ bool LocomotionController::emergencyStop(locomotion_controller_msgs::EmergencySt
 }
 
 void LocomotionController::commandVelocityCallback(const geometry_msgs::Twist::ConstPtr& msg) {
+  std::lock_guard<std::mutex> lock(mutexModelAndControllerManager_);
 	model_.setCommandVelocity(msg);
 }
 

@@ -63,7 +63,7 @@ class ControllerManager
   virtual ~ControllerManager();
 
   void updateController();
-  void setupControllers(double dt, double time, robotModel::State& state, robotModel::Command& command);
+  void setupControllers(double dt, robotModel::State& state, robotModel::Command& command);
   void addController(ControllerPtr controller);
   bool switchController(locomotion_controller_msgs::SwitchController::Request  &req,
                         locomotion_controller_msgs::SwitchController::Response &res);
@@ -74,7 +74,6 @@ class ControllerManager
  protected:
   void switchToEmergencyTask();
  protected:
-  double time_;
   double timeStep_;
   bool isInitializingTask_;
   boost::ptr_vector<Controller> controllers_;
