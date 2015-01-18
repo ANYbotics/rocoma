@@ -56,7 +56,7 @@ Locomotion Controller
 
 ## Bugs & Feature Requests
 
-Please report bugs and request features using the [Issue Tracker](https://github.com/ethz-asl/grid_map/issues).
+Please report bugs and request features using the [Issue Tracker](https://github.com/ethz-asl/c_starleth_locomotion_controller/issues).
 
 
 [ROS]: http://www.ros.org
