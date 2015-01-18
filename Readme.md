@@ -48,11 +48,11 @@ Locomotion Controller
 
 * **`controller/time_step`** (double, default: "0.0025")
  
-    The name of the grid map topic to be visualized.
+    Time step in seconds between two consecutive controller updates.
 
 * **`controller/is_real_robot`** (bool, default: "false")
  
-
+	Indicates if the real robot is in the loop. 
 
 ## Bugs & Feature Requests
 
