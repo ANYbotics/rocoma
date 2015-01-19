@@ -8,6 +8,6 @@ subscribers:
     queue_size: 100
     latch: false
   command_velocity: 
-    topic: /locomotion_controller/command_velocity
+    topic: /pose_controller/command_velocity
     queue_size: 100
     latch: false
