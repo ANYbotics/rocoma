@@ -41,7 +41,7 @@
 #include <starleth_msgs/RobotState.h>
 #include <sensor_msgs/Joy.h>
 #include <starleth_msgs/SeActuatorCommands.h>
-
+#include <geometry_msgs/Twist.h>
 
 #include "locomotion_controller/Model.hpp"
 #include "locomotion_controller/ControllerManager.hpp"
@@ -55,7 +55,7 @@
 
 
 #include <memory>
-
+#include <mutex>
 
 
 namespace locomotion_controller {
@@ -75,7 +75,7 @@ class LocomotionController : public nodewrap::NodeImpl
   virtual ~LocomotionController();
 
   void init();
-  bool run();
+  void cleanup();
 
 
  protected:
@@ -84,24 +84,35 @@ class LocomotionController : public nodewrap::NodeImpl
   void joystickCallback(const sensor_msgs::Joy::ConstPtr& msg);
   bool emergencyStop(locomotion_controller_msgs::EmergencyStop::Request  &req,
                      locomotion_controller_msgs::EmergencyStop::Response &res);
+  void commandVelocityCallback(const geometry_msgs::Twist::ConstPtr& msg);
+
+  void initializeMessages();
+  void initializeServices();
+  void initializePublishers();
+  void initializeSubscribers();
+
+  void updateControllerAndPublish(const starleth_msgs::RobotState::ConstPtr& robotState);
 
  private:
+  double timeStep_;
+  bool isRealRobot_;
+  model::Model model_;
+  ControllerManager controllerManager_;
+
   ros::Subscriber robotStateSubscriber_;
   ros::Subscriber joystickSubscriber_;
+  ros::Subscriber commandVelocitySubscriber_;
   ros::Publisher jointCommandsPublisher_;
   ros::ServiceServer switchControllerService_;
   ros::ServiceServer emergencyStopService_;
   ros::ServiceClient resetStateEstimatorClient_;
 
   starleth_msgs::SeActuatorCommandsPtr jointCommands_;
-  double timeStep_;
-  double time_;
-  bool isRealRobot_;
-  model::Model model_;
-  ControllerManager controllerManager_;
 
 
 
+  std::mutex mutexJointCommands_;
+  std::mutex mutexModelAndControllerManager_;
 
 };
 

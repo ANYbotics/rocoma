@@ -37,7 +37,6 @@
 namespace locomotion_controller {
 
 ControllerManager::ControllerManager() :
-    time_(0.0),
     timeStep_(0.0),
     isInitializingTask_(false),
     controllers_(),
@@ -51,8 +50,7 @@ ControllerManager::~ControllerManager()
 {
 }
 
-void ControllerManager::setupControllers(double dt, double time, robotModel::State& state, robotModel::Command& command)  {
-  time_ = time;
+void ControllerManager::setupControllers(double dt, robotModel::State& state, robotModel::Command& command)  {
   timeStep_ = dt;
 
   /* Create no task, which is active until estimator converged*/
@@ -126,19 +124,20 @@ bool ControllerManager::switchController(locomotion_controller_msgs::SwitchContr
 
   for (auto& controller : controllers_) {
     if (req.name == controller.getName()) {
-      activeController_ = &controller;
+      ControllerPtr initController = &controller;
 
 //      isInitializingTask_ = true;
-      activeController_->initializeController(timeStep_);
-      if (activeController_->isInitialized()) {
+      initController->initializeController(timeStep_);
+      if (initController->isInitialized()) {
         res.status = res.STATUS_SWITCHED;
-        ROS_INFO("Switched to controller %s", activeController_->getName().c_str());
+        ROS_INFO("Switched to controller %s", initController->getName().c_str());
+        activeController_ = initController;
       }
       else {
         // switch to no task
         switchToEmergencyTask();
         res.status = res.STATUS_ERROR;
-        ROS_INFO("Could not switched to controller %s", activeController_->getName().c_str());
+        ROS_INFO("Could not switched to controller %s", initController->getName().c_str());
       }
       return true;
     }

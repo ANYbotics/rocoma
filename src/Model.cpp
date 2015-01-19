@@ -99,6 +99,7 @@ void Model::initializeForController(double dt, bool isRealRobot) {
   //  robotModel.est().setActualEstimator(robotModel::PE_LSE); // not used
 
   robotModel_->est().getActualEstimator()->setVerboseLevel(0);
+  robotModel_->est().getActualEstimator()->setIsPlayingAudio(false);
 
   /* activate sensor noise */
   robotModel_->sensors().setIsAddingSensorNoise(false);
@@ -127,6 +128,8 @@ void Model::initializeForStateEstimator(double dt, bool isRealRobot) {
   //  robotModel.est().setActualEstimator(robotModel::PE_ObservabilityConstrainedEKF); // activate this estimator
   //  robotModel.est().setActualEstimator(robotModel::PE_LSE); // not used
 
+  robotModel_->est().getActualEstimator()->setIsPlayingAudio(true);
+  robotModel_->est().getActualEstimator()->setPathToAudioFiles(std::string(getenv("LAB_ROOT")) + std::string{"/starleth_audio_files/locomotion_controller/"});
   /* activate sensor noise */
   robotModel_->sensors().setIsAddingSensorNoise(false);
   robotModel_->act().setUseLimitsInSimFlag(false); // do not change! see jointController for activating limits
@@ -276,6 +279,8 @@ void Model::setRobotState(const starleth_msgs::RobotState::ConstPtr& robotState)
 //  robotModel_->sensors().setJointAcc(jointAccelerations);
   robotModel_->sensors().getSimMainBodyPose()->setQb(Qb);
   robotModel_->sensors().getSimMainBodyPose()->setdQb(dQb);
+
+  //ROS_INFO_STREAM("Qb: " << Qb.transpose());
   // todo: acceleration is missing!
 //  robotModel_.sensors().getSimMainBodyPose()->setddQb(ddQb);
 
@@ -295,6 +300,8 @@ void Model::setRobotState(const starleth_msgs::RobotState::ConstPtr& robotState)
   state_.copyStateFromRobotModel();
 
   state_.setStatus((robotModel::State::StateStatus)robotState->state);
+
+  //ROS_INFO_STREAM("q.Qb: " << robotModel_->q().getQb().transpose());
 
 }
 
@@ -376,62 +383,18 @@ void Model::setRobotState(const sensor_msgs::ImuPtr& imu,
   robotModel_->sensors().setJointVel(jointVelocities);
 
   robotModel_->update();
+  updateStamp_ = ros::Time::now();
   state_.copyStateFromRobotModel();
 
 
 }
 
 void Model::initializeRobotState(starleth_msgs::RobotStatePtr& robotState) const {
-//  robotState->contacts.clear();
-//  robotState->contacts.push_back(starleth_msgs::Contact());
-//  robotState->contacts.push_back(starleth_msgs::Contact());
-//  robotState->contacts.push_back(starleth_msgs::Contact());
-//  robotState->contacts.push_back(starleth_msgs::Contact());
-//  robotState->contacts[0].name = "LF";
-//  robotState->contacts[1].name = "RF";
-//  robotState->contacts[2].name = "LH";
-//  robotState->contacts[3].name = "RH";
-//  robotState->contacts[0].header.frame_id = "World";
-//  robotState->contacts[1].header.frame_id = "World";
-//  robotState->contacts[2].header.frame_id = "World";
-//  robotState->contacts[3].header.frame_id = "World";
-//
-//  for (int i=0; i<robotState->contacts.size() ; i++) {
-//    robotState->contacts[i].frictionCoefficient = 0.8;
-//    robotState->contacts[i].restitutionCoefficient = 0.0;
-//  }
-//
-//  initializeJointState(robotState->joints);
   starleth_description::initializeRobotStateForStarlETH(*robotState);
-
-
 }
 
 void Model::initializeJointState(sensor_msgs::JointState& jointState) const {
   starleth_description::initializeJointStateForStarlETH(jointState);
-//  jointState.name.clear();
-//  jointState.position.clear();
-//  jointState.velocity.clear();
-//  jointState.effort.clear();
-//
-//  jointState.name.push_back("LF_HAA");
-//  jointState.name.push_back("LF_HFE");
-//  jointState.name.push_back("LF_KFE");
-//  jointState.name.push_back("RF_HAA");
-//  jointState.name.push_back("RF_HFE");
-//  jointState.name.push_back("RF_KFE");
-//  jointState.name.push_back("LH_HAA");
-//  jointState.name.push_back("LH_HFE");
-//  jointState.name.push_back("LH_KFE");
-//  jointState.name.push_back("RH_HAA");
-//  jointState.name.push_back("RH_HFE");
-//  jointState.name.push_back("RH_KFE");
-//
-//  for (int i=0; i<12;i++) {
-//    jointState.position.push_back(0.0);
-//    jointState.velocity.push_back(0.0);
-//    jointState.effort.push_back(0.0);
-//  }
 }
 
 void Model::getRobotState(starleth_msgs::RobotStatePtr& robotState) {
@@ -530,6 +493,45 @@ void Model::getSeActuatorCommands(starleth_msgs::SeActuatorCommandsPtr& actuator
   }
 }
 
+void Model::getPose(geometry_msgs::PoseWithCovarianceStampedPtr& pose) {
+
+  const Position positionWorldToBaseInWorldFrame = Position(
+      robotModel_->kin()[robotModel::JT_World2Base_CSw]->getPos());
+
+  kindr::rotations::eigen_impl::RotationQuaternionAD rquatWorldToBaseActive(
+      robotModel_->est().getActualEstimator()->getQuat());
+  const RotationQuaternion  orientationWorldToBase = rquatWorldToBaseActive.getPassive();
+
+  pose->header.stamp = updateStamp_;
+  pose->pose.pose.position.x = positionWorldToBaseInWorldFrame.x();
+  pose->pose.pose.position.y =  positionWorldToBaseInWorldFrame.y();
+  pose->pose.pose.position.z =  positionWorldToBaseInWorldFrame.z();
+  pose->pose.pose.orientation.w = orientationWorldToBase.w();
+  pose->pose.pose.orientation.x = orientationWorldToBase.x();
+  pose->pose.pose.orientation.y = orientationWorldToBase.y();
+  pose->pose.pose.orientation.z = orientationWorldToBase.z();
+
+  robotModel::EstimatorBase::CovarianceMatrix covariance = robotModel_->est().getActualEstimator()->getEstimateCovariance();
+
+  // Variances of pose and twist
+  Eigen::Matrix<double, 12, 6, Eigen::RowMajor> varianceSlMessage;
+  varianceSlMessage.topRows(6) = covariance.block<6,6>(0,0);
+  varianceSlMessage.bottomRows(6) = covariance.block<6,6>(6,6);
+
+  unsigned int covarianceSize = 36;
+
+  for (int i = 0; i < covarianceSize; i++) {
+    pose->pose.covariance.elems[i] = varianceSlMessage(i);
+  }
+
+
+}
+
+void Model::getTwist(geometry_msgs::TwistWithCovarianceStampedPtr& pose) {
+  // todo: implement
+}
+
+
 void Model::setJoystickCommands(const sensor_msgs::Joy::ConstPtr& msg) {
   for (int i=0; i<msg->axes.size();i++) {
     robotModel_->sensors().getJoystick()->setAxis(i+1, msg->axes[i]);
@@ -543,5 +545,11 @@ void Model::setContactForceThreshold(double value) {
 	contactForceThreshold_ = value;
 }
 
+
+void Model::setCommandVelocity(const geometry_msgs::Twist::ConstPtr& msg) {
+	 robotModel_->sensors().getDesRobotVelocity()->setDesSagittalVelocity(msg->linear.x);
+	 robotModel_->sensors().getDesRobotVelocity()->setDesCoronalVelocity(msg->linear.y);
+	 robotModel_->sensors().getDesRobotVelocity()->setDesTurningRate(msg->angular.z);
+}
 
 } /* namespace model */
