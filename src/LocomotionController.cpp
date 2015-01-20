@@ -185,6 +185,12 @@ void LocomotionController::updateControllerAndPublish(const starleth_msgs::Robot
   if (elapsedTimeNSecs > timeStep) {
     NODEWRAP_WARN("Computation of locomotion controller is not real-time! Elapsed time: %lf ms\n", (double)elapsedTimeNSecs*1e-6);
   }
+  if (elapsedTimeNSecs > timeStep*10) {
+      NODEWRAP_ERROR("Computation took more than 10 times the maximum allowed computation time (%lf ms)!", timeStep_*1e-3);
+      std::lock_guard<std::mutex> lock(mutexModelAndControllerManager_);
+      controllerManager_.emergencyStop();
+  }
+
   //---
 }
 
