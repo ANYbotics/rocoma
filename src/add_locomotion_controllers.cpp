@@ -50,18 +50,16 @@ namespace locomotion_controller {
 void add_locomotion_controllers(locomotion_controller::ControllerManager* manager, robotModel::State& state, robotModel::Command& command, ros::NodeHandle& nodeHandle) {
 
 #ifdef USE_TASK_LOCODEMO
-   auto controllerLocoDemo = new ControllerRos<robotTask::LocoDemo>(state, command);
-   controllerLocoDemo->setControllerManager(manager);
-   controllerLocoDemo->setIsCheckingState(false);
-   controllerLocoDemo->setIsRealRobotFromSl(manager->isRealRobot());
-   manager->addController(controllerLocoDemo);
+  auto controllerLocoDemo = new ControllerRos<robotTask::LocoDemo>(state, command);
+  controllerLocoDemo->setControllerManager(manager);
+  controllerLocoDemo->setIsRealRobotFromManager(manager->isRealRobot());
+  manager->addController(controllerLocoDemo);
 #endif
 
 #ifdef USE_TASK_LOCOCRAWLING
    auto controllerCrawling = new ControllerRos<robotTask::Crawling>(state, command);
    controllerCrawling->setControllerManager(manager);
-   controllerCrawling->setIsCheckingState(false);
-   controllerCrawling->setIsRealRobotFromSl(manager->isRealRobot());
+   controllerCrawling->setIsRealRobotFromManager(manager->isRealRobot());
 #ifdef USE_ROS_TASK_WRAPPER
    controllerCrawling->setNodeHandle(nodeHandle);
 #endif
@@ -71,8 +69,7 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
 #ifdef USE_TASK_LOCOFREEGAIT
    auto controllerFreeGait = new ControllerRos<robotTask::FreeGait>(state, command);
    controllerFreeGait->setControllerManager(manager);
-   controllerFreeGait->setIsCheckingState(false);
-   controllerFreeGait->setIsRealRobotFromSl(manager->isRealRobot());
+   controllerFreeGait->setIsRealRobotFromManager(manager->isRealRobot());
    manager->addController(controllerFreeGait);
 #endif
 

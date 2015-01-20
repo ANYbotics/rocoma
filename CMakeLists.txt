@@ -85,7 +85,7 @@ find_package(Eigen3 REQUIRED)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
  INCLUDE_DIRS include $ENV{LAB_ROOT}/starlethModel/include $ENV{LAB_ROOT}/robotUtils/include
- LIBRARIES locomotion_controller model
+ LIBRARIES locomotion_controller model robotUtils
  CATKIN_DEPENDS roscpp_nodewrap locomotion_controller_msgs starleth_description
 # DEPENDS system_lib
 )
@@ -98,6 +98,9 @@ catkin_package(
 # Exclude dynamics in robot model
 if (NOT RM_EXCLUDE_DYNAMICS) 
 add_definitions( -DRM_EXCLUDE_DYNAMICS) 
+endif()
+if (PLAY_AUDIO) 
+add_definitions( -DPLAY_AUDIO) 
 endif()
 set(STANDALONE ON CACHE BOOL "standalone")
 set(ISSUBDIRECTORY ON CACHE BOOL "issubdir")

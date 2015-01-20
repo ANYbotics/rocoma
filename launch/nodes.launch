@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?> 
-<launch>
-    <node name="joystick" pkg="joy" type="joy_node" >
-      <remap from="/joy" to="/locomotion_controller/sensors/joy" />
-    </node>
-	<include file="$(find locomotion_controller)/launch/default_locomotion_controller.launch" />
-    <include file="$(find mule_simulator)/launch/default_mule_simulator.launch" />
-    <include file="$(find state_estimator_rm)/launch/default_state_estimator_rm.launch" />
-</launch>

@@ -84,7 +84,7 @@ class ControllerRos:  public roco::controllers::ControllerAdapterInterface, publ
   virtual bool isCheckingState() const;
   virtual void setIsCheckingState(bool isChecking);
   virtual bool isRealRobot() const;
-  virtual void setIsRealRobotFromSl(bool isRealRobot);
+  virtual void setIsRealRobotFromManager(bool isRealRobot);
   virtual void setIsRealRobot(bool isRealRobot);
   virtual const State& getState() const;
   virtual const Command& getCommand() const;
