@@ -62,7 +62,9 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
    controllerCrawling->setControllerManager(manager);
    controllerCrawling->setIsCheckingState(false);
    controllerCrawling->setIsRealRobotFromSl(manager->isRealRobot());
+#ifdef USE_ROS_TASK_WRAPPER
    controllerCrawling->setNodeHandle(nodeHandle);
+#endif
    manager->addController(controllerCrawling);
 #endif
 
