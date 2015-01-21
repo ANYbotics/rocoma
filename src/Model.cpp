@@ -172,14 +172,12 @@ void Model::addVariablesToLog() {
        "RF_HAA_th", "RF_HFE_th", "RF_KFE_th",
        "LH_HAA_th", "LH_HFE_th", "LH_KFE_th",
        "RH_HAA_th", "RH_HFE_th", "RH_KFE_th";
-//  robotUtils::logger->addToLog(measPositions, names);
   robotUtils::logger->addDoubleEigenMatrixToLog(state_.getJointPositions().toImplementation(), names);
 
   names << "LF_HAA_thd", "LF_HFE_thd", "LF_KFE_thd",
        "RF_HAA_thd", "RF_HFE_thd", "RF_KFE_thd",
        "LH_HAA_thd", "LH_HFE_thd", "LH_KFE_thd",
        "RH_HAA_thd", "RH_HFE_thd", "RH_KFE_thd";
-//  robotUtils::logger->addToLog(measVelocities, names);
   robotUtils::logger->addDoubleEigenMatrixToLog(state_.getJointVelocities().toImplementation(), names);
 
   names << "LF_HAA_load", "LF_HFE_load", "LF_KFE_load",

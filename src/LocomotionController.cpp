@@ -51,6 +51,7 @@
 
 #include <chrono>
 #include <cstdint>
+#include <string>
 
 NODEWRAP_EXPORT_CLASS(locomotion_controller, locomotion_controller::LocomotionController)
 
@@ -75,14 +76,22 @@ void LocomotionController::init() {
   //--- Read parameters.
   getNodeHandle().param<double>("controller/time_step", timeStep_, 0.0025);
   getNodeHandle().param<bool>("controller/is_real_robot", isRealRobot_, false);
+
   //---
 
   //--- Configure logger.
-  std::string loggingScriptFileName = ros::package::getPath("locomotion_controller") + std::string{"/config/logging.script"};
+  std::string loggingScriptFilename;
+  getNodeHandle().param<std::string>("logger/script", loggingScriptFilename, "");
+  if (loggingScriptFilename.empty()){
+    loggingScriptFilename = ros::package::getPath("locomotion_controller") + std::string{"/config/logging.script"};
+  }
+  double samplingTime;
+  getNodeHandle().param<double>("logger/sampling_time", samplingTime, 60.0);
+  NODEWRAP_INFO("Initialize logger with sampling time: %lfs and script: %s.", samplingTime, loggingScriptFilename.c_str());
   robotUtils::logger.reset(new robotUtils::LoggerStd);
   robotUtils::LoggerStd* loggerStd = static_cast<robotUtils::LoggerStd*>(robotUtils::logger.get());
   loggerStd->setVerboseLevel(robotUtils::LoggerStd::VL_DEBUG);
-  robotUtils::logger->initLogger((int)(1.0/timeStep_), (int)(1.0/timeStep_), 60, loggingScriptFileName);
+  robotUtils::logger->initLogger((int)(1.0/timeStep_), (int)(1.0/timeStep_), samplingTime, loggingScriptFilename);
   //---
 
   //--- Configure controllers
