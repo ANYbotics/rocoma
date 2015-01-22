@@ -142,6 +142,10 @@ void LocomotionController::initializePublishers() {
 void LocomotionController::initializeSubscribers() {
   joystickSubscriber_ = subscribe("joy", "/joy", 100, &LocomotionController::joystickCallback, ros::TransportHints().tcpNoDelay());
   commandVelocitySubscriber_ = subscribe("command_velocity", "/command_velocity", 100, &LocomotionController::commandVelocityCallback, ros::TransportHints().tcpNoDelay());
+  //--- temporary
+  mocapSubscriber_ = subscribe("mocap", "mocap", 100, &LocomotionController::mocapCallback, ros::TransportHints().tcpNoDelay());
+  seActuatorStatesSubscriber_ = subscribe("actuator_states", "/actuator_states", 100, &LocomotionController::seActuatorStatesCallback, ros::TransportHints().tcpNoDelay());
+  //---
 
   // this should be last since it will start the controller loop
   robotStateSubscriber_ = subscribe("robot_state", "/robot", 100, &LocomotionController::robotStateCallback, ros::TransportHints().tcpNoDelay());
@@ -204,6 +208,7 @@ void LocomotionController::updateControllerAndPublish(const starleth_msgs::Robot
 }
 
 void LocomotionController::joystickCallback(const sensor_msgs::Joy::ConstPtr& msg) {
+  std::lock_guard<std::mutex> lock(mutexJoystick_);
   std::lock_guard<std::mutex> lockControllerManager(mutexModelAndControllerManager_);
   model_.setJoystickCommands(msg);
 
@@ -257,5 +262,15 @@ void LocomotionController::commandVelocityCallback(const geometry_msgs::Twist::C
 	model_.setCommandVelocity(msg);
 }
 
+void LocomotionController::mocapCallback(const geometry_msgs::TransformStamped::ConstPtr& msg)
+{
+  std::lock_guard<std::mutex> lock(mutexModelAndControllerManager_);
+  model_.setMocapData(msg);
+}
+
+void LocomotionController::seActuatorStatesCallback(const starleth_msgs::SeActuatorStates::ConstPtr& msg) {
+  std::lock_guard<std::mutex> lock(mutexModelAndControllerManager_);
+  model_.setSeActuatorStates(msg);
+}
 
 } /* namespace locomotion_controller */

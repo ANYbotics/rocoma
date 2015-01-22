@@ -11,3 +11,11 @@ subscribers:
     topic: /pose_controller/command_velocity
     queue_size: 100
     latch: false
+  actuator_states: 
+    topic: /sensors/actuator_states
+    queue_size: 100
+    latch: false
+  mocap: 
+    topic: /starleth/pose
+    queue_size: 100
+    latch: false

@@ -550,4 +550,25 @@ void Model::setCommandVelocity(const geometry_msgs::Twist::ConstPtr& msg) {
 	 robotModel_->sensors().getDesRobotVelocity()->setDesTurningRate(msg->angular.z);
 }
 
+void Model::setMocapData(const geometry_msgs::TransformStamped::ConstPtr& msg) {
+  robotModel_->sensors().getMocap()->setTimeStamp(msg->header.stamp.toSec());
+  robotModel_->sensors().getMocap()->setTranslation(Eigen::Vector3d(msg->transform.translation.x, msg->transform.translation.y, msg->transform.translation.z));
+  robotModel_->sensors().getMocap()->setRotation(Eigen::Quaterniond(msg->transform.rotation.w, msg->transform.rotation.x, msg->transform.rotation.y, msg->transform.rotation.z));
+}
+
+void Model::setSeActuatorStates(const starleth_msgs::SeActuatorStates::ConstPtr& msg) {
+  robotModel::VectorQj motorPositions;
+  robotModel::VectorQj motorVelocities;
+  robotModel::VectorQj motorDesiredVelocities;
+
+  for (int i=0; i<motorPositions.size(); i++) {
+    motorPositions[i] = msg->readings[i].motorPosition;
+    motorVelocities[i] = msg->readings[i].motorVelocity;
+    motorDesiredVelocities[i] = msg->readings[i].motorDesiredVelocity;
+  }
+  robotModel_->sensors().setMotorPos(motorPositions);
+  robotModel_->sensors().setMotorVel(motorVelocities);
+  robotModel_->sensors().setDesiredMotorVel(motorDesiredVelocities);
+}
+
 } /* namespace model */
