@@ -87,11 +87,12 @@ void LocomotionController::init() {
   }
   double samplingTime;
   getNodeHandle().param<double>("logger/sampling_time", samplingTime, 60.0);
-  NODEWRAP_INFO("Initialize logger with sampling time: %lfs and script: %s.", samplingTime, loggingScriptFilename.c_str());
+
   robotUtils::logger.reset(new robotUtils::LoggerStd);
   robotUtils::LoggerStd* loggerStd = static_cast<robotUtils::LoggerStd*>(robotUtils::logger.get());
   loggerStd->setVerboseLevel(robotUtils::LoggerStd::VL_DEBUG);
   robotUtils::logger->initLogger((int)(1.0/timeStep_), (int)(1.0/timeStep_), samplingTime, loggingScriptFilename);
+  NODEWRAP_INFO("Initialize logger with sampling time: %lfs, sampling frequency: %d and script: %s.", samplingTime, (int)(1.0/timeStep_), loggingScriptFilename.c_str());
   //---
 
   //--- Configure controllers
