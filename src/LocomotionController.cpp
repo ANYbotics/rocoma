@@ -51,6 +51,7 @@
 
 #include <chrono>
 #include <cstdint>
+#include <string>
 
 NODEWRAP_EXPORT_CLASS(locomotion_controller, locomotion_controller::LocomotionController)
 
@@ -75,14 +76,22 @@ void LocomotionController::init() {
   //--- Read parameters.
   getNodeHandle().param<double>("controller/time_step", timeStep_, 0.0025);
   getNodeHandle().param<bool>("controller/is_real_robot", isRealRobot_, false);
+
   //---
 
   //--- Configure logger.
-  std::string loggingScriptFileName = ros::package::getPath("locomotion_controller") + std::string{"/config/logging.script"};
+  std::string loggingScriptFilename;
+  getNodeHandle().param<std::string>("logger/script", loggingScriptFilename, "");
+  if (loggingScriptFilename.empty()){
+    loggingScriptFilename = ros::package::getPath("locomotion_controller") + std::string{"/config/logging.script"};
+  }
+  double samplingTime;
+  getNodeHandle().param<double>("logger/sampling_time", samplingTime, 60.0);
+  NODEWRAP_INFO("Initialize logger with sampling time: %lfs and script: %s.", samplingTime, loggingScriptFilename.c_str());
   robotUtils::logger.reset(new robotUtils::LoggerStd);
   robotUtils::LoggerStd* loggerStd = static_cast<robotUtils::LoggerStd*>(robotUtils::logger.get());
   loggerStd->setVerboseLevel(robotUtils::LoggerStd::VL_DEBUG);
-  robotUtils::logger->initLogger((int)(1.0/timeStep_), (int)(1.0/timeStep_), 60, loggingScriptFileName);
+  robotUtils::logger->initLogger((int)(1.0/timeStep_), (int)(1.0/timeStep_), samplingTime, loggingScriptFilename);
   //---
 
   //--- Configure controllers
@@ -133,6 +142,10 @@ void LocomotionController::initializePublishers() {
 void LocomotionController::initializeSubscribers() {
   joystickSubscriber_ = subscribe("joy", "/joy", 100, &LocomotionController::joystickCallback, ros::TransportHints().tcpNoDelay());
   commandVelocitySubscriber_ = subscribe("command_velocity", "/command_velocity", 100, &LocomotionController::commandVelocityCallback, ros::TransportHints().tcpNoDelay());
+  //--- temporary
+  mocapSubscriber_ = subscribe("mocap", "mocap", 100, &LocomotionController::mocapCallback, ros::TransportHints().tcpNoDelay());
+  seActuatorStatesSubscriber_ = subscribe("actuator_states", "/actuator_states", 100, &LocomotionController::seActuatorStatesCallback, ros::TransportHints().tcpNoDelay());
+  //---
 
   // this should be last since it will start the controller loop
   robotStateSubscriber_ = subscribe("robot_state", "/robot", 100, &LocomotionController::robotStateCallback, ros::TransportHints().tcpNoDelay());
@@ -196,6 +209,7 @@ void LocomotionController::updateControllerAndPublish(const starleth_msgs::Robot
 }
 
 void LocomotionController::joystickCallback(const sensor_msgs::Joy::ConstPtr& msg) {
+  std::lock_guard<std::mutex> lock(mutexJoystick_);
   std::lock_guard<std::mutex> lockControllerManager(mutexModelAndControllerManager_);
   model_.setJoystickCommands(msg);
 
@@ -249,5 +263,15 @@ void LocomotionController::commandVelocityCallback(const geometry_msgs::Twist::C
 	model_.setCommandVelocity(msg);
 }
 
+void LocomotionController::mocapCallback(const geometry_msgs::TransformStamped::ConstPtr& msg)
+{
+  std::lock_guard<std::mutex> lock(mutexModelAndControllerManager_);
+  model_.setMocapData(msg);
+}
+
+void LocomotionController::seActuatorStatesCallback(const starleth_msgs::SeActuatorStates::ConstPtr& msg) {
+  std::lock_guard<std::mutex> lock(mutexModelAndControllerManager_);
+  model_.setSeActuatorStates(msg);
+}
 
 } /* namespace locomotion_controller */

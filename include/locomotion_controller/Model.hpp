@@ -44,9 +44,11 @@
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/TwistWithCovarianceStamped.h>
+#include <geometry_msgs/TransformStamped.h>
 #include <starleth_msgs/RobotState.h>
 #include <sensor_msgs/Joy.h>
 #include <starleth_msgs/SeActuatorCommands.h>
+#include <starleth_msgs/SeActuatorStates.h>
 
 #include <starlethModel/State.hpp>
 #include <starlethModel/Command.hpp>
@@ -100,6 +102,8 @@ class Model
 
   void setJoystickCommands(const sensor_msgs::Joy::ConstPtr& msg);
   void setCommandVelocity(const geometry_msgs::Twist::ConstPtr& msg);
+  void setMocapData(const geometry_msgs::TransformStamped::ConstPtr& msg);
+  void setSeActuatorStates(const starleth_msgs::SeActuatorStates::ConstPtr& msg);
 
   robotModel::RobotModel* getRobotModel();
   robotTerrain::TerrainBase* getTerrainModel();
