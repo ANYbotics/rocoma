@@ -113,6 +113,7 @@ class LocomotionController : public nodewrap::NodeImpl
 
   std::mutex mutexJointCommands_;
   std::mutex mutexModelAndControllerManager_;
+  std::mutex mutexUpdateControllerAndPublish_;
 
 };
 

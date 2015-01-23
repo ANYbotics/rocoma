@@ -165,6 +165,7 @@ void LocomotionController::updateControllerAndPublish(const starleth_msgs::Robot
   std::chrono::time_point<std::chrono::steady_clock> start, end;
   start = std::chrono::steady_clock::now();
   //---
+  std::lock_guard<std::mutex> lockUpdateControllerAndPublish(mutexUpdateControllerAndPublish_);
 
   NODEWRAP_DEBUG("Update locomotion controller.");
 
