@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   starleth_description
   locomotion_controller_msgs
   roco
+  robot_utils
 )
 
 ## System dependencies are found with CMake's conventions
@@ -86,8 +87,8 @@ find_package(Eigen3 REQUIRED)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
  INCLUDE_DIRS include $ENV{LAB_ROOT}/starlethModel/include $ENV{LAB_ROOT}/robotUtils/include
- LIBRARIES locomotion_controller model robotUtils
- CATKIN_DEPENDS roscpp_nodewrap locomotion_controller_msgs starleth_description roco
+ LIBRARIES locomotion_controller model
+ CATKIN_DEPENDS roscpp_nodewrap locomotion_controller_msgs starleth_description roco robot_utils
 # DEPENDS system_lib
 )
 
@@ -111,7 +112,7 @@ add_definitions( -DUSE_ROS)
 include($ENV{LAB_ROOT}/starlethTask/cmake/tasks_add_definitions.cmake)
 add_subdirectory($ENV{LAB_ROOT}/starlethTask starlethTask)
 add_subdirectory($ENV{LAB_ROOT}/starlethModel starlethModel)
-add_subdirectory($ENV{LAB_ROOT}/robotUtils robotUtils)
+#add_subdirectory($ENV{LAB_ROOT}/robotUtils robotUtils)
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
@@ -121,7 +122,7 @@ include_directories(${Kindr_INCLUDE_DIRS})
 include_directories(${catkin_INCLUDE_DIRS})
 include_directories($ENV{LAB_ROOT}/starlethTask/include)
 include_directories($ENV{LAB_ROOT}/starlethModel/include)
-include_directories($ENV{LAB_ROOT}/robotUtils/include)
+#include_directories($ENV{LAB_ROOT}/robotUtils/include)
 include_directories(${TASK_INCL})
 
 
@@ -131,7 +132,7 @@ add_library(model
 )
 target_link_libraries(model
    starlethRobotModel
-   robotUtils
+   #robotUtils
    ${catkin_LIBRARIES}
 )
 
@@ -142,7 +143,7 @@ add_library(locomotion_controller
   src/LocomotionController.cpp
 )
 
-add_dependencies(locomotion_controller locomotion_controller_msgs_generate_messages_cpp roco)
+add_dependencies(locomotion_controller locomotion_controller_msgs_generate_messages_cpp roco robot_utils)
 
 
 target_link_libraries(locomotion_controller
@@ -151,7 +152,7 @@ target_link_libraries(locomotion_controller
    starlethTask
    ${TASK_LIBS}
    starlethRobotModel
-   robotUtils
+   #robotUtils
 )
 
 add_executable(locomotion_controller_node src/locomotion_controller_node.cpp)
@@ -163,7 +164,7 @@ target_link_libraries(locomotion_controller_node
    starlethTask
    ${TASK_LIBS}
    starlethRobotModel
-   robotUtils
+   #robotUtils
 )
 
 
