@@ -46,6 +46,7 @@
 
 #include <robotUtils/loggers/logger.hpp>
 #include <robotUtils/loggers/LoggerStd.hpp>
+#include <robotUtils/loggers/LoggerRos.hpp>
 
 #include <ros/package.h>
 
@@ -76,7 +77,6 @@ void LocomotionController::init() {
   //--- Read parameters.
   getNodeHandle().param<double>("controller/time_step", timeStep_, 0.0025);
   getNodeHandle().param<bool>("controller/is_real_robot", isRealRobot_, false);
-
   //---
 
   //--- Configure logger.
@@ -88,9 +88,20 @@ void LocomotionController::init() {
   double samplingTime;
   getNodeHandle().param<double>("logger/sampling_time", samplingTime, 60.0);
   NODEWRAP_INFO("Initialize logger with sampling time: %lfs and script: %s.", samplingTime, loggingScriptFilename.c_str());
-  robotUtils::logger.reset(new robotUtils::LoggerStd);
-  robotUtils::LoggerStd* loggerStd = static_cast<robotUtils::LoggerStd*>(robotUtils::logger.get());
-  loggerStd->setVerboseLevel(robotUtils::LoggerStd::VL_DEBUG);
+
+  std::string loggerClass;
+  getNodeHandle().param<std::string>("logger/class", loggerClass, "std");
+  if (!loggerClass.compare("ros")) {
+    // initialize ros logger
+    robotUtils::logger.reset(new robotUtils::LoggerRos());
+
+  } else {
+    // initialize std logger as fallback logger
+    robotUtils::logger.reset(new robotUtils::LoggerStd());
+    robotUtils::LoggerStd* loggerStd = static_cast<robotUtils::LoggerStd*>(robotUtils::logger.get());
+    loggerStd->setVerboseLevel(robotUtils::LoggerStd::VL_DEBUG);
+  }
+
   robotUtils::logger->initLogger((int)(1.0/timeStep_), (int)(1.0/timeStep_), samplingTime, loggingScriptFilename);
   //---
 
