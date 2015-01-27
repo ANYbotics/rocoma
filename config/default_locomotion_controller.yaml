@@ -3,4 +3,6 @@ controller:
   is_real_robot: false
 
 logger:
-  class: ros
+  sampling_time: 60
+  script: ""
+  class: "ros"

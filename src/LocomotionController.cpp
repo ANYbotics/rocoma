@@ -93,7 +93,7 @@ void LocomotionController::init() {
   getNodeHandle().param<std::string>("logger/class", loggerClass, "std");
   if (!loggerClass.compare("ros")) {
     // initialize ros logger
-    robotUtils::logger.reset(new robotUtils::LoggerRos());
+    robotUtils::logger.reset(new robotUtils::LoggerRos(getNodeHandle()));
 
   } else {
     // initialize std logger as fallback logger
