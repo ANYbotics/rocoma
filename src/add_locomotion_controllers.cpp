@@ -33,8 +33,7 @@
 #include <locomotion_controller/ControllerManager.hpp>
 #include <locomotion_controller/ControllerRos.hpp>
 
-#include <robotTask/tasks/tasks.hpp>
-
+#include <roco_assembly/controllers.hpp>
 
 namespace locomotion_controller {
 
