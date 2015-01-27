@@ -33,17 +33,7 @@
 #include <locomotion_controller/ControllerManager.hpp>
 #include <locomotion_controller/ControllerRos.hpp>
 
-#ifdef USE_TASK_LOCODEMO
-#include "LocoDemo_Task.hpp"
-#endif
-
-#ifdef USE_TASK_LOCOCRAWLING
-#include "Crawling_Task.hpp"
-#endif
-
-#ifdef USE_TASK_LOCOFREEGAIT
-#include "FreeGait_Task.hpp"
-#endif
+#include <roco_assembly/controllers.hpp>
 
 namespace locomotion_controller {
 

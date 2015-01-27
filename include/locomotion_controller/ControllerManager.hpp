@@ -40,8 +40,8 @@
 
 #include <locomotion_controller/Model.hpp>
 
-#include "robotTask/tasks/TaskRobotBase.hpp"
-#include "robotTask/tasks/tasks.hpp"
+#include "roco_freeze/RocoFreeze.hpp"
+//#include "robotTask/tasks/tasks.hpp"
 #include <roco/controllers/ControllerInterface.hpp>
 #include <starlethModel/State.hpp>
 #include <starlethModel/Command.hpp>

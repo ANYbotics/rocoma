@@ -3,9 +3,22 @@ project(locomotion_controller)
 
 set(CMAKE_CXX_FLAGS "-std=c++11")
 
-## Find catkin macros and libraries
-## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-## is used, also find other catkin packages
+
+# Exclude dynamics in robot model
+if (NOT RM_EXCLUDE_DYNAMICS) 
+add_definitions( -DRM_EXCLUDE_DYNAMICS) 
+endif()
+if (PLAY_AUDIO) 
+add_definitions( -DPLAY_AUDIO) 
+endif()
+
+set(STANDALONE ON CACHE BOOL "standalone")
+set(ISSUBDIRECTORY ON CACHE BOOL "issubdir")
+add_definitions(-DUSE_ROS) 
+set(USE_ROS ON CACHE BOOL "use ros") 
+
+find_package(catkin REQUIRED COMPONENTS roco_assembly)
+
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   nodelet
@@ -15,7 +28,13 @@ find_package(catkin REQUIRED COMPONENTS
   roco
   robot_utils
   robot_model
+  roco_freeze
+  roco_assembly
+  ${CATKIN_ROCO_PKGS}
 )
+
+
+
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -89,7 +108,7 @@ find_package(Eigen3 REQUIRED)
 catkin_package(
  INCLUDE_DIRS include 
  LIBRARIES locomotion_controller model
- CATKIN_DEPENDS roscpp_nodewrap locomotion_controller_msgs starleth_description roco robot_utils robot_model
+ CATKIN_DEPENDS roscpp_nodewrap locomotion_controller_msgs starleth_description roco robot_utils robot_model roco_freeze
 # DEPENDS system_lib
 )
 
@@ -98,20 +117,10 @@ catkin_package(
 ###########
 
 
-# Exclude dynamics in robot model
-if (NOT RM_EXCLUDE_DYNAMICS) 
-add_definitions( -DRM_EXCLUDE_DYNAMICS) 
-endif()
-if (PLAY_AUDIO) 
-add_definitions( -DPLAY_AUDIO) 
-endif()
 
-set(STANDALONE ON CACHE BOOL "standalone")
-set(ISSUBDIRECTORY ON CACHE BOOL "issubdir")
-set(USE_TASK_NOTASKROS ON CACHE BOOL "notask")
-add_definitions( -DUSE_ROS) 
-include($ENV{LAB_ROOT}/starlethTask/cmake/tasks_add_definitions.cmake)
-add_subdirectory($ENV{LAB_ROOT}/starlethTask starlethTask)
+
+#include(tasks_add_definitions.cmake)
+#add_subdirectory($ENV{LAB_ROOT}/starlethTask starlethTask)
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
@@ -119,8 +128,8 @@ include_directories(include)
 include_directories(${EIGEN3_INCLUDE_DIR})
 include_directories(${Kindr_INCLUDE_DIRS})
 include_directories(${catkin_INCLUDE_DIRS})
-include_directories($ENV{LAB_ROOT}/starlethTask/include)
-include_directories(${TASK_INCL})
+#include_directories($ENV{LAB_ROOT}/starlethTask/include)
+#include_directories(${TASK_INCL})
 
 
 
@@ -138,14 +147,12 @@ add_library(locomotion_controller
   src/LocomotionController.cpp
 )
 
-add_dependencies(locomotion_controller locomotion_controller_msgs_generate_messages_cpp roco robot_utils robot_model)
+add_dependencies(locomotion_controller locomotion_controller_msgs_generate_messages_cpp roco robot_utils robot_model roco_freeze)
 
 
 target_link_libraries(locomotion_controller
     model
    ${catkin_LIBRARIES}
-   starlethTask
-   ${TASK_LIBS}
 )
 
 add_executable(locomotion_controller_node src/locomotion_controller_node.cpp)
@@ -154,8 +161,6 @@ target_link_libraries(locomotion_controller_node
    model
    locomotion_controller
    ${catkin_LIBRARIES}
-   starlethTask
-   ${TASK_LIBS}
 )
 
 
