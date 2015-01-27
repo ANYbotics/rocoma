@@ -54,7 +54,7 @@ void ControllerManager::setupControllers(double dt, robotModel::State& state, ro
   timeStep_ = dt;
 
   /* Create no task, which is active until estimator converged*/
-  auto controller = new ControllerRos<robotTask::NoTaskRos>(state, command);
+  auto controller = new ControllerRos<robot_controller::RocoFreeze>(state, command);
   controller->setControllerManager(this);
   //controller->setIsCheckingState(false);
   addController(controller);
