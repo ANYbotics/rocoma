@@ -42,6 +42,7 @@
 #include <sensor_msgs/Joy.h>
 #include <starleth_msgs/SeActuatorCommands.h>
 #include <geometry_msgs/Twist.h>
+#include <geometry_msgs/TransformStamped.h>
 
 #include "locomotion_controller/Model.hpp"
 #include "locomotion_controller/ControllerManager.hpp"
@@ -85,6 +86,8 @@ class LocomotionController : public nodewrap::NodeImpl
   bool emergencyStop(locomotion_controller_msgs::EmergencyStop::Request  &req,
                      locomotion_controller_msgs::EmergencyStop::Response &res);
   void commandVelocityCallback(const geometry_msgs::Twist::ConstPtr& msg);
+  void mocapCallback(const geometry_msgs::TransformStamped::ConstPtr& msg);
+  void seActuatorStatesCallback(const starleth_msgs::SeActuatorStates::ConstPtr& msg);
 
   void initializeMessages();
   void initializeServices();
@@ -102,6 +105,11 @@ class LocomotionController : public nodewrap::NodeImpl
   ros::Subscriber robotStateSubscriber_;
   ros::Subscriber joystickSubscriber_;
   ros::Subscriber commandVelocitySubscriber_;
+
+  // this is only temporary:
+  ros::Subscriber mocapSubscriber_;
+  ros::Subscriber seActuatorStatesSubscriber_;
+
   ros::Publisher jointCommandsPublisher_;
   ros::ServiceServer switchControllerService_;
   ros::ServiceServer emergencyStopService_;
@@ -112,6 +120,7 @@ class LocomotionController : public nodewrap::NodeImpl
 
 
   std::mutex mutexJointCommands_;
+  std::mutex mutexJoystick_;
   std::mutex mutexModelAndControllerManager_;
 
 };

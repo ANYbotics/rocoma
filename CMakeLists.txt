@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp_nodewrap
   starleth_description
   locomotion_controller_msgs
+  roco
 )
 
 ## System dependencies are found with CMake's conventions
@@ -86,7 +87,7 @@ find_package(Eigen3 REQUIRED)
 catkin_package(
  INCLUDE_DIRS include $ENV{LAB_ROOT}/starlethModel/include $ENV{LAB_ROOT}/robotUtils/include
  LIBRARIES locomotion_controller model robotUtils
- CATKIN_DEPENDS roscpp_nodewrap locomotion_controller_msgs starleth_description
+ CATKIN_DEPENDS roscpp_nodewrap locomotion_controller_msgs starleth_description roco
 # DEPENDS system_lib
 )
 
@@ -102,15 +103,15 @@ endif()
 if (PLAY_AUDIO) 
 add_definitions( -DPLAY_AUDIO) 
 endif()
+
 set(STANDALONE ON CACHE BOOL "standalone")
 set(ISSUBDIRECTORY ON CACHE BOOL "issubdir")
 set(USE_TASK_NOTASKROS ON CACHE BOOL "notask")
-
+add_definitions( -DUSE_ROS) 
 include($ENV{LAB_ROOT}/starlethTask/cmake/tasks_add_definitions.cmake)
 add_subdirectory($ENV{LAB_ROOT}/starlethTask starlethTask)
 add_subdirectory($ENV{LAB_ROOT}/starlethModel starlethModel)
 add_subdirectory($ENV{LAB_ROOT}/robotUtils robotUtils)
-add_subdirectory($ENV{LAB_ROOT}/roco roco)
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
@@ -121,7 +122,6 @@ include_directories(${catkin_INCLUDE_DIRS})
 include_directories($ENV{LAB_ROOT}/starlethTask/include)
 include_directories($ENV{LAB_ROOT}/starlethModel/include)
 include_directories($ENV{LAB_ROOT}/robotUtils/include)
-include_directories($ENV{LAB_ROOT}/roco/include)
 include_directories(${TASK_INCL})
 
 
@@ -132,7 +132,6 @@ add_library(model
 target_link_libraries(model
    starlethRobotModel
    robotUtils
-   roco
    ${catkin_LIBRARIES}
 )
 
@@ -143,7 +142,7 @@ add_library(locomotion_controller
   src/LocomotionController.cpp
 )
 
-add_dependencies(locomotion_controller locomotion_controller_msgs_generate_messages_cpp)
+add_dependencies(locomotion_controller locomotion_controller_msgs_generate_messages_cpp roco)
 
 
 target_link_libraries(locomotion_controller
@@ -152,7 +151,6 @@ target_link_libraries(locomotion_controller
    starlethTask
    ${TASK_LIBS}
    starlethRobotModel
-   roco
    robotUtils
 )
 
