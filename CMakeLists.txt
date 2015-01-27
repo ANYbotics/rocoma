@@ -15,10 +15,9 @@ endif()
 set(STANDALONE ON CACHE BOOL "standalone")
 set(ISSUBDIRECTORY ON CACHE BOOL "issubdir")
 add_definitions(-DUSE_ROS) 
+set(USE_ROS ON CACHE BOOL "use ros") 
 
 find_package(catkin REQUIRED COMPONENTS roco_assembly)
-
-message(STATUS "-----------------------------------------------> ${CONTROLLER_PKGS}")
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
