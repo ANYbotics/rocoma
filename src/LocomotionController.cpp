@@ -46,13 +46,12 @@
 
 #include <robotUtils/loggers/logger.hpp>
 #include <robotUtils/loggers/LoggerStd.hpp>
-#include <robotUtilsRos/loggers/LoggerRos.hpp>
-
 #include <ros/package.h>
 
 #include <chrono>
 #include <cstdint>
 #include <string>
+#include "robot_utils_ros/loggers/LoggerRos.hpp"
 
 NODEWRAP_EXPORT_CLASS(locomotion_controller, locomotion_controller::LocomotionController)
 
