@@ -46,7 +46,7 @@
 
 #include <robotUtils/loggers/logger.hpp>
 #include <robotUtils/loggers/LoggerStd.hpp>
-#include <robotUtils/loggers/LoggerRos.hpp>
+#include <robotUtilsRos/loggers/LoggerRos.hpp>
 
 #include <ros/package.h>
 
@@ -93,7 +93,7 @@ void LocomotionController::init() {
   getNodeHandle().param<std::string>("logger/class", loggerClass, "std");
   if (!loggerClass.compare("ros")) {
     // initialize ros logger
-    robotUtils::logger.reset(new robotUtils::LoggerRos(getNodeHandle()));
+    robotUtils::logger.reset(new robotUtilsRos::LoggerRos(getNodeHandle()));
 
   } else {
     // initialize std logger as fallback logger
