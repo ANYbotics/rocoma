@@ -131,6 +131,7 @@ void LocomotionController::initializeMessages() {
 
 void LocomotionController::initializeServices() {
   switchControllerService_ = getNodeHandle().advertiseService("switch_controller", &ControllerManager::switchController, &this->controllerManager_);
+  getActiveControllersService_ = getNodeHandle().advertiseService("get_active_controllers", &ControllerManager::getActiveControllers, &this->controllerManager_);
   emergencyStopService_ = advertiseService("emergency_stop", "/emergency_stop", &LocomotionController::emergencyStop);
   resetStateEstimatorClient_ = serviceClient<locomotion_controller_msgs::ResetStateEstimator>("reset_state_estimator", "/reset_state_estimator");
 }
