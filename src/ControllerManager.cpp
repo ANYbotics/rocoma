@@ -147,6 +147,17 @@ bool ControllerManager::switchController(locomotion_controller_msgs::SwitchContr
   return true;
 }
 
+bool ControllerManager::getAvailableControllers(locomotion_controller_msgs::GetAvailableControllers::Request &req,
+                                                locomotion_controller_msgs::GetAvailableControllers::Response &res)
+{
+
+  for (auto& controller : controllers_) {
+    res.available_controllers.push_back(controller.getName());
+  }
+
+  return true;
+}
+
 bool ControllerManager::isRealRobot() const {
 	return isRealRobot_;
 }
