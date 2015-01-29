@@ -37,7 +37,7 @@
 #include <ros/ros.h>
 #include <locomotion_controller_msgs/SwitchController.h>
 #include <locomotion_controller_msgs/EmergencyStop.h>
-#include <locomotion_controller_msgs/GetActiveControllers.h>
+#include <locomotion_controller_msgs/GetAvailableControllers.h>
 
 #include <locomotion_controller/Model.hpp>
 
@@ -69,8 +69,8 @@ class ControllerManager
   bool switchController(locomotion_controller_msgs::SwitchController::Request  &req,
                         locomotion_controller_msgs::SwitchController::Response &res);
 
-  bool getActiveControllers(locomotion_controller_msgs::GetActiveControllers::Request &req,
-                            locomotion_controller_msgs::GetActiveControllers::Response &res);
+  bool getAvailableControllers(locomotion_controller_msgs::GetAvailableControllers::Request &req,
+                               locomotion_controller_msgs::GetAvailableControllers::Response &res);
 
   bool emergencyStop();
   bool switchControllerAfterEmergencyStop();
@@ -82,7 +82,7 @@ class ControllerManager
   double timeStep_;
   bool isInitializingTask_;
   boost::ptr_vector<Controller> controllers_;
-  ControllerPtr activeController_;
+  ControllerPtr availableControllers_;
   bool isRealRobot_;
 };
 
