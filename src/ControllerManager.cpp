@@ -148,7 +148,7 @@ bool ControllerManager::switchController(locomotion_controller_msgs::SwitchContr
 }
 
 bool ControllerManager::getActiveControllers(locomotion_controller_msgs::GetActiveControllers::Request &req,
-                          locomotion_controller_msgs::GetActiveControllers::Response &res)
+                                             locomotion_controller_msgs::GetActiveControllers::Response &res)
 {
 
   for (auto& controller : controllers_) {
