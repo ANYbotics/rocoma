@@ -40,7 +40,7 @@ ControllerManager::ControllerManager() :
     timeStep_(0.0),
     isInitializingTask_(false),
     controllers_(),
-    activeControllers_(nullptr),
+    activeController_(nullptr),
     isRealRobot_(false)
 {
 
@@ -58,9 +58,9 @@ void ControllerManager::setupControllers(double dt, robotModel::State& state, ro
   controller->setControllerManager(this);
   //controller->setIsCheckingState(false);
   addController(controller);
-  activeControllers_ = &controllers_.back();
+  activeController_ = &controllers_.back();
 
-  if (!activeControllers_->initializeController(timeStep_)) {
+  if (!activeController_->initializeController(timeStep_)) {
     ROS_FATAL("Could not initialized NoTask!");
   }
 
@@ -86,11 +86,11 @@ void ControllerManager::addController(ControllerPtr controller)  {
 
 
 void ControllerManager::updateController() {
-  activeControllers_->advanceController(timeStep_);
+  activeController_->advanceController(timeStep_);
 }
 
 bool ControllerManager::emergencyStop() {
- activeControllers_->stopController();
+ activeController_->stopController();
  return true;
 }
 
@@ -102,8 +102,8 @@ bool ControllerManager::switchControllerAfterEmergencyStop() {
 void ControllerManager::switchToEmergencyTask() {
   for (auto& controller : controllers_) {
     if (controller.getName() == "No Task") {
-      activeControllers_ = &controller;
-      activeControllers_->initializeController(timeStep_);
+      activeController_ = &controller;
+      activeController_->initializeController(timeStep_);
       return;
     }
   }
@@ -116,7 +116,7 @@ bool ControllerManager::switchController(locomotion_controller_msgs::SwitchContr
 {
 
   //--- Check if controller is already active
-  if (req.name == activeControllers_->getName()) {
+  if (req.name == activeController_->getName()) {
     res.status = res.STATUS_RUNNING;
     ROS_INFO("Controller is already running!");
     return true;
@@ -131,7 +131,7 @@ bool ControllerManager::switchController(locomotion_controller_msgs::SwitchContr
       if (initController->isInitialized()) {
         res.status = res.STATUS_SWITCHED;
         ROS_INFO("Switched to controller %s", initController->getName().c_str());
-        activeControllers_ = initController;
+        activeController_ = initController;
       }
       else {
         // switch to no task
@@ -152,7 +152,7 @@ bool ControllerManager::getAvailableControllers(locomotion_controller_msgs::GetA
 {
 
   for (auto& controller : controllers_) {
-    res.availableControllers.push_back(controller.getName());
+    res.available_controllers.push_back(controller.getName());
   }
 
   return true;

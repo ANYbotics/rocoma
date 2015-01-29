@@ -82,7 +82,7 @@ class ControllerManager
   double timeStep_;
   bool isInitializingTask_;
   boost::ptr_vector<Controller> controllers_;
-  ControllerPtr activeControllers_;
+  ControllerPtr activeController_;
   bool isRealRobot_;
 };
 
