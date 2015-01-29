@@ -47,7 +47,7 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
 #endif
 
 #ifdef USE_TASK_LOCOCRAWLING
-   auto controllerCrawling = new ControllerRos<robotTask::Crawling>(state, command);
+   auto controllerCrawling = new ControllerRos<loco_crawling::Crawling>(state, command);
    controllerCrawling->setControllerManager(manager);
    controllerCrawling->setIsRealRobotFromManager(manager->isRealRobot());
    manager->addController(controllerCrawling);
