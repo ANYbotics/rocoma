@@ -113,7 +113,7 @@ class LocomotionController : public nodewrap::NodeImpl
   ros::Publisher jointCommandsPublisher_;
   ros::ServiceServer switchControllerService_;
   ros::ServiceServer emergencyStopService_;
-  ros::ServiceServer getActiveControllersService_;
+  ros::ServiceServer getAvailableControllersService_;
   ros::ServiceClient resetStateEstimatorClient_;
 
   starleth_msgs::SeActuatorCommandsPtr jointCommands_;
