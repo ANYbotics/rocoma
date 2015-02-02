@@ -62,7 +62,8 @@ LocomotionController::LocomotionController():
     timeStep_(0.0025),
     isRealRobot_(false),
     model_(),
-    controllerManager_()
+    controllerManager_(),
+    defaultController_("LocoDemo")
 {
 
 
@@ -76,7 +77,7 @@ void LocomotionController::init() {
   //--- Read parameters.
   getNodeHandle().param<double>("controller/time_step", timeStep_, 0.0025);
   getNodeHandle().param<bool>("controller/is_real_robot", isRealRobot_, false);
-
+  getNodeHandle().param<std::string>("controller/default", defaultController_, "LocoDemo");
   //---
 
   //--- Configure logger.
@@ -88,10 +89,12 @@ void LocomotionController::init() {
   double samplingTime;
   getNodeHandle().param<double>("logger/sampling_time", samplingTime, 60.0);
   NODEWRAP_INFO("Initialize logger with sampling time: %lfs and script: %s.", samplingTime, loggingScriptFilename.c_str());
-  robotUtils::logger.reset(new robotUtils::LoggerStd);
+  robotUtils::logger.reset(new robotUtils::LoggerStd());
   robotUtils::LoggerStd* loggerStd = static_cast<robotUtils::LoggerStd*>(robotUtils::logger.get());
   loggerStd->setVerboseLevel(robotUtils::LoggerStd::VL_DEBUG);
-  robotUtils::logger->initLogger((int)(1.0/timeStep_), (int)(1.0/timeStep_), samplingTime, loggingScriptFilename);
+
+  loggerStd->initLogger((int)(1.0/timeStep_), (int)(1.0/timeStep_), samplingTime, loggingScriptFilename);
+  NODEWRAP_INFO("Initialized logger.");
   //---
 
   //--- Configure controllers
@@ -218,15 +221,16 @@ void LocomotionController::joystickCallback(const sensor_msgs::Joy::ConstPtr& ms
   if (msg->buttons[4] == 1 && msg->buttons[7] == 1 ) {
     locomotion_controller_msgs::SwitchController::Request  req;
     locomotion_controller_msgs::SwitchController::Response res;
-    req.name = "LocoDemo";
+    req.name = defaultController_;
     if(!controllerManager_.switchController(req,res)) {
     }
     ROS_INFO("Switched task by joystick (status: %d)",res.status);
 
+
   }
   // RB button
   if (msg->buttons[5] == 1 ) {
-    NODEWRAP_INFO("Emergency stop by joystick!");
+    NODEWRAP_WARN("Emergency stop by joystick!");
     controllerManager_.emergencyStop();
   }
 }
