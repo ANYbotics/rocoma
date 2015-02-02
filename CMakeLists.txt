@@ -30,7 +30,7 @@ set(CATKIN_ROCO_PKGS)
 # This will fill ${CATKIN_ROCO_PKGS} with the enabled roco packages.
 find_package(catkin REQUIRED COMPONENTS roco_assembly)
 
-include(${roco_assembly_SOURCE_DIR}/cmake/roco_ros.cmake)
+include(${roco_assembly_SOURCE_PREFIX}/cmake/roco_ros.cmake)
 
 # This will overwrite the previous find_package(catkin).
 find_package(catkin REQUIRED COMPONENTS
