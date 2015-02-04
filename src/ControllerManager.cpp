@@ -54,7 +54,7 @@ void ControllerManager::setupControllers(double dt, robotModel::State& state, ro
   timeStep_ = dt;
 
   /* Create no task, which is active until estimator converged*/
-  auto controller = new ControllerRos<robotTask::NoTaskRos>(state, command);
+  auto controller = new ControllerRos<robot_controller::RocoFreeze>(state, command);
   controller->setControllerManager(this);
   //controller->setIsCheckingState(false);
   addController(controller);
@@ -144,6 +144,17 @@ bool ControllerManager::switchController(locomotion_controller_msgs::SwitchContr
   }
   res.status = res.STATUS_NOTFOUND;
   ROS_INFO("Controller %s not found!", req.name.c_str());
+  return true;
+}
+
+bool ControllerManager::getAvailableControllers(locomotion_controller_msgs::GetAvailableControllers::Request &req,
+                                                locomotion_controller_msgs::GetAvailableControllers::Response &res)
+{
+
+  for (auto& controller : controllers_) {
+    res.available_controllers.push_back(controller.getName());
+  }
+
   return true;
 }
 

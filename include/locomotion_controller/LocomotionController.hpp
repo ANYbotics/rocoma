@@ -99,6 +99,8 @@ class LocomotionController : public nodewrap::NodeImpl
  private:
   double timeStep_;
   bool isRealRobot_;
+  std::string defaultController_;
+
   model::Model model_;
   ControllerManager controllerManager_;
 
@@ -113,6 +115,7 @@ class LocomotionController : public nodewrap::NodeImpl
   ros::Publisher jointCommandsPublisher_;
   ros::ServiceServer switchControllerService_;
   ros::ServiceServer emergencyStopService_;
+  ros::ServiceServer getAvailableControllersService_;
   ros::ServiceClient resetStateEstimatorClient_;
 
   starleth_msgs::SeActuatorCommandsPtr jointCommands_;
