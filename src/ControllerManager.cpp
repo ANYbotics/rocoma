@@ -53,7 +53,7 @@ ControllerManager::~ControllerManager()
 void ControllerManager::setupControllers(double dt, robotModel::State& state, robotModel::Command& command)  {
   timeStep_ = dt;
 
-  /* Create no task, which is active until estimator converged*/
+  /* Create controller freeze, which is active until estimator converged*/
   auto controller = new ControllerRos<robot_controller::RocoFreeze>(state, command);
   controller->setControllerManager(this);
   //controller->setIsCheckingState(false);
@@ -101,13 +101,13 @@ bool ControllerManager::switchControllerAfterEmergencyStop() {
 
 void ControllerManager::switchToEmergencyTask() {
   for (auto& controller : controllers_) {
-    if (controller.getName() == "No Task") {
+    if (controller.getName() == "Freeze") {
       activeController_ = &controller;
       activeController_->initializeController(timeStep_);
       return;
     }
   }
-  throw std::runtime_error("No Task not found!");
+  throw std::runtime_error("Controller 'freeze' not found!");
 }
 
 
@@ -134,7 +134,7 @@ bool ControllerManager::switchController(locomotion_controller_msgs::SwitchContr
         activeController_ = initController;
       }
       else {
-        // switch to no task
+        // switch to freeze controller
         switchToEmergencyTask();
         res.status = res.STATUS_ERROR;
         ROS_INFO("Could not switched to controller %s", initController->getName().c_str());
