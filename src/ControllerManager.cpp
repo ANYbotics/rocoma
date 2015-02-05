@@ -100,14 +100,17 @@ bool ControllerManager::switchControllerAfterEmergencyStop() {
 }
 
 void ControllerManager::switchToEmergencyTask() {
-  for (auto& controller : controllers_) {
-    if (controller.getName() == "Freeze") {
-      activeController_ = &controller;
-      activeController_->initializeController(timeStep_);
-      return;
+
+  if (activeController_->getName() != "Freeze") {
+    for (auto& controller : controllers_) {
+      if (controller.getName() == "Freeze") {
+        activeController_ = &controller;
+        activeController_->resetController(timeStep_);
+        return;
+      }
     }
+    throw std::runtime_error("Controller 'freeze' not found!");
   }
-  throw std::runtime_error("Controller 'freeze' not found!");
 }
 
 

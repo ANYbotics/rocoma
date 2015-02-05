@@ -105,6 +105,7 @@ class ControllerRos:  public roco::controllers::ControllerAdapterInterface, publ
   State& state_;
   Command& command_;
   ControllerManager* controllerManager_;
+  std::string emergencyStopControllerName_;
 };
 
 
