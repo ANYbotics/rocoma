@@ -44,14 +44,16 @@
 #include <starlethModel/starleth/starleth.hpp>
 #include <starleth_description/starleth_se_actuator_commands.hpp>
 
-#include <robotUtils/loggers/logger.hpp>
-#include <robotUtils/loggers/LoggerStd.hpp>
+#include <signal_logger/logger.hpp>
+#include <signal_logger_std/LoggerStd.hpp>
+#include <signal_logger_ros/LoggerRos.hpp>
+
 #include <ros/package.h>
 
 #include <chrono>
 #include <cstdint>
 #include <string>
-#include "robot_utils_ros/loggers/LoggerRos.hpp"
+
 
 NODEWRAP_EXPORT_CLASS(locomotion_controller, locomotion_controller::LocomotionController)
 
@@ -94,16 +96,16 @@ void LocomotionController::init() {
   getNodeHandle().param<std::string>("logger/class", loggerClass, "std");
   if (!loggerClass.compare("ros")) {
     // initialize ros logger
-    robotUtils::logger.reset(new robotUtilsRos::LoggerRos(getNodeHandle()));
+    signal_logger::logger.reset(new signal_logger_ros::LoggerRos(getNodeHandle()));
 
   } else {
     // initialize std logger as fallback logger
-    robotUtils::logger.reset(new robotUtils::LoggerStd());
-    robotUtils::LoggerStd* loggerStd = static_cast<robotUtils::LoggerStd*>(robotUtils::logger.get());
-    loggerStd->setVerboseLevel(robotUtils::LoggerStd::VL_DEBUG);
+    signal_logger::logger.reset(new signal_logger_std::LoggerStd());
+    signal_logger_std::LoggerStd* loggerStd = static_cast<signal_logger_std::LoggerStd*>(signal_logger::logger.get());
+    loggerStd->setVerboseLevel(signal_logger_std::LoggerStd::VL_DEBUG);
   }
 
-  robotUtils::logger->initLogger((int)(1.0/timeStep_), (int)(1.0/timeStep_), samplingTime, loggingScriptFilename);
+  signal_logger::logger->initLogger((int)(1.0/timeStep_), (int)(1.0/timeStep_), samplingTime, loggingScriptFilename);
   NODEWRAP_INFO("Initialize logger with sampling time: %lfs, sampling frequency: %d and script: %s.", samplingTime, (int)(1.0/timeStep_), loggingScriptFilename.c_str());
   //---
 

@@ -208,7 +208,7 @@ bool ControllerRos<Controller_>::initializeController(double dt)
   try {
     // Update the state.
     updateState(dt);
-    robotUtils::logger->stopLogger();
+    signal_logger::logger->stopLogger();
     if (!this->initialize(dt)) {
       ROCO_WARN_STREAM("Controller could not be initialized!");
       emergencyStop();
@@ -225,7 +225,7 @@ bool ControllerRos<Controller_>::initializeController(double dt)
   //---
 
   this->isRunning_ = true;
-  robotUtils::logger->startLogger();
+  signal_logger::logger->startLogger();
   ROCO_INFO_STREAM(
       "Initialized controller " << this->getName() << " successfully!");
   return true;
@@ -282,7 +282,7 @@ bool ControllerRos<Controller_>::advanceController(double dt)
       return true;
     }
     updateCommand(dt, false);
-    robotUtils::logger->collectLoggerData();
+    signal_logger::logger->collectLoggerData();
   } catch (std::exception& e) {
     ROCO_WARN_STREAM("Exception caught: " << e.what());
     emergencyStop();
@@ -389,8 +389,8 @@ void ControllerRos<Controller_>::emergencyStop()
   ROCO_INFO("ControllerRos::mergencyStop() called!");
   sendEmergencyCommand();
   if (this->getName() != emergencyStopControllerName_) {
-    robotUtils::logger->stopLogger();
-    robotUtils::logger->saveLoggerData();
+    signal_logger::logger->stopLogger();
+    signal_logger::logger->saveLoggerData();
     controllerManager_->switchControllerAfterEmergencyStop();
   }
 }

@@ -35,7 +35,7 @@
 #include "robotUtils/terrains/TerrainPlane.hpp"
 #include <starleth_description/starleth_robot_state.hpp>
 #include <starlethModel/starleth/starleth.hpp>
-#include <robotUtils/loggers/logger.hpp>
+#include <signal_logger/logger.hpp>
 
 namespace model {
 
@@ -153,46 +153,46 @@ void Model::addVariablesToLog() {
        "RF_HAA_des_th", "RF_HFE_des_th", "RF_KFE_des_th",
        "LH_HAA_des_th", "LH_HFE_des_th", "LH_KFE_des_th",
        "RH_HAA_des_th", "RH_HFE_des_th", "RH_KFE_des_th";
-  robotUtils::logger->addDoubleEigenMatrixToLog(command_.getDesiredJointPositions().toImplementation(), names);
+  signal_logger::logger->addDoubleEigenMatrixToLog(command_.getDesiredJointPositions().toImplementation(), names);
 
   names << "LF_HAA_des_thd", "LF_HFE_des_thd", "LF_KFE_des_thd",
       "RF_HAA_des_thd", "RF_HFE_des_thd", "RF_KFE_des_thd",
       "LH_HAA_des_thd", "LH_HFE_des_thd", "LH_KFE_des_thd",
       "RH_HAA_des_thd", "RH_HFE_des_thd", "RH_KFE_des_thd";
-  robotUtils::logger->addDoubleEigenMatrixToLog(command_.getDesiredMotorVelocities().toImplementation(), names);
+  signal_logger::logger->addDoubleEigenMatrixToLog(command_.getDesiredMotorVelocities().toImplementation(), names);
 
   names << "LF_HAA_uff", "LF_HFE_uff", "LF_KFE_uff",
        "RF_HAA_uff", "RF_HFE_uff", "RF_KFE_uff",
        "LH_HAA_uff", "LH_HFE_uff", "LH_KFE_uff",
        "RH_HAA_uff", "RH_HFE_uff", "RH_KFE_uff";
-  robotUtils::logger->addDoubleEigenMatrixToLog(command_.getDesiredJointTorques().toImplementation(), names);
+  signal_logger::logger->addDoubleEigenMatrixToLog(command_.getDesiredJointTorques().toImplementation(), names);
 
 
   names << "LF_HAA_th", "LF_HFE_th", "LF_KFE_th",
        "RF_HAA_th", "RF_HFE_th", "RF_KFE_th",
        "LH_HAA_th", "LH_HFE_th", "LH_KFE_th",
        "RH_HAA_th", "RH_HFE_th", "RH_KFE_th";
-  robotUtils::logger->addDoubleEigenMatrixToLog(state_.getJointPositions().toImplementation(), names);
+  signal_logger::logger->addDoubleEigenMatrixToLog(state_.getJointPositions().toImplementation(), names);
 
   names << "LF_HAA_thd", "LF_HFE_thd", "LF_KFE_thd",
        "RF_HAA_thd", "RF_HFE_thd", "RF_KFE_thd",
        "LH_HAA_thd", "LH_HFE_thd", "LH_KFE_thd",
        "RH_HAA_thd", "RH_HFE_thd", "RH_KFE_thd";
-  robotUtils::logger->addDoubleEigenMatrixToLog(state_.getJointVelocities().toImplementation(), names);
+  signal_logger::logger->addDoubleEigenMatrixToLog(state_.getJointVelocities().toImplementation(), names);
 
   names << "LF_HAA_load", "LF_HFE_load", "LF_KFE_load",
        "RF_HAA_load", "RF_HFE_load", "RF_KFE_load",
        "LH_HAA_load", "LH_HFE_load", "LH_KFE_load",
        "RH_HAA_load", "RH_HFE_load", "RH_KFE_load";
 //  robotUtils::logger->addToLog(measJointTorques_, names);
-  robotUtils::logger->addDoubleEigenMatrixToLog(state_.getJointTorques().toImplementation(), names);
+  signal_logger::logger->addDoubleEigenMatrixToLog(state_.getJointTorques().toImplementation(), names);
 
 
   Eigen::Matrix<std::string, 4,1> contactNames;
   contactNames << "LF_CONTACT_FLAG", "RF_CONTACT_FLAG", "LH_CONTACT_FLAG", "RH_CONTACT_FLAG";
-  robotUtils::logger->addIntEigenMatrixToLog(robotModel_->contacts().getCA(), contactNames);
+  signal_logger::logger->addIntEigenMatrixToLog(robotModel_->contacts().getCA(), contactNames);
 
-  robotUtils::logger->updateLogger(true);
+  signal_logger::logger->updateLogger(true);
 
 
 }

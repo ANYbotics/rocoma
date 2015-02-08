@@ -45,7 +45,7 @@
 #include <roco/time/TimeStd.hpp>
 
 #include <roco/controllers/ControllerAdapterInterface.hpp>
-#include <robotUtils/loggers/logger.hpp>
+#include <signal_logger/logger.hpp>
 
 #include "locomotion_controller/ControllerManager.hpp"
 
