@@ -50,13 +50,14 @@ ControllerRos<Controller_>::ControllerRos(State& state, Command& command)
       time_(),
       state_(state),
       command_(command),
-      controllerManager_(nullptr)
+      controllerManager_(nullptr),
+      emergencyStopControllerName_("Freeze")
 {
   if (isRealRobot_) {
     isCheckingCommand_ = true;
     isCheckingState_ = true;
   }
-  if (this->getName() == "No Task") {
+  if (this->getName() == emergencyStopControllerName_) {
     isCheckingState_ = false;
     isCheckingCommand_ = true;
   }
@@ -385,11 +386,13 @@ bool ControllerRos<Controller_>::stopController()
 template<typename Controller_>
 void ControllerRos<Controller_>::emergencyStop()
 {
-  ROCO_INFO("Controller: emergency stop!");
+  ROCO_INFO("ControllerRos::mergencyStop() called!");
   sendEmergencyCommand();
-  robotUtils::logger->stopLogger();
-  robotUtils::logger->saveLoggerData();
-  controllerManager_->switchControllerAfterEmergencyStop();
+  if (this->getName() != emergencyStopControllerName_) {
+    robotUtils::logger->stopLogger();
+    robotUtils::logger->saveLoggerData();
+    controllerManager_->switchControllerAfterEmergencyStop();
+  }
 }
 
 template<typename Controller_>

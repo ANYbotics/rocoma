@@ -99,6 +99,8 @@ class LocomotionController : public nodewrap::NodeImpl
  private:
   double timeStep_;
   bool isRealRobot_;
+  std::string defaultController_;
+
   model::Model model_;
   ControllerManager controllerManager_;
 
@@ -123,6 +125,7 @@ class LocomotionController : public nodewrap::NodeImpl
   std::mutex mutexJointCommands_;
   std::mutex mutexJoystick_;
   std::mutex mutexModelAndControllerManager_;
+  std::mutex mutexUpdateControllerAndPublish_;
 
 };
 

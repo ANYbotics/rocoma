@@ -221,10 +221,13 @@ void Model::setRobotState(const starleth_msgs::RobotState::ConstPtr& robotState)
   Qb.segment<3>(3) = rot::EulerAnglesXyzPD(orientationWorldToBase).vector();
 
 
-  dQb(0) = robotState->twist.linear.x;
-  dQb(1) = robotState->twist.linear.y;
-  dQb(2) = robotState->twist.linear.z;
+  Eigen::Vector3d B_v_B;
+  B_v_B(0) = robotState->twist.linear.x;
+  B_v_B(1) = robotState->twist.linear.y;
+  B_v_B(2) = robotState->twist.linear.z;
 
+  const Eigen::Vector3d I_v_B = orientationWorldToBase.inverseRotate(B_v_B);
+  dQb.segment<3>(0) = I_v_B;
 
 //  static mule::Vector3d globalAngularVelocity;
 //  simulationManager.getRobotBaseAngularVelocityInWorldCoordinates(
@@ -282,8 +285,7 @@ void Model::setRobotState(const starleth_msgs::RobotState::ConstPtr& robotState)
   // todo: acceleration is missing!
 //  robotModel_.sensors().getSimMainBodyPose()->setddQb(ddQb);
 
-  const Eigen::Vector3d I_v_B = dQb.block<3,1>(0,0);
-  const Eigen::Vector3d B_v_B = orientationWorldToBase.rotate(I_v_B);
+
   robotModel_->sensors().getSimMainBodyPose()->setLinearVelocityBaseInWorldFrame(I_v_B);
   robotModel_->sensors().getSimMainBodyPose()->setLinearVelocityBaseInBaseFrame(B_v_B);
   robotModel_->sensors().getSimMainBodyPose()->setAngularVelocityBaseInWorldFrame(globalAngularVelocity);
@@ -408,6 +410,7 @@ void Model::getRobotState(starleth_msgs::RobotStatePtr& robotState) {
 
   const LinearVelocity linearVelocityBaseInWorldFrame(robotModel_->kin()[robotModel::JT_World2Base_CSw]->getVel());
   const LocalAngularVelocity angularVelocityBaseInBaseFrame(orientationWorldToBase.rotate(robotModel_->est().getOmega()));
+  const LinearVelocity linearVelocityBaseInBaseFrame = orientationWorldToBase.rotate(linearVelocityBaseInWorldFrame);
 
 
   robotState->header.stamp = updateStamp_;
@@ -422,9 +425,9 @@ void Model::getRobotState(starleth_msgs::RobotStatePtr& robotState) {
   robotState->pose.orientation.y = orientationWorldToBase.y();
   robotState->pose.orientation.z = orientationWorldToBase.z();
 
-  robotState->twist.linear.x = linearVelocityBaseInWorldFrame.x();
-  robotState->twist.linear.y = linearVelocityBaseInWorldFrame.y();
-  robotState->twist.linear.z = linearVelocityBaseInWorldFrame.z();
+  robotState->twist.linear.x = linearVelocityBaseInBaseFrame.x();
+  robotState->twist.linear.y = linearVelocityBaseInBaseFrame.y();
+  robotState->twist.linear.z = linearVelocityBaseInBaseFrame.z();
 
   robotState->twist.angular.x = angularVelocityBaseInBaseFrame.x();
   robotState->twist.angular.y = angularVelocityBaseInBaseFrame.y();

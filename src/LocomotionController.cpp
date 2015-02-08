@@ -62,7 +62,8 @@ LocomotionController::LocomotionController():
     timeStep_(0.0025),
     isRealRobot_(false),
     model_(),
-    controllerManager_()
+    controllerManager_(),
+    defaultController_("LocoDemo")
 {
 
 
@@ -76,6 +77,7 @@ void LocomotionController::init() {
   //--- Read parameters.
   getNodeHandle().param<double>("controller/time_step", timeStep_, 0.0025);
   getNodeHandle().param<bool>("controller/is_real_robot", isRealRobot_, false);
+  getNodeHandle().param<std::string>("controller/default", defaultController_, "LocoDemo");
   //---
 
   //--- Configure logger.
@@ -102,6 +104,7 @@ void LocomotionController::init() {
   }
 
   robotUtils::logger->initLogger((int)(1.0/timeStep_), (int)(1.0/timeStep_), samplingTime, loggingScriptFilename);
+  NODEWRAP_INFO("Initialize logger with sampling time: %lfs, sampling frequency: %d and script: %s.", samplingTime, (int)(1.0/timeStep_), loggingScriptFilename.c_str());
   //---
 
   //--- Configure controllers
@@ -189,6 +192,7 @@ void LocomotionController::updateControllerAndPublish(const starleth_msgs::Robot
   std::chrono::time_point<std::chrono::steady_clock> start, end;
   start = std::chrono::steady_clock::now();
   //---
+  std::lock_guard<std::mutex> lockUpdateControllerAndPublish(mutexUpdateControllerAndPublish_);
 
   NODEWRAP_DEBUG("Update locomotion controller.");
 
@@ -228,7 +232,7 @@ void LocomotionController::joystickCallback(const sensor_msgs::Joy::ConstPtr& ms
   if (msg->buttons[4] == 1 && msg->buttons[7] == 1 ) {
     locomotion_controller_msgs::SwitchController::Request  req;
     locomotion_controller_msgs::SwitchController::Response res;
-    req.name = "LocoDemo";
+    req.name = defaultController_;
     if(!controllerManager_.switchController(req,res)) {
     }
     ROS_INFO("Switched task by joystick (status: %d)",res.status);
@@ -236,7 +240,7 @@ void LocomotionController::joystickCallback(const sensor_msgs::Joy::ConstPtr& ms
   }
   // RB button
   if (msg->buttons[5] == 1 ) {
-    NODEWRAP_INFO("Emergency stop by joystick!");
+    NODEWRAP_WARN("Emergency stop by joystick!");
     controllerManager_.emergencyStop();
   }
 }
@@ -258,8 +262,10 @@ bool LocomotionController::emergencyStop(locomotion_controller_msgs::EmergencySt
 
   //---  Reset the estimator.
   if (resetStateEstimatorClient_.exists()) {
+	ROS_INFO("Locomotion controller wants to reset state estimator.");
     locomotion_controller_msgs::ResetStateEstimator resetEstimatorService;
     if(!resetStateEstimatorClient_.call(resetEstimatorService)) {
+      ROS_WARN("Locomotion controller could not reset state estimator.");
       result = false;
     }
   }

@@ -54,7 +54,7 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
 #endif
 
 #ifdef USE_TASK_LOCOFREEGAIT
-   auto controllerFreeGait = new ControllerRos<robotTask::FreeGait>(state, command);
+   auto controllerFreeGait = new ControllerRos<loco_free_gait::FreeGait>(state, command);
    controllerFreeGait->setControllerManager(manager);
    controllerFreeGait->setIsRealRobotFromManager(manager->isRealRobot());
    manager->addController(controllerFreeGait);
