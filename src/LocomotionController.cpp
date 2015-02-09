@@ -44,14 +44,16 @@
 #include <starlethModel/starleth/starleth.hpp>
 #include <starleth_description/starleth_se_actuator_commands.hpp>
 
-#include <robotUtils/loggers/logger.hpp>
-#include <robotUtils/loggers/LoggerStd.hpp>
+#include <signal_logger/logger.hpp>
+#include <signal_logger_std/LoggerStd.hpp>
+#include <signal_logger_ros/LoggerRos.hpp>
 
 #include <ros/package.h>
 
 #include <chrono>
 #include <cstdint>
 #include <string>
+
 
 NODEWRAP_EXPORT_CLASS(locomotion_controller, locomotion_controller::LocomotionController)
 
@@ -62,7 +64,8 @@ LocomotionController::LocomotionController():
     timeStep_(0.0025),
     isRealRobot_(false),
     model_(),
-    controllerManager_()
+    controllerManager_(),
+    defaultController_("LocoDemo")
 {
 
 
@@ -76,7 +79,7 @@ void LocomotionController::init() {
   //--- Read parameters.
   getNodeHandle().param<double>("controller/time_step", timeStep_, 0.0025);
   getNodeHandle().param<bool>("controller/is_real_robot", isRealRobot_, false);
-
+  getNodeHandle().param<std::string>("controller/default", defaultController_, "LocoDemo");
   //---
 
   //--- Configure logger.
@@ -88,10 +91,21 @@ void LocomotionController::init() {
   double samplingTime;
   getNodeHandle().param<double>("logger/sampling_time", samplingTime, 60.0);
   NODEWRAP_INFO("Initialize logger with sampling time: %lfs and script: %s.", samplingTime, loggingScriptFilename.c_str());
-  robotUtils::logger.reset(new robotUtils::LoggerStd);
-  robotUtils::LoggerStd* loggerStd = static_cast<robotUtils::LoggerStd*>(robotUtils::logger.get());
-  loggerStd->setVerboseLevel(robotUtils::LoggerStd::VL_DEBUG);
-  robotUtils::logger->initLogger((int)(1.0/timeStep_), (int)(1.0/timeStep_), samplingTime, loggingScriptFilename);
+
+  std::string loggerClass;
+  getNodeHandle().param<std::string>("logger/class", loggerClass, "std");
+  if (loggerClass.compare("ros") == 0) {
+    // initialize ros logger
+    signal_logger::logger.reset(new signal_logger_ros::LoggerRos(getNodeHandle()));
+  } else {
+    // initialize std logger as fallback logger
+    signal_logger::logger.reset(new signal_logger_std::LoggerStd());
+    signal_logger_std::LoggerStd* loggerStd = static_cast<signal_logger_std::LoggerStd*>(signal_logger::logger.get());
+    loggerStd->setVerboseLevel(signal_logger_std::LoggerStd::VL_DEBUG);
+  }
+
+  signal_logger::logger->initLogger((int)(1.0/timeStep_), (int)(1.0/timeStep_), samplingTime, loggingScriptFilename);
+  NODEWRAP_INFO("Initialize logger with sampling time: %lfs, sampling frequency: %d and script: %s.", samplingTime, (int)(1.0/timeStep_), loggingScriptFilename.c_str());
   //---
 
   //--- Configure controllers
@@ -131,6 +145,7 @@ void LocomotionController::initializeMessages() {
 
 void LocomotionController::initializeServices() {
   switchControllerService_ = getNodeHandle().advertiseService("switch_controller", &ControllerManager::switchController, &this->controllerManager_);
+  getAvailableControllersService_ = getNodeHandle().advertiseService("get_available_controllers", &ControllerManager::getAvailableControllers, &this->controllerManager_);
   emergencyStopService_ = advertiseService("emergency_stop", "/emergency_stop", &LocomotionController::emergencyStop);
   resetStateEstimatorClient_ = serviceClient<locomotion_controller_msgs::ResetStateEstimator>("reset_state_estimator", "/reset_state_estimator");
 }
@@ -178,6 +193,7 @@ void LocomotionController::updateControllerAndPublish(const starleth_msgs::Robot
   std::chrono::time_point<std::chrono::steady_clock> start, end;
   start = std::chrono::steady_clock::now();
   //---
+  std::lock_guard<std::mutex> lockUpdateControllerAndPublish(mutexUpdateControllerAndPublish_);
 
   NODEWRAP_DEBUG("Update locomotion controller.");
 
@@ -217,7 +233,7 @@ void LocomotionController::joystickCallback(const sensor_msgs::Joy::ConstPtr& ms
   if (msg->buttons[4] == 1 && msg->buttons[7] == 1 ) {
     locomotion_controller_msgs::SwitchController::Request  req;
     locomotion_controller_msgs::SwitchController::Response res;
-    req.name = "LocoDemo";
+    req.name = defaultController_;
     if(!controllerManager_.switchController(req,res)) {
     }
     ROS_INFO("Switched task by joystick (status: %d)",res.status);
@@ -225,7 +241,7 @@ void LocomotionController::joystickCallback(const sensor_msgs::Joy::ConstPtr& ms
   }
   // RB button
   if (msg->buttons[5] == 1 ) {
-    NODEWRAP_INFO("Emergency stop by joystick!");
+    NODEWRAP_WARN("Emergency stop by joystick!");
     controllerManager_.emergencyStop();
   }
 }
@@ -247,8 +263,10 @@ bool LocomotionController::emergencyStop(locomotion_controller_msgs::EmergencySt
 
   //---  Reset the estimator.
   if (resetStateEstimatorClient_.exists()) {
+	ROS_INFO("Locomotion controller wants to reset state estimator.");
     locomotion_controller_msgs::ResetStateEstimator resetEstimatorService;
     if(!resetStateEstimatorClient_.call(resetEstimatorService)) {
+      ROS_WARN("Locomotion controller could not reset state estimator.");
       result = false;
     }
   }

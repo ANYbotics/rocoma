@@ -33,31 +33,21 @@
 #include <locomotion_controller/ControllerManager.hpp>
 #include <locomotion_controller/ControllerRos.hpp>
 
-#ifdef USE_TASK_LOCODEMO
-#include "LocoDemo_Task.hpp"
-#endif
-
-#ifdef USE_TASK_LOCOCRAWLING
-#include "Crawling_Task.hpp"
-#endif
-
-#ifdef USE_TASK_LOCOFREEGAIT
-#include "FreeGait_Task.hpp"
-#endif
+#include <roco_assembly/controllers.hpp>
 
 namespace locomotion_controller {
 
 void add_locomotion_controllers(locomotion_controller::ControllerManager* manager, robotModel::State& state, robotModel::Command& command, ros::NodeHandle& nodeHandle) {
 
 #ifdef USE_TASK_LOCODEMO
-  auto controllerLocoDemo = new ControllerRos<robotTask::LocoDemo>(state, command);
+  auto controllerLocoDemo = new ControllerRos<loco_demo::LocoDemo>(state, command);
   controllerLocoDemo->setControllerManager(manager);
   controllerLocoDemo->setIsRealRobotFromManager(manager->isRealRobot());
   manager->addController(controllerLocoDemo);
 #endif
 
 #ifdef USE_TASK_LOCOCRAWLING
-   auto controllerCrawling = new ControllerRos<robotTask::Crawling>(state, command);
+   auto controllerCrawling = new ControllerRos<loco_crawling::Crawling>(state, command);
    controllerCrawling->setControllerManager(manager);
    controllerCrawling->setIsRealRobotFromManager(manager->isRealRobot());
 #ifdef USE_ROS_TASK_WRAPPER
@@ -67,7 +57,7 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
 #endif
 
 #ifdef USE_TASK_LOCOFREEGAIT
-   auto controllerFreeGait = new ControllerRos<robotTask::FreeGait>(state, command);
+   auto controllerFreeGait = new ControllerRos<loco_free_gait::FreeGait>(state, command);
    controllerFreeGait->setControllerManager(manager);
    controllerFreeGait->setIsRealRobotFromManager(manager->isRealRobot());
    manager->addController(controllerFreeGait);

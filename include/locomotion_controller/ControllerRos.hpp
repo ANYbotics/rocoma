@@ -45,7 +45,7 @@
 #include <roco/time/TimeStd.hpp>
 
 #include <roco/controllers/ControllerAdapterInterface.hpp>
-#include <robotUtils/loggers/logger.hpp>
+#include <signal_logger/logger.hpp>
 
 #include "locomotion_controller/ControllerManager.hpp"
 
@@ -105,6 +105,7 @@ class ControllerRos:  public roco::controllers::ControllerAdapterInterface, publ
   State& state_;
   Command& command_;
   ControllerManager* controllerManager_;
+  std::string emergencyStopControllerName_;
 };
 
 
