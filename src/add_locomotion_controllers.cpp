@@ -53,13 +53,6 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
    manager->addController(controllerCrawling);
 #endif
 
-#ifdef USE_TASK_LOCOFREEGAIT
-   auto controllerFreeGait = new ControllerRos<loco_free_gait::FreeGait>(state, command);
-   controllerFreeGait->setControllerManager(manager);
-   controllerFreeGait->setIsRealRobotFromManager(manager->isRealRobot());
-   manager->addController(controllerFreeGait);
-#endif
-
 #ifdef USE_TASK_LOCOCRAWLING_ROS
    auto controllerCrawlingRos = new ControllerRos<loco_crawling_ros::LocoCrawlingRos>(state, command);
    controllerCrawlingRos->setControllerManager(manager);
@@ -67,6 +60,23 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
    controllerCrawlingRos->setNodeHandle(nodeHandle);
    manager->addController(controllerCrawlingRos);
 #endif
+
+#ifdef USE_TASK_LOCOFREEGAIT
+   auto controllerFreeGait = new ControllerRos<loco_free_gait::FreeGait>(state, command);
+   controllerFreeGait->setControllerManager(manager);
+   controllerFreeGait->setIsRealRobotFromManager(manager->isRealRobot());
+   manager->addController(controllerFreeGait);
+#endif
+
+#ifdef USE_TASK_LOCOFREEGAIT_ROS
+   auto controllerFreeGaitRos = new ControllerRos<loco_free_gait_ros::FreeGaitRos>(state, command);
+   controllerFreeGaitRos->setControllerManager(manager);
+   controllerFreeGaitRos->setIsRealRobotFromManager(manager->isRealRobot());
+   controllerFreeGaitRos->setNodeHandle(nodeHandle);
+   manager->addController(controllerFreeGaitRos);
+#endif
+
+
 
 }
 
