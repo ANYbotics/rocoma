@@ -86,7 +86,8 @@ void Model::initializeForController(double dt, bool isRealRobot) {
   state_.setTerrainPtr(this->getTerrainModel());
   command_.setRobotModelPtr(this->getRobotModel());
   robotModel::initializeStateForStarlETH(state_);
-  robotModel::initializeCommandForStarlETH(command_);
+  //robotModel::initializeCommandForStarlETH(command_);
+  robotModel::initializeCommandForStarlETHWithoutBars(command_);
 
 //  setRobotModelParameters();
 
