@@ -261,16 +261,19 @@ bool LocomotionController::emergencyStop(locomotion_controller_msgs::EmergencySt
   }
   //---
 
-  //---  Reset the estimator.
-  if (resetStateEstimatorClient_.exists()) {
-	ROS_INFO("Locomotion controller wants to reset state estimator.");
-    locomotion_controller_msgs::ResetStateEstimator resetEstimatorService;
-    if(!resetStateEstimatorClient_.call(resetEstimatorService)) {
-      ROS_WARN("Locomotion controller could not reset state estimator.");
-      result = false;
-    }
-  }
-  //---
+// The estimator does not have to be reset when an emergency stop is invoked!!
+
+//  //---  Reset the estimator.
+//  if (resetStateEstimatorClient_.exists()) {
+//	ROS_INFO("Locomotion controller wants to reset state estimator.");
+//    locomotion_controller_msgs::ResetStateEstimator resetEstimatorService;
+//    resetEstimatorService.request.pose.orientation.w = 1.0;
+//    if(!resetStateEstimatorClient_.call(resetEstimatorService)) {
+//      ROS_WARN("Locomotion controller could not reset state estimator.");
+//      result = false;
+//    }
+//  }
+//  //---
 
   return result;
 }
