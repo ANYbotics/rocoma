@@ -24,6 +24,7 @@
   
   <build_depend>robot_model</build_depend>
   <build_depend>roco_freeze</build_depend>
+  <build_depend>kindr</build_depend>
 
   <run_depend>roscpp</run_depend>
   <run_depend>locomotion_controller_msgs</run_depend>
@@ -40,6 +41,7 @@
 
   <run_depend>robot_model</run_depend>
   <run_depend>roco_freeze</run_depend>
+  <run_depend>kindr</run_depend>
   <export>
  	<nodelet plugin="${prefix}/nodelet_plugins.xml"/>
   </export>

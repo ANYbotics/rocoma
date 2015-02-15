@@ -47,12 +47,11 @@ find_package(catkin REQUIRED COMPONENTS
   robot_model
   roco_freeze
   roco_assembly
+  kindr
   ${CATKIN_ROCO_PKGS}
 )
 
 ## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
-find_package(Kindr REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 ###################################
@@ -67,7 +66,7 @@ find_package(Eigen3 REQUIRED)
 catkin_package(
  INCLUDE_DIRS include 
  LIBRARIES locomotion_controller model
- CATKIN_DEPENDS roscpp_nodewrap locomotion_controller_msgs starleth_description roco robot_utils signal_logger signal_logger_std signal_logger_ros robot_model roco_freeze
+ CATKIN_DEPENDS roscpp_nodewrap locomotion_controller_msgs starleth_description roco robot_utils signal_logger signal_logger_std signal_logger_ros robot_model roco_freeze roco_assembly kindr
 # DEPENDS system_lib
 )
 
@@ -79,7 +78,6 @@ catkin_package(
 ## Your package locations should be listed before other locations
 include_directories(include)
 include_directories(${EIGEN3_INCLUDE_DIR})
-include_directories(${Kindr_INCLUDE_DIRS})
 include_directories(${catkin_INCLUDE_DIRS})
 
 # This library includes the robot model and the terrain model.
@@ -97,7 +95,7 @@ add_library(locomotion_controller
   src/LocomotionController.cpp
 )
 
-add_dependencies(locomotion_controller locomotion_controller_msgs_generate_messages_cpp roco robot_utils robot_model roco_freeze)
+add_dependencies(locomotion_controller locomotion_controller_msgs_generate_messages_cpp roco robot_utils robot_model roco_freeze roco_assembly kindr)
 
 target_link_libraries(locomotion_controller
     model
