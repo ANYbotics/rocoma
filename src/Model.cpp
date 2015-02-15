@@ -84,7 +84,6 @@ void Model::initializeForController(double dt, bool isRealRobot) {
 
   state_.setRobotModelPtr(this->getRobotModel());
   state_.setTerrainPtr(this->getTerrainModel());
-  command_.setRobotModelPtr(this->getRobotModel());
   robotModel::initializeStateForStarlETH(state_);
   //robotModel::initializeCommandForStarlETH(command_);
   robotModel::initializeCommandForStarlETHWithoutBars(command_);
@@ -104,7 +103,6 @@ void Model::initializeForController(double dt, bool isRealRobot) {
 
   /* activate sensor noise */
   robotModel_->sensors().setIsAddingSensorNoise(false);
-  robotModel_->act().setUseLimitsInSimFlag(false); // do not change! see jointController for activating limits
   /* initialize robot model */
   robotModel_->init();
 
@@ -118,7 +116,6 @@ void Model::initializeForStateEstimator(double dt, bool isRealRobot) {
   //setRobotModelParameters();
   state_.setRobotModelPtr(this->getRobotModel());
   state_.setTerrainPtr(this->getTerrainModel());
-  command_.setRobotModelPtr(this->getRobotModel());
   robotModel::initializeStateForStarlETH(state_);
   robotModel::initializeCommandForStarlETH(command_);
 
@@ -133,7 +130,6 @@ void Model::initializeForStateEstimator(double dt, bool isRealRobot) {
   robotModel_->est().getActualEstimator()->setPathToAudioFiles(std::string(getenv("LAB_ROOT")) + std::string{"/starleth_audio_files/locomotion_controller/"});
   /* activate sensor noise */
   robotModel_->sensors().setIsAddingSensorNoise(false);
-  robotModel_->act().setUseLimitsInSimFlag(false); // do not change! see jointController for activating limits
   /* initialize robot model */
   robotModel_->init();
 

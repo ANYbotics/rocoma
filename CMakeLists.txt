@@ -66,7 +66,7 @@ find_package(Eigen3 REQUIRED)
 catkin_package(
  INCLUDE_DIRS include 
  LIBRARIES locomotion_controller model
- CATKIN_DEPENDS roscpp_nodewrap locomotion_controller_msgs starleth_description roco robot_utils signal_logger signal_logger_std signal_logger_ros robot_model roco_freeze roco_assembly kindr
+ CATKIN_DEPENDS roscpp_nodewrap locomotion_controller_msgs starleth_description roco robot_utils signal_logger signal_logger_std signal_logger_ros robot_model roco_freeze roco_assembly kindr 
 # DEPENDS system_lib
 )
 
@@ -95,7 +95,7 @@ add_library(locomotion_controller
   src/LocomotionController.cpp
 )
 
-add_dependencies(locomotion_controller locomotion_controller_msgs_generate_messages_cpp roco robot_utils robot_model roco_freeze roco_assembly kindr)
+add_dependencies(locomotion_controller locomotion_controller_msgs_generate_messages_cpp roco robot_utils robot_model roco_freeze roco_assembly kindr ${CATKIN_ROCO_PKGS})
 
 target_link_libraries(locomotion_controller
     model

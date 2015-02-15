@@ -185,11 +185,6 @@ bool ControllerRos<Controller_>::createController(double dt)
 template<typename Controller_>
 bool ControllerRos<Controller_>::initializeController(double dt)
 {
-
-  // Default is reading commands from robot model
-  getCommand().setIsReadingCommandFromRobotModel(true);
-
-
   //--- Check if the controller was created.
   if (!this->isCreated()) {
     ROCO_WARN_STREAM("Controller was not created!");
@@ -242,8 +237,6 @@ bool ControllerRos<Controller_>::resetController(double dt)
   if (!this->isInitialized()) {
     return initializeController(dt);
   }
-
-  getCommand().setIsReadingCommandFromRobotModel(true);
 
   try {
 
@@ -355,9 +348,6 @@ template<typename Controller_>
 bool ControllerRos<Controller_>::updateCommand(double dt,
                                                bool forceSendingControlModes)
 {
-  if (command_.isReadingCommandFromRobotModel()) {
-    command_.copyCommandFromRobotModel();
-  }
 
   if (isCheckingCommand_) {
     if (!command_.limitCommand()) {
