@@ -48,7 +48,6 @@ find_package(catkin REQUIRED COMPONENTS
   roco_freeze
   roco_assembly
   kindr
-  ${CATKIN_ROCO_PKGS}
 )
 
 ## System dependencies are found with CMake's conventions
@@ -95,7 +94,7 @@ add_library(locomotion_controller
   src/LocomotionController.cpp
 )
 
-add_dependencies(locomotion_controller locomotion_controller_msgs_generate_messages_cpp roco robot_utils robot_model roco_freeze roco_assembly kindr ${CATKIN_ROCO_PKGS})
+add_dependencies(locomotion_controller locomotion_controller_msgs_generate_messages_cpp roco robot_utils robot_model roco_freeze roco_assembly kindr)
 
 target_link_libraries(locomotion_controller
     model
