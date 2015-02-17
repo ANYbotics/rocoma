@@ -33,6 +33,8 @@
 #include <locomotion_controller/ControllerManager.hpp>
 #include <locomotion_controller/ControllerRos.hpp>
 
+#include <ros/package.h>
+
 #include <roco_assembly/controllers.hpp>
 
 namespace locomotion_controller {
@@ -51,6 +53,14 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
    controllerCrawling->setControllerManager(manager);
    controllerCrawling->setIsRealRobotFromManager(manager->isRealRobot());
    manager->addController(controllerCrawling);
+#endif
+
+#ifdef USE_TASK_LOCOJUMP
+   auto controllerJump = new ControllerRos<loco_jump::LocoJump>(state, command);
+   controllerJump->setControllerManager(manager);
+   controllerJump->setIsRealRobotFromManager(manager->isRealRobot());
+   controllerJump->setPackageRoot(ros::package::getPath("loco_jump"));
+   manager->addController(controllerJump);
 #endif
 
 #ifdef USE_TASK_LOCOCRAWLING_ROS
