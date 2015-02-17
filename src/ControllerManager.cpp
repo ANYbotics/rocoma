@@ -50,7 +50,7 @@ ControllerManager::~ControllerManager()
 {
 }
 
-void ControllerManager::setupControllers(double dt, robotModel::State& state, robotModel::Command& command, ros::NodeHandle& nodeHandle)  {
+void ControllerManager::setupControllers(double dt, robot_model::State& state, robot_model::Command& command, ros::NodeHandle& nodeHandle)  {
   timeStep_ = dt;
 
   /* Create controller freeze, which is active until estimator converged*/

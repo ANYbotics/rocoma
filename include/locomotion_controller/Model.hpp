@@ -34,7 +34,7 @@
 #ifndef LOCOMOTION_CONTROLLER_MODEL_HPP_
 #define LOCOMOTION_CONTROLLER_MODEL_HPP_
 
-#include "starlethModel/RobotModel.hpp"
+#include "robot_model/RobotModel.hpp"
 #include "robotUtils/terrains/TerrainBase.hpp"
 
 #include <ros/ros.h>
@@ -50,8 +50,8 @@
 #include <starleth_msgs/SeActuatorCommands.h>
 #include <starleth_msgs/SeActuatorStates.h>
 
-#include <starlethModel/State.hpp>
-#include <starlethModel/Command.hpp>
+#include <robot_model/State.hpp>
+#include <robot_model/Command.hpp>
 
 
 #include <kindr/rotations/RotationEigen.hpp>
@@ -105,21 +105,21 @@ class Model
   void setMocapData(const geometry_msgs::TransformStamped::ConstPtr& msg);
   void setSeActuatorStates(const starleth_msgs::SeActuatorStates::ConstPtr& msg);
 
-  robotModel::RobotModel* getRobotModel();
+  robot_model::RobotModel* getRobotModel();
   robotTerrain::TerrainBase* getTerrainModel();
-  robotModel::State& getState();
-  robotModel::Command& getCommand();
+  robot_model::State& getState();
+  robot_model::Command& getCommand();
 
-  const robotModel::State& getState() const;
-  const robotModel::Command& getCommand() const;
+  const robot_model::State& getState() const;
+  const robot_model::Command& getCommand() const;
 
   void setContactForceThreshold(double value);
  private:
   ros::Time updateStamp_;
-  std::shared_ptr<robotModel::RobotModel> robotModel_;
+  std::shared_ptr<robot_model::RobotModel> robotModel_;
   std::shared_ptr<robotTerrain::TerrainBase> terrain_;
-  robotModel::State state_;
-  robotModel::Command command_;
+  robot_model::State state_;
+  robot_model::Command command_;
   double contactForceThreshold_;
 };
 
