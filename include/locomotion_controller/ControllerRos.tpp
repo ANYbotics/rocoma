@@ -202,7 +202,7 @@ bool ControllerRos<Controller_>::initializeController(double dt)
   //--- Initialize the controller now.
   try {
     // Update the state.
-    updateState(dt);
+    updateState(dt, false);
     signal_logger::logger->stopLogger();
     if (!this->initialize(dt)) {
       ROCO_WARN_STREAM("Controller could not be initialized!");
@@ -239,8 +239,8 @@ bool ControllerRos<Controller_>::resetController(double dt)
   }
 
   try {
-
-    updateState(dt);
+    updateState(dt, false);
+    signal_logger::logger->stopLogger();
     if (!this->reset(dt)) {
       ROCO_WARN_STREAM("Could not reset controller!");
       emergencyStop();
@@ -254,7 +254,8 @@ bool ControllerRos<Controller_>::resetController(double dt)
   }
 
   this->isRunning_ = true;
-  ROCO_INFO_STREAM("Reset controller " << this->getName() << "!");
+  signal_logger::logger->startLogger();
+  ROCO_INFO_STREAM("Reset controller " << this->getName() << " successfully!");
   return true;
 }
 
@@ -329,11 +330,11 @@ bool ControllerRos<Controller_>::cleanupController()
 }
 
 template<typename Controller_>
-bool ControllerRos<Controller_>::updateState(double dt)
+bool ControllerRos<Controller_>::updateState(double dt, bool checkState)
 {
   time_.setNow();
 
-  if (isCheckingState_) {
+  if (checkState && isCheckingState_) {
     if (!state_.checkState()) {
       ROCO_ERROR("Bad state!");
       return false;
@@ -351,7 +352,7 @@ bool ControllerRos<Controller_>::updateCommand(double dt,
 
   if (isCheckingCommand_) {
     if (!command_.limitCommand()) {
-      ROCO_ERROR("Found Inf or NaN in one of the commands!");
+      ROCO_ERROR("The command is invalid!");
     }
   }
 
@@ -376,7 +377,7 @@ bool ControllerRos<Controller_>::stopController()
 template<typename Controller_>
 void ControllerRos<Controller_>::emergencyStop()
 {
-  ROCO_INFO("ControllerRos::mergencyStop() called!");
+  ROCO_INFO("ControllerRos::emergencyStop() called!");
   sendEmergencyCommand();
   if (this->getName() != emergencyStopControllerName_) {
     signal_logger::logger->stopLogger();

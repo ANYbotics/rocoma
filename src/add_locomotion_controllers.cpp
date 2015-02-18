@@ -90,6 +90,14 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
    manager->addController(controllerFreeGaitRos);
 #endif
 
+#ifdef USE_TASK_ROCOSEATESTSTEP_ROS
+   auto controllerRocoSeaTestStepRos = new ControllerRos<roco_sea_test_ros::RocoSeaTestStepRos>(state, command);
+   controllerRocoSeaTestStepRos->setControllerManager(manager);
+   controllerRocoSeaTestStepRos->setIsRealRobotFromManager(manager->isRealRobot());
+   controllerRocoSeaTestStepRos->setNodeHandle(nodeHandle);
+   manager->addController(controllerRocoSeaTestStepRos);
+#endif
+
 
 
 }
