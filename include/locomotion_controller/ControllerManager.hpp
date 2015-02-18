@@ -44,15 +44,15 @@
 #include "roco_freeze/RocoFreeze.hpp"
 //#include "robotTask/tasks/tasks.hpp"
 #include <roco/controllers/ControllerInterface.hpp>
-#include <starlethModel/State.hpp>
-#include <starlethModel/Command.hpp>
+#include <robot_model/State.hpp>
+#include <robot_model/Command.hpp>
 
 #include <boost/ptr_container/ptr_vector.hpp>
 
 namespace locomotion_controller {
 
 class ControllerManager;
-void add_locomotion_controllers(locomotion_controller::ControllerManager* manager, robotModel::State& state, robotModel::Command& command, ros::NodeHandle& nodeHandle);
+void add_locomotion_controllers(locomotion_controller::ControllerManager* manager, robot_model::State& state, robot_model::Command& command, ros::NodeHandle& nodeHandle);
 
 class ControllerManager
 {
@@ -64,7 +64,7 @@ class ControllerManager
   virtual ~ControllerManager();
 
   void updateController();
-  void setupControllers(double dt, robotModel::State& state, robotModel::Command& command, ros::NodeHandle& nodeHandle);
+  void setupControllers(double dt, robot_model::State& state, robot_model::Command& command, ros::NodeHandle& nodeHandle);
   void addController(ControllerPtr controller);
   bool switchController(locomotion_controller_msgs::SwitchController::Request  &req,
                         locomotion_controller_msgs::SwitchController::Response &res);

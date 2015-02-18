@@ -34,7 +34,7 @@
 #include "locomotion_controller/Model.hpp"
 #include "robotUtils/terrains/TerrainPlane.hpp"
 #include <starleth_description/starleth_robot_state.hpp>
-#include <starlethModel/starleth/starleth.hpp>
+#include <robot_model/starleth/starleth.hpp>
 #include <signal_logger/logger.hpp>
 
 namespace model {
@@ -57,36 +57,36 @@ Model::~Model()
 }
 
 
-robotModel::RobotModel* Model::getRobotModel() {
+robot_model::RobotModel* Model::getRobotModel() {
   return robotModel_.get();
 }
 robotTerrain::TerrainBase* Model::getTerrainModel() {
   return terrain_.get();
 }
 
-robotModel::State& Model::getState() {
+robot_model::State& Model::getState() {
   return state_;
 }
-robotModel::Command& Model::getCommand() {
+robot_model::Command& Model::getCommand() {
   return command_;
 }
 
-const robotModel::State& Model::getState() const {
+const robot_model::State& Model::getState() const {
   return state_;
 }
-const robotModel::Command& Model::getCommand() const {
+const robot_model::Command& Model::getCommand() const {
   return command_;
 }
 
 void Model::initializeForController(double dt, bool isRealRobot) {
-  robotModel_.reset(new robotModel::RobotModel(dt));
+  robotModel_.reset(new robot_model::RobotModel(dt));
 
 
   state_.setRobotModelPtr(this->getRobotModel());
   state_.setTerrainPtr(this->getTerrainModel());
-  robotModel::initializeStateForStarlETH(state_);
-  //robotModel::initializeCommandForStarlETH(command_);
-  robotModel::initializeCommandForStarlETHWithoutBars(command_);
+  robot_model::initializeStateForStarlETH(state_);
+  //robot_model::initializeCommandForStarlETH(command_);
+  robot_model::initializeCommandForStarlETHWithoutBars(command_);
 
 //  setRobotModelParameters();
 
@@ -94,9 +94,9 @@ void Model::initializeForController(double dt, bool isRealRobot) {
 
   robotModel_->setIsRealRobot(isRealRobot);
   /* Select estimator: */
-  robotModel_->est().setActualEstimator(robotModel::PE_SL); // feed through of simulated states
-  //  robotModel.est().setActualEstimator(robotModel::PE_ObservabilityConstrainedEKF); // activate this estimator
-  //  robotModel.est().setActualEstimator(robotModel::PE_LSE); // not used
+  robotModel_->est().setActualEstimator(robot_model::PE_SL); // feed through of simulated states
+  //  robotModel.est().setActualEstimator(robot_model::PE_ObservabilityConstrainedEKF); // activate this estimator
+  //  robotModel.est().setActualEstimator(robot_model::PE_LSE); // not used
 
   robotModel_->est().getActualEstimator()->setVerboseLevel(0);
   robotModel_->est().getActualEstimator()->setIsPlayingAudio(false);
@@ -112,19 +112,19 @@ void Model::initializeForController(double dt, bool isRealRobot) {
 
 
 void Model::initializeForStateEstimator(double dt, bool isRealRobot) {
-  robotModel_.reset(new robotModel::RobotModel(dt));
+  robotModel_.reset(new robot_model::RobotModel(dt));
   //setRobotModelParameters();
   state_.setRobotModelPtr(this->getRobotModel());
   state_.setTerrainPtr(this->getTerrainModel());
-  robotModel::initializeStateForStarlETH(state_);
-  robotModel::initializeCommandForStarlETH(command_);
+  robot_model::initializeStateForStarlETH(state_);
+  robot_model::initializeCommandForStarlETH(command_);
 
 
   robotModel_->setIsRealRobot(false);
   /* Select estimator: */
-  robotModel_->est().setActualEstimator(robotModel::PE_ObservabilityConstrainedEKF); // feed through of simulated states
-  //  robotModel.est().setActualEstimator(robotModel::PE_ObservabilityConstrainedEKF); // activate this estimator
-  //  robotModel.est().setActualEstimator(robotModel::PE_LSE); // not used
+  robotModel_->est().setActualEstimator(robot_model::PE_ObservabilityConstrainedEKF); // feed through of simulated states
+  //  robotModel.est().setActualEstimator(robot_model::PE_ObservabilityConstrainedEKF); // activate this estimator
+  //  robotModel.est().setActualEstimator(robot_model::PE_LSE); // not used
 
   robotModel_->est().getActualEstimator()->setIsPlayingAudio(true);
   robotModel_->est().getActualEstimator()->setPathToAudioFiles(std::string(getenv("LAB_ROOT")) + std::string{"/starleth_audio_files/locomotion_controller/"});
@@ -198,12 +198,12 @@ void Model::setRobotState(const starleth_msgs::RobotState::ConstPtr& robotState)
 
   namespace rot = kindr::rotations::eigen_impl;
 
-  static robotModel::VectorQb Qb = robotModel::VectorQb::Zero();
-  static robotModel::VectorQb dQb = robotModel::VectorQb::Zero();
-  static robotModel::VectorQb ddQb = robotModel::VectorQb::Zero();
-  static robotModel::VectorAct jointTorques;
-  static robotModel::VectorQj jointPositions;
-  static robotModel::VectorQj jointVelocities;
+  static robot_model::VectorQb Qb = robot_model::VectorQb::Zero();
+  static robot_model::VectorQb dQb = robot_model::VectorQb::Zero();
+  static robot_model::VectorQb ddQb = robot_model::VectorQb::Zero();
+  static robot_model::VectorAct jointTorques;
+  static robot_model::VectorQj jointPositions;
+  static robot_model::VectorQj jointVelocities;
 
   Qb(0) = robotState->pose.position.x;
   Qb(1) = robotState->pose.position.y;
@@ -296,7 +296,7 @@ void Model::setRobotState(const starleth_msgs::RobotState::ConstPtr& robotState)
   robotModel_->update();
   state_.copyStateFromRobotModel();
 
-  state_.setStatus((robotModel::State::StateStatus)robotState->state);
+  state_.setStatus((robot_model::State::StateStatus)robotState->state);
 
   //ROS_INFO_STREAM("q.Qb: " << robotModel_->q().getQb().transpose());
 
@@ -313,12 +313,12 @@ void Model::setRobotState(const sensor_msgs::ImuPtr& imu,
 
   namespace rot = kindr::rotations::eigen_impl;
 
-  static robotModel::VectorQb Qb = robotModel::VectorQb::Zero();
-  static robotModel::VectorQb dQb = robotModel::VectorQb::Zero();
-  static robotModel::VectorQb ddQb = robotModel::VectorQb::Zero();
-  static robotModel::VectorAct jointTorques;
-  static robotModel::VectorQj jointPositions;
-  static robotModel::VectorQj jointVelocities;
+  static robot_model::VectorQb Qb = robot_model::VectorQb::Zero();
+  static robot_model::VectorQb dQb = robot_model::VectorQb::Zero();
+  static robot_model::VectorQb ddQb = robot_model::VectorQb::Zero();
+  static robot_model::VectorAct jointTorques;
+  static robot_model::VectorQj jointPositions;
+  static robot_model::VectorQj jointVelocities;
 
   Eigen::Vector3d force;
   Eigen::Vector3d normal = Eigen::Vector3d::UnitZ();
@@ -402,10 +402,10 @@ void Model::getRobotState(starleth_msgs::RobotStatePtr& robotState) {
   const RotationQuaternion  orientationWorldToBase = rquatWorldToBaseActive.getPassive();
 
   const Position positionWorldToBaseInWorldFrame = Position(
-      robotModel_->kin()[robotModel::JT_World2Base_CSw]->getPos());
+      robotModel_->kin()[robot_model::JT_World2Base_CSw]->getPos());
 
 
-  const LinearVelocity linearVelocityBaseInWorldFrame(robotModel_->kin()[robotModel::JT_World2Base_CSw]->getVel());
+  const LinearVelocity linearVelocityBaseInWorldFrame(robotModel_->kin()[robot_model::JT_World2Base_CSw]->getVel());
   const LocalAngularVelocity angularVelocityBaseInBaseFrame(orientationWorldToBase.rotate(robotModel_->est().getOmega()));
   const LinearVelocity linearVelocityBaseInBaseFrame = orientationWorldToBase.rotate(linearVelocityBaseInWorldFrame);
 
@@ -457,14 +457,14 @@ void Model::getRobotState(starleth_msgs::RobotStatePtr& robotState) {
     robotState->contacts[i].normal.y = normal.y();
     robotState->contacts[i].normal.z = normal.z();
 
-    Position position(robotModel_->contacts().getCP(robotModel::CP_LF_World2Foot_CSw+i)->getPos());
+    Position position(robotModel_->contacts().getCP(robot_model::CP_LF_World2Foot_CSw+i)->getPos());
     robotState->contacts[i].position.x = position.x();
     robotState->contacts[i].position.y = position.y();
     robotState->contacts[i].position.z = position.z();
 
-    if (robotModel_->contacts().getCP(robotModel::CP_LF_World2Foot_CSw+i)->getFlag()) {
+    if (robotModel_->contacts().getCP(robot_model::CP_LF_World2Foot_CSw+i)->getFlag()) {
 //      std::cout << "leg " << std::to_string(i) << "vel: " << getLinearVelocityFootInBaseFrame(i).norm() << std::endl;
-      if (robotModel_->contacts().getCP(robotModel::CP_LF_World2Foot_CSw+i)->getVel().norm() < 0.01) {
+      if (robotModel_->contacts().getCP(robot_model::CP_LF_World2Foot_CSw+i)->getVel().norm() < 0.01) {
         robotState->contacts[i].state = robotState->contacts[i].STATE_CLOSED;
       }
       else {
@@ -494,7 +494,7 @@ void Model::getSeActuatorCommands(starleth_msgs::SeActuatorCommandsPtr& actuator
 void Model::getPose(geometry_msgs::PoseWithCovarianceStampedPtr& pose) {
 
   const Position positionWorldToBaseInWorldFrame = Position(
-      robotModel_->kin()[robotModel::JT_World2Base_CSw]->getPos());
+      robotModel_->kin()[robot_model::JT_World2Base_CSw]->getPos());
 
   kindr::rotations::eigen_impl::RotationQuaternionAD rquatWorldToBaseActive(
       robotModel_->est().getActualEstimator()->getQuat());
@@ -509,7 +509,7 @@ void Model::getPose(geometry_msgs::PoseWithCovarianceStampedPtr& pose) {
   pose->pose.pose.orientation.y = orientationWorldToBase.y();
   pose->pose.pose.orientation.z = orientationWorldToBase.z();
 
-  robotModel::EstimatorBase::CovarianceMatrix covariance = robotModel_->est().getActualEstimator()->getEstimateCovariance();
+  robot_model::EstimatorBase::CovarianceMatrix covariance = robotModel_->est().getActualEstimator()->getEstimateCovariance();
 
   // Variances of pose and twist
   Eigen::Matrix<double, 12, 6, Eigen::RowMajor> varianceSlMessage;
@@ -557,9 +557,9 @@ void Model::setMocapData(const geometry_msgs::TransformStamped::ConstPtr& msg) {
 }
 
 void Model::setSeActuatorStates(const starleth_msgs::SeActuatorStates::ConstPtr& msg) {
-  robotModel::VectorQj motorPositions;
-  robotModel::VectorQj motorVelocities;
-  robotModel::VectorQj motorDesiredVelocities;
+  robot_model::VectorQj motorPositions;
+  robot_model::VectorQj motorVelocities;
+  robot_model::VectorQj motorDesiredVelocities;
 
   for (int i=0; i<motorPositions.size(); i++) {
     motorPositions[i] = msg->readings[i].motorPosition;

@@ -41,7 +41,7 @@
 
 #include <locomotion_controller_msgs/ResetStateEstimator.h>
 
-#include <starlethModel/starleth/starleth.hpp>
+#include <robot_model/starleth/starleth.hpp>
 #include <starleth_description/starleth_se_actuator_commands.hpp>
 
 #include <signal_logger/logger.hpp>
