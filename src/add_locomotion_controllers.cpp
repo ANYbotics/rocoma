@@ -30,17 +30,22 @@
  * @author  Christian Gehring
  * @date    Oct, 2014
  */
+#include <ros/package.h>
+
 #include <locomotion_controller/ControllerManager.hpp>
 #include <locomotion_controller/ControllerRos.hpp>
+
+#include <ros/package.h>
 
 #include <roco_assembly/controllers.hpp>
 
 namespace locomotion_controller {
 
-void add_locomotion_controllers(locomotion_controller::ControllerManager* manager, robotModel::State& state, robotModel::Command& command, ros::NodeHandle& nodeHandle) {
+void add_locomotion_controllers(locomotion_controller::ControllerManager* manager, robot_model::State& state, robot_model::Command& command, ros::NodeHandle& nodeHandle) {
 
 #ifdef USE_TASK_LOCODEMO
   auto controllerLocoDemo = new ControllerRos<loco_demo::LocoDemo>(state, command);
+  controllerLocoDemo->setParameterPath(ros::package::getPath("loco_demo"));
   controllerLocoDemo->setControllerManager(manager);
   controllerLocoDemo->setIsRealRobotFromManager(manager->isRealRobot());
   manager->addController(controllerLocoDemo);
@@ -48,13 +53,23 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
 
 #ifdef USE_TASK_LOCOCRAWLING
    auto controllerCrawling = new ControllerRos<loco_crawling::Crawling>(state, command);
+   controllerCrawling->setParameterPath(ros::package::getPath("loco_crawling"));
    controllerCrawling->setControllerManager(manager);
    controllerCrawling->setIsRealRobotFromManager(manager->isRealRobot());
    manager->addController(controllerCrawling);
 #endif
 
+#ifdef USE_TASK_LOCOJUMP
+   auto controllerJump = new ControllerRos<loco_jump::LocoJump>(state, command);
+   controllerJump->setControllerManager(manager);
+   controllerJump->setIsRealRobotFromManager(manager->isRealRobot());
+   controllerJump->setPackageRoot(ros::package::getPath("loco_jump"));
+   manager->addController(controllerJump);
+#endif
+
 #ifdef USE_TASK_LOCOCRAWLING_ROS
    auto controllerCrawlingRos = new ControllerRos<loco_crawling_ros::LocoCrawlingRos>(state, command);
+   controllerCrawlingRos->setParameterPath(ros::package::getPath("loco_crawling"));
    controllerCrawlingRos->setControllerManager(manager);
    controllerCrawlingRos->setIsRealRobotFromManager(manager->isRealRobot());
    controllerCrawlingRos->setNodeHandle(nodeHandle);
@@ -74,6 +89,14 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
    controllerFreeGaitRos->setIsRealRobotFromManager(manager->isRealRobot());
    controllerFreeGaitRos->setNodeHandle(nodeHandle);
    manager->addController(controllerFreeGaitRos);
+#endif
+
+#ifdef USE_TASK_ROCOSEATESTSTEP_ROS
+   auto controllerRocoSeaTestStepRos = new ControllerRos<roco_sea_test_ros::RocoSeaTestStepRos>(state, command);
+   controllerRocoSeaTestStepRos->setControllerManager(manager);
+   controllerRocoSeaTestStepRos->setIsRealRobotFromManager(manager->isRealRobot());
+   controllerRocoSeaTestStepRos->setNodeHandle(nodeHandle);
+   manager->addController(controllerRocoSeaTestStepRos);
 #endif
 
 

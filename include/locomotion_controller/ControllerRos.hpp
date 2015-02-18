@@ -92,7 +92,7 @@ class ControllerRos:  public roco::controllers::ControllerAdapterInterface, publ
 
   virtual void emergencyStop();
  protected:
-  bool updateState(double dt);
+  bool updateState(double dt, bool checkState=true);
   bool updateCommand(double dt, bool forceSendingControlModes);
   void sendEmergencyCommand();
 
