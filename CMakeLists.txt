@@ -47,11 +47,18 @@ find_package(catkin REQUIRED COMPONENTS
   robot_model
   roco_freeze
   roco_assembly
-  kindr
 )
 
 ## System dependencies are found with CMake's conventions
 find_package(Eigen3 REQUIRED)
+
+# Attempt to find catkinized kindr
+find_package(kindr QUIET)
+if(NOT kindr_FOUND)
+  # Attempt to find package-based kindr
+  find_package(PkgConfig REQUIRED)
+  pkg_check_modules(kindr kindr REQUIRED)
+endif()
 
 ###################################
 ## catkin specific configuration ##
@@ -65,7 +72,7 @@ find_package(Eigen3 REQUIRED)
 catkin_package(
  INCLUDE_DIRS include 
  LIBRARIES locomotion_controller model
- CATKIN_DEPENDS roscpp_nodewrap locomotion_controller_msgs starleth_description roco robot_utils signal_logger signal_logger_std signal_logger_ros robot_model roco_freeze roco_assembly kindr 
+ CATKIN_DEPENDS roscpp_nodewrap locomotion_controller_msgs starleth_description roco robot_utils signal_logger signal_logger_std signal_logger_ros robot_model roco_freeze roco_assembly 
 # DEPENDS system_lib
 )
 
@@ -78,6 +85,7 @@ catkin_package(
 include_directories(include)
 include_directories(${EIGEN3_INCLUDE_DIR})
 include_directories(${catkin_INCLUDE_DIRS})
+include_directories(${kindr_INCLUDE_DIRS})
 
 # This library includes the robot model and the terrain model.
 add_library(model
