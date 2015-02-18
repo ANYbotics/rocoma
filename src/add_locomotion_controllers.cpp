@@ -56,6 +56,7 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
   controllerLocoDemoRos->setParameterPath(ros::package::getPath("loco_demo"));
   controllerLocoDemoRos->setControllerManager(manager);
   controllerLocoDemoRos->setIsRealRobotFromManager(manager->isRealRobot());
+  controllerLocoDemoRos->setNodeHandle(nodeHandle);
   manager->addController(controllerLocoDemoRos);
 #endif
 
