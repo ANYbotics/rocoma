@@ -30,6 +30,8 @@
  * @author  Christian Gehring
  * @date    Oct, 2014
  */
+#include <ros/package.h>
+
 #include <locomotion_controller/ControllerManager.hpp>
 #include <locomotion_controller/ControllerRos.hpp>
 
@@ -48,6 +50,7 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
 
 #ifdef USE_TASK_LOCOCRAWLING
    auto controllerCrawling = new ControllerRos<loco_crawling::Crawling>(state, command);
+   controllerCrawling->setParameterPath(ros::package::getPath("loco_crawling"));
    controllerCrawling->setControllerManager(manager);
    controllerCrawling->setIsRealRobotFromManager(manager->isRealRobot());
    manager->addController(controllerCrawling);
@@ -55,6 +58,7 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
 
 #ifdef USE_TASK_LOCOCRAWLING_ROS
    auto controllerCrawlingRos = new ControllerRos<loco_crawling_ros::LocoCrawlingRos>(state, command);
+   controllerCrawlingRos->setParameterPath(ros::package::getPath("loco_crawling"));
    controllerCrawlingRos->setControllerManager(manager);
    controllerCrawlingRos->setIsRealRobotFromManager(manager->isRealRobot());
    controllerCrawlingRos->setNodeHandle(nodeHandle);
