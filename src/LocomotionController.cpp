@@ -45,6 +45,7 @@
 #include <starleth_description/starleth_se_actuator_commands.hpp>
 
 #include <signal_logger/logger.hpp>
+#include <signal_logger/LoggerNone.hpp>
 #include <signal_logger_std/LoggerStd.hpp>
 #include <signal_logger_ros/LoggerRos.hpp>
 
@@ -97,11 +98,13 @@ void LocomotionController::init() {
   if (loggerClass.compare("ros") == 0) {
     // initialize ros logger
     signal_logger::logger.reset(new signal_logger_ros::LoggerRos(getNodeHandle()));
-  } else {
+  } else if (loggerClass.compare("std") == 0) {
     // initialize std logger as fallback logger
     signal_logger::logger.reset(new signal_logger_std::LoggerStd());
     signal_logger_std::LoggerStd* loggerStd = static_cast<signal_logger_std::LoggerStd*>(signal_logger::logger.get());
     loggerStd->setVerboseLevel(signal_logger_std::LoggerStd::VL_DEBUG);
+  } else {
+    signal_logger::logger.reset(new signal_logger::LoggerNone());
   }
 
   signal_logger::logger->initLogger((int)(1.0/timeStep_), (int)(1.0/timeStep_), samplingTime, loggingScriptFilename);
