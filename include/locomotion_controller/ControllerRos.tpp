@@ -114,10 +114,12 @@ void ControllerRos<Controller_>::setIsCheckingState(bool isChecking)
 {
   if (isRealRobot_ && !isChecking) {
     ROCO_WARN(
-        "Cannot deactivate checking the robot state when the real robot is controlled!");
-  } else {
-    isCheckingState_ = isChecking;
+        "Checking the robot state was deactivated!");
   }
+/*  else {
+    isCheckingState_ = isChecking;
+  }*/
+  isCheckingState_ = isChecking;
 }
 
 template<typename Controller_>
