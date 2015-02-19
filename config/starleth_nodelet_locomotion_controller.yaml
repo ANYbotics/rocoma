@@ -5,4 +5,4 @@ controller:
 logger:
   sampling_time: 60
   script: ""
-  class: std
+  class: ros
