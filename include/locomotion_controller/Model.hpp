@@ -91,7 +91,8 @@ class Model
                      const geometry_msgs::WrenchStampedPtr& contactForceLf,
                      const geometry_msgs::WrenchStampedPtr& contactForceRf,
                      const geometry_msgs::WrenchStampedPtr& contactForceLh,
-                     const geometry_msgs::WrenchStampedPtr& contactForceRh);
+                     const geometry_msgs::WrenchStampedPtr& contactForceRh,
+                     const Eigen::Vector4i& contactFlags);
   void initializeRobotState(starleth_msgs::RobotStatePtr& robotState) const;
   void initializeJointState(sensor_msgs::JointState& jointState) const;
 
@@ -113,14 +114,12 @@ class Model
   const robot_model::State& getState() const;
   const robot_model::Command& getCommand() const;
 
-  void setContactForceThreshold(double value);
  private:
   ros::Time updateStamp_;
   std::shared_ptr<robot_model::RobotModel> robotModel_;
   std::shared_ptr<robotTerrain::TerrainBase> terrain_;
   robot_model::State state_;
   robot_model::Command command_;
-  double contactForceThreshold_;
 };
 
 } /* namespace model */

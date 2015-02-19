@@ -44,8 +44,7 @@ Model::Model():
   robotModel_(),
   terrain_(),
   state_(),
-  command_(),
-  contactForceThreshold_(2.0)
+  command_()
 {
 
 
@@ -307,7 +306,8 @@ void Model::setRobotState(const sensor_msgs::ImuPtr& imu,
                    const geometry_msgs::WrenchStampedPtr& contactForceLf,
                    const geometry_msgs::WrenchStampedPtr& contactForceRf,
                    const geometry_msgs::WrenchStampedPtr& contactForceLh,
-                   const geometry_msgs::WrenchStampedPtr& contactForceRh) {
+                   const geometry_msgs::WrenchStampedPtr& contactForceRh,
+                   const Eigen::Vector4i& contactFlags) {
 
 
 
@@ -322,7 +322,7 @@ void Model::setRobotState(const sensor_msgs::ImuPtr& imu,
 
   Eigen::Vector3d force;
   Eigen::Vector3d normal = Eigen::Vector3d::UnitZ();
-  Eigen::Vector4i contactFlags = Eigen::Vector4i::Zero();
+
 
 
 
@@ -331,28 +331,28 @@ void Model::setRobotState(const sensor_msgs::ImuPtr& imu,
   force.z() = contactForceLf->wrench.force.z;
   robotModel_->sensors().setContactForceCSw(0, force);
   robotModel_->sensors().setContactNormalCSw(0, normal);
-  contactFlags(0) = force.norm() >= contactForceThreshold_ ? 1 : 0;
+
 
   force.x() = contactForceRf->wrench.force.x;
   force.y() = contactForceRf->wrench.force.y;
   force.z() = contactForceRf->wrench.force.z;
   robotModel_->sensors().setContactForceCSw(1, force);
   robotModel_->sensors().setContactNormalCSw(1, normal);
-  contactFlags(1) = force.norm() >= contactForceThreshold_ ? 1 : 0;
+
 
   force.x() = contactForceLh->wrench.force.x;
   force.y() = contactForceLh->wrench.force.y;
   force.z() = contactForceLh->wrench.force.z;
   robotModel_->sensors().setContactForceCSw(2, force);
   robotModel_->sensors().setContactNormalCSw(2, normal);
-  contactFlags(2) = force.norm() >= contactForceThreshold_ ? 1 : 0;
+
 
   force.x() = contactForceRh->wrench.force.x;
   force.y() = contactForceRh->wrench.force.y;
   force.z() = contactForceRh->wrench.force.z;
   robotModel_->sensors().setContactForceCSw(3, force);
   robotModel_->sensors().setContactNormalCSw(3, normal);
-  contactFlags(3) = force.norm() >= contactForceThreshold_ ? 1 : 0;
+
 
   robotModel_->sensors().setContactFlags(contactFlags);
 
@@ -537,10 +537,6 @@ void Model::setJoystickCommands(const sensor_msgs::Joy::ConstPtr& msg) {
   for (int i=0; i<msg->buttons.size();i++) {
     robotModel_->sensors().getJoystick()->setButton(i+1, msg->buttons[i]);
   }
-}
-
-void Model::setContactForceThreshold(double value) {
-	contactForceThreshold_ = value;
 }
 
 
