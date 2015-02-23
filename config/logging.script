@@ -270,6 +270,9 @@ time
 /log/base_des_quat_ctrl_x
 /log/base_des_quat_ctrl_y
 /log/base_des_quat_ctrl_z
+/fps/landing_plane_normal_x
+/fps/landing_plane_normal_y
+/fps/landing_plane_normal_z
 /fps/landing_plane_height
 /fps/LF_foot_x
 /fps/LF_foot_y

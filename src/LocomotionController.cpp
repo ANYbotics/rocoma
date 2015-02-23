@@ -48,7 +48,7 @@
 #include <signal_logger/LoggerNone.hpp>
 #include <signal_logger_std/LoggerStd.hpp>
 #include <signal_logger_ros/LoggerRos.hpp>
-
+#include <signal_logger/LoggerNone.hpp>
 #include <ros/package.h>
 
 #include <chrono>
