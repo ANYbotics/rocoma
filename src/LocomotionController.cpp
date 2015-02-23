@@ -98,6 +98,8 @@ void LocomotionController::init() {
   if (loggerClass.compare("ros") == 0) {
     // initialize ros logger
     signal_logger::logger.reset(new signal_logger_ros::LoggerRos(getNodeHandle()));
+    signal_logger_ros::LoggerRos* loggerRos = static_cast<signal_logger_ros::LoggerRos*>(signal_logger::logger.get());
+    loggerRos->setPublishFrequency(samplingTime);
   } else if (loggerClass.compare("std") == 0) {
     // initialize std logger as fallback logger
     signal_logger::logger.reset(new signal_logger_std::LoggerStd());
