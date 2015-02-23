@@ -78,6 +78,7 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
 
 #ifdef USE_TASK_LOCOFREEGAIT
    auto controllerFreeGait = new ControllerRos<loco_free_gait::FreeGait>(state, command);
+   controllerFreeGait->setControllerPath(ros::package::getPath("loco_free_gait"));
    controllerFreeGait->setControllerManager(manager);
    controllerFreeGait->setIsRealRobotFromManager(manager->isRealRobot());
    manager->addController(controllerFreeGait);
@@ -85,6 +86,7 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
 
 #ifdef USE_TASK_LOCOFREEGAIT_ROS
    auto controllerFreeGaitRos = new ControllerRos<loco_free_gait_ros::FreeGaitRos>(state, command);
+   controllerFreeGaitRos->setControllerPath(ros::package::getPath("loco_free_gait"));
    controllerFreeGaitRos->setControllerManager(manager);
    controllerFreeGaitRos->setIsRealRobotFromManager(manager->isRealRobot());
    controllerFreeGaitRos->setNodeHandle(nodeHandle);
