@@ -109,6 +109,23 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
 #endif
 
 
+#ifdef USE_TASK_ROCO_RECOVERY_STATICWALK
+   auto controllerRocoRecoveryStaticWalk = new ControllerRos<roco_recovery_staticwalk::RocoRecoveryStaticWalk>(state, command);
+   controllerRocoRecoveryStaticWalk->setControllerPath(ros::package::getPath("roco_recovery_staticwalk"));
+   controllerRocoRecoveryStaticWalk->setControllerManager(manager);
+   controllerRocoRecoveryStaticWalk->setIsRealRobotFromManager(manager->isRealRobot());
+   manager->addController(controllerRocoRecoveryStaticWalk);
+#endif
+
+#ifdef USE_TASK_ROCO_RECOVERY_STATICWALK_ROS
+   auto controllerRocoRecoveryStaticWalkRos = new ControllerRos<roco_recovery_staticwalk_ros::RocoRecoveryStaticWalkRos>(state, command);
+   controllerRocoRecoveryStaticWalkRos->setControllerPath(ros::package::getPath("roco_recovery_staticwalk"));
+   controllerRocoRecoveryStaticWalkRos->setControllerManager(manager);
+   controllerRocoRecoveryStaticWalkRos->setIsRealRobotFromManager(manager->isRealRobot());
+   controllerRocoRecoveryStaticWalkRos->setNodeHandle(nodeHandle);
+   manager->addController(controllerRocoRecoveryStaticWalkRos);
+#endif
+
 
 }
 
