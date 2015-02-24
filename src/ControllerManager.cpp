@@ -75,11 +75,12 @@ void ControllerManager::addController(ControllerPtr controller)  {
 //  controller = &controllers_.back();
 
 
-  ROS_INFO("Added Task %s.", controller->getName().c_str());
+
   if (!controller->createController(timeStep_)) {
     std::string error = "Could not add controller " +  controller->getName() + "!";
     throw std::runtime_error(error);
   }
+  ROS_INFO("Added Task %s.", controller->getName().c_str());
 }
 
 

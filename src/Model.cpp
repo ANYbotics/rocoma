@@ -155,7 +155,7 @@ void Model::addVariablesToLog() {
       "RF_HAA_des_thd", "RF_HFE_des_thd", "RF_KFE_des_thd",
       "LH_HAA_des_thd", "LH_HFE_des_thd", "LH_KFE_des_thd",
       "RH_HAA_des_thd", "RH_HFE_des_thd", "RH_KFE_des_thd";
-  signal_logger::logger->addDoubleEigenMatrixToLog(command_.getDesiredMotorVelocities().toImplementation(), names);
+  signal_logger::logger->addDoubleEigenMatrixToLog(command_.getDesiredJointVelocities().toImplementation(), names);
 
   names << "LF_HAA_uff", "LF_HFE_uff", "LF_KFE_uff",
        "RF_HAA_uff", "RF_HFE_uff", "RF_KFE_uff",
@@ -485,7 +485,9 @@ void Model::getSeActuatorCommands(starleth_msgs::SeActuatorCommandsPtr& actuator
   for (int i=0; i<actuatorCommands->commands.size(); i++) {
     actuatorCommands->commands[i].header.stamp = stamp;
     actuatorCommands->commands[i].mode = command_.getDesiredControlModes()(i);
+    //std::cout << i << ":  " << (command_.getDesiredJointPositions()(i) - actuatorCommands->commands[i].jointPosition)/fabs(actuatorCommands->commands[i].jointPosition - command_.getDesiredJointPositions()(i)) << "  " << command_.getDesiredJointVelocities()(i)/fabs(command_.getDesiredJointVelocities()(i)) << std::endl;
     actuatorCommands->commands[i].jointPosition = command_.getDesiredJointPositions()(i);
+    actuatorCommands->commands[i].jointVelocity = command_.getDesiredJointVelocities()(i);
     actuatorCommands->commands[i].motorVelocity = command_.getDesiredMotorVelocities()(i);
     actuatorCommands->commands[i].jointTorque = command_.getDesiredJointTorques()(i);
   }
