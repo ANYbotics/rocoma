@@ -33,6 +33,7 @@
 #include "locomotion_controller/ControllerManager.hpp"
 #include "locomotion_controller/ControllerRos.hpp"
 
+#include "signal_logger_ros/LoggerRos.hpp"
 
 namespace locomotion_controller {
 
@@ -131,6 +132,17 @@ bool ControllerManager::switchController(locomotion_controller_msgs::SwitchContr
       ControllerPtr initController = &controller;
 
 //      isInitializingTask_ = true;
+
+
+      // reset the ros logger
+      if (signal_logger::logger.get()->getLoggerType()
+          == signal_logger::LoggerBase::LoggerType::TypeRos) {
+        signal_logger_ros::LoggerRos* loggerRos =
+            dynamic_cast<signal_logger_ros::LoggerRos*>(signal_logger::logger
+                .get());
+        loggerRos->clearCollectedVariables();
+      }
+
       initController->initializeController(timeStep_);
       if (initController->isInitialized()) {
         res.status = res.STATUS_SWITCHED;
