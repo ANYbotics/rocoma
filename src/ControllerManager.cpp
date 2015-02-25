@@ -80,7 +80,7 @@ void ControllerManager::addController(ControllerPtr controller)  {
     std::string error = "Could not add controller " +  controller->getName() + "!";
     throw std::runtime_error(error);
   }
-  ROS_INFO("Added Task %s.", controller->getName().c_str());
+  ROS_INFO("Added controller %s.", controller->getName().c_str());
 }
 
 
