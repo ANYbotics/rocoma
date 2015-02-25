@@ -108,7 +108,12 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
    manager->addController(controllerRocoSeaTestStepRos);
 #endif
 
-
+#ifdef USE_TASK_LOCOBOUND
+   auto controllerLocoBound = new ControllerRos<loco_bound::LocoBound>(state, command);
+   controllerLocoBound->setControllerManager(manager);
+   controllerLocoBound->setIsRealRobotFromManager(manager->isRealRobot());
+   manager->addController(controllerLocoBound);
+#endif
 
 }
 
