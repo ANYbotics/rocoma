@@ -87,6 +87,7 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
 
 #ifdef USE_TASK_LOCOFREEGAIT
    auto controllerFreeGait = new ControllerRos<loco_free_gait::FreeGait>(state, command);
+   controllerFreeGait->setControllerPath(ros::package::getPath("loco_free_gait"));
    controllerFreeGait->setControllerManager(manager);
    controllerFreeGait->setIsRealRobotFromManager(manager->isRealRobot());
    manager->addController(controllerFreeGait);
@@ -94,6 +95,7 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
 
 #ifdef USE_TASK_LOCOFREEGAIT_ROS
    auto controllerFreeGaitRos = new ControllerRos<loco_free_gait_ros::FreeGaitRos>(state, command);
+   controllerFreeGaitRos->setControllerPath(ros::package::getPath("loco_free_gait"));
    controllerFreeGaitRos->setControllerManager(manager);
    controllerFreeGaitRos->setIsRealRobotFromManager(manager->isRealRobot());
    controllerFreeGaitRos->setNodeHandle(nodeHandle);
@@ -107,7 +109,6 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
    controllerRocoSeaTestStepRos->setNodeHandle(nodeHandle);
    manager->addController(controllerRocoSeaTestStepRos);
 #endif
-
 
 #ifdef USE_TASK_ROCO_RECOVERY_STATICWALK
    auto controllerRocoRecoveryStaticWalk = new ControllerRos<roco_recovery_staticwalk::RocoRecoveryStaticWalk>(state, command);
@@ -126,6 +127,12 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
    manager->addController(controllerRocoRecoveryStaticWalkRos);
 #endif
 
+#ifdef USE_TASK_LOCOBOUND
+   auto controllerLocoBound = new ControllerRos<loco_bound::LocoBound>(state, command);
+   controllerLocoBound->setControllerManager(manager);
+   controllerLocoBound->setIsRealRobotFromManager(manager->isRealRobot());
+   manager->addController(controllerLocoBound);
+#endif
 
 }
 
