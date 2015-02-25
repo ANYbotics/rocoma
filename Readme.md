@@ -1,6 +1,10 @@
 Locomotion Controller 
 =====================
 
+Run the default locomotion controller with
+
+	roslaunch locomotion_controller locomotion_controller.launch
+
 ## ROS Node
 
 #### Subscribed Topics
