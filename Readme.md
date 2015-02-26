@@ -1,6 +1,10 @@
 Locomotion Controller 
 =====================
 
+Run the default locomotion controller with
+
+	roslaunch locomotion_controller locomotion_controller.launch
+
 ## ROS Node
 
 #### Subscribed Topics
@@ -56,7 +60,7 @@ Locomotion Controller
 
 ## Bugs & Feature Requests
 
-Please report bugs and request features using the [Issue Tracker](https://github.com/ethz-asl/c_starleth_locomotion_controller/issues).
+Please report bugs and request features using the [Issue Tracker](https://bitbucket.org/ethz-asl-lr/starleth_locomotion_controller/issues).
 
 
 [ROS]: http://www.ros.org

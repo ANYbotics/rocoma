@@ -95,12 +95,18 @@ bool ControllerRos<Controller_>::isCheckingCommand() const
 template<typename Controller_>
 void ControllerRos<Controller_>::setIsCheckingCommand(bool isChecking)
 {
-  if (isRealRobot_ && !isChecking) {
+/*  if (isRealRobot_ && !isChecking) {
     ROCO_WARN(
         "Cannot deactivate checking the commands when the real robot is controlled!");
   } else {
     isCheckingCommand_ = isChecking;
+  }*/
+
+  if (isRealRobot_ && !isChecking) {
+    ROCO_WARN(
+        "Checking the command was deactivated!");
   }
+  isCheckingCommand_ = isChecking;
 }
 
 template<typename Controller_>

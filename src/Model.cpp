@@ -490,6 +490,7 @@ void Model::getSeActuatorCommands(starleth_msgs::SeActuatorCommandsPtr& actuator
     actuatorCommands->commands[i].jointVelocity = command_.getDesiredJointVelocities()(i);
     actuatorCommands->commands[i].motorVelocity = command_.getDesiredMotorVelocities()(i);
     actuatorCommands->commands[i].jointTorque = command_.getDesiredJointTorques()(i);
+    //std::cout << i << " motor vel: " << command_.getDesiredMotorVelocities()(i) << std::endl;
   }
 }
 
@@ -558,14 +559,17 @@ void Model::setSeActuatorStates(const starleth_msgs::SeActuatorStates::ConstPtr&
   robot_model::VectorQj motorPositions;
   robot_model::VectorQj motorVelocities;
   robot_model::VectorQj motorDesiredVelocities;
+  robot_model::VectorQj motorCurrents;
 
   for (int i=0; i<motorPositions.size(); i++) {
     motorPositions[i] = msg->readings[i].motorPosition;
     motorVelocities[i] = msg->readings[i].motorVelocity;
+    motorCurrents[i] = msg->readings[i].motorCurrent;
     motorDesiredVelocities[i] = msg->readings[i].motorDesiredVelocity;
   }
   robotModel_->sensors().setMotorPos(motorPositions);
   robotModel_->sensors().setMotorVel(motorVelocities);
+  robotModel_->sensors().setMotorCurrents(motorCurrents);
   robotModel_->sensors().setDesiredMotorVel(motorDesiredVelocities);
 }
 
