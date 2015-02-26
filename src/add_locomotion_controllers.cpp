@@ -125,6 +125,7 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
    controllerRocoRecoveryStaticWalkRos->setIsRealRobotFromManager(manager->isRealRobot());
    controllerRocoRecoveryStaticWalkRos->setNodeHandle(nodeHandle);
    manager->addController(controllerRocoRecoveryStaticWalkRos);
+#endif
 
 #ifdef USE_TASK_ROCOSEATESTCHIRP
    auto controllerRocoSeaTestChirp = new ControllerRos<roco_sea_test_chirp::RocoSeaTestChirp>(state, command);
