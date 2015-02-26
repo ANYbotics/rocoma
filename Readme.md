@@ -1,9 +1,113 @@
-Locomotion Controller 
-=====================
+Locomotion Controller for StarlETH
+============================
 
-Run the default locomotion controller with
+[![Build Status](http://129.132.38.183:8080/buildStatus/icon?job=starleth_locomotion_controller)](http://129.132.38.183:8080/view/legged_robotics/job/starleth_locomotion_controller/)
 
-	roslaunch locomotion_controller locomotion_controller.launch
+Overview
+---------------
+This C++ software package provides a locomotion controller for the quadruped robot StarlETH.
+
+**Author: Christian Gehring**
+
+**Contact: gehrinch@ethz.ch**
+
+**Affiliation: Autonomous Systems Lab, ETH Zurich**
+
+
+
+Usage
+------------
+### Boot-Up Configuration on StarlETH
+
+When the machine *starleth-lpc* boots up, the locomotion controller is started automatically as a *deamon*. 
+To **start the deamon** manually, run
+
+```
+sudo service starleth-locomotion-controller start
+```
+The service will wait a few seconds until it starts the locomotion controller, because during boot-up some devices take some time to be ready.
+Note that the controller will be started with a homing procedure, i.e. the legs need to be at the hard stops.
+
+To **re-start the locomotion controller**, you can also use the following command:
+
+```
+sudo service starleth-locomotion-controller restart
+```
+This service will stop the locomotion controller if it is still running and start it immediately.
+
+To  **re-start the locomotion controller without homing**, run
+```
+sudo service starleth-locomotion-controller restart-no-home
+```
+
+To **stop the  locomotion controller**, run
+```
+sudo service starleth-locomotion-controller stop
+```
+
+To **check if the  locomotion controller is running**, run
+```
+sudo service starleth-locomotion-controller status
+```
+
+
+### ROS Launch Configuration on StarlETH
+To **start the locomotion controller**, run 
+
+```
+roslaunch starleth_locomotion_controller starleth_nodelet_screen.launch
+```
+
+This will start the locomotion controller with [screen](http://www.gnu.org/software/screen/screen.html), which is  highly recommended!
+Screen prevents stopping the locomotion controller when the user's terminal is closed. 
+
+To **display the output** of the locomotion controller, run 
+```
+rosrun starleth_locomotion_controller spawn_locomotion_controller
+```
+ or use screen directly: 
+```
+screen -r locomotion_controller_manager
+```
+
+To **terminate** the locomotion controller, press ```Ctrl + C``` in the shell or run 
+```
+rosrun starleth_locomotion_controller quit_screen
+```
+press ```y``` and  ```Enter```.
+
+Check with *screen* and *rosnode* if everything closed properly, but wait about 5 seconds after terminating the locomotion controller:
+```
+screen -ls
+rosnode list
+```
+If *locomotion_controller_manager*, *locomotion_controller*, *state_estimator* or *lowlevel_controller* appears in the list, re-run
+```
+rosrun starleth_locomotion_controller quit_screen
+```
+and check again.
+
+If *locomotion_controller_manager*, *locomotion_controller*, *state_estimator* or *lowlevel_controller* appears *twice* in the list, run 
+```
+rosrun starleth_locomotion_controller quit_screen_all_detached
+```
+This will quit all detached screen windows.
+
+
+
+### Debugging Configuration On StarlETH
+
+To debug the locomotion controller with [GDB](http://www.gnu.org/software/gdb/), run
+```
+roslaunch starleth_locomotion_controller starleth_nodelet_gdb.launch
+```
+Note that this configuration does not run with [screen](http://www.gnu.org/software/screen/screen.html)! 
+
+
+
+
+
+
 
 ## ROS Node
 
