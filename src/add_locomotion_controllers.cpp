@@ -102,6 +102,23 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
    manager->addController(controllerFreeGaitRos);
 #endif
 
+#ifdef USE_TASK_LOCOJOINTTRAJECTORIES
+   auto controllerJointTrajectories = new ControllerRos<loco_joint_trajectories::JointTrajectories>(state, command);
+   controllerJointTrajectories->setControllerPath(ros::package::getPath("loco_joint_trajectories"));
+   controllerJointTrajectories->setControllerManager(manager);
+   controllerJointTrajectories->setIsRealRobotFromManager(manager->isRealRobot());
+   manager->addController(controllerJointTrajectories);
+#endif
+
+#ifdef USE_TASK_LOCOJOINTTRAJECTORIES_ROS
+   auto controllerJointTrajectoriesRos = new ControllerRos<loco_joint_trajectories_ros::JointTrajectoriesRos>(state, command);
+   controllerJointTrajectoriesRos->setControllerPath(ros::package::getPath("loco_joint_trajectories"));
+   controllerJointTrajectoriesRos->setControllerManager(manager);
+   controllerJointTrajectoriesRos->setIsRealRobotFromManager(manager->isRealRobot());
+   controllerJointTrajectoriesRos->setNodeHandle(nodeHandle);
+   manager->addController(controllerJointTrajectoriesRos);
+#endif
+
 #ifdef USE_TASK_ROCOSEATESTSTEP_ROS
    auto controllerRocoSeaTestStepRos = new ControllerRos<roco_sea_test_ros::RocoSeaTestStepRos>(state, command);
    controllerRocoSeaTestStepRos->setControllerManager(manager);
