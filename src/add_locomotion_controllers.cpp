@@ -151,6 +151,14 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
    manager->addController(controllerRocoSeaTestChirp);
 #endif
 
+
+#ifdef USE_TASK_ROCOSEATEST_FRICTION_ID
+   auto controllerRocoSeaTestFrictionId = new ControllerRos<roco_sea_test_friction_id::RocoSeaTestFrictionId>(state, command);
+   controllerRocoSeaTestFrictionId->setControllerManager(manager);
+   controllerRocoSeaTestFrictionId->setIsRealRobotFromManager(manager->isRealRobot());
+    manager->addController(controllerRocoSeaTestFrictionId);
+#endif
+
 #ifdef USE_TASK_LOCOBOUND
    auto controllerLocoBound = new ControllerRos<loco_bound::LocoBound>(state, command);
    controllerLocoBound->setControllerManager(manager);
