@@ -566,6 +566,7 @@ void Model::setSeActuatorStates(const starleth_msgs::SeActuatorStates::ConstPtr&
     motorVelocities[i] = msg->readings[i].motorVelocity;
     motorCurrents[i] = msg->readings[i].motorCurrent;
     motorDesiredVelocities[i] = msg->readings[i].motorDesiredVelocity;
+    robotModel_->sensors().getMotorCurrents()(i) = msg->readings[i].motorDesiredCurrent;
   }
   robotModel_->sensors().setMotorPos(motorPositions);
   robotModel_->sensors().setMotorVel(motorVelocities);
