@@ -36,6 +36,8 @@
 #include <starleth_description/starleth_robot_state.hpp>
 #include <robot_model/starleth/starleth.hpp>
 #include <signal_logger/logger.hpp>
+#include <series_elastic_actuator_ros/ConvertRosMessages.hpp>
+
 
 namespace model {
 
@@ -84,10 +86,7 @@ void Model::initializeForController(double dt, bool isRealRobot) {
   state_.setRobotModelPtr(this->getRobotModel());
   state_.setTerrainPtr(this->getTerrainModel());
   robot_model::initializeStateForStarlETH(state_);
-  //robot_model::initializeCommandForStarlETH(command_);
-  robot_model::initializeCommandForStarlETHWithoutBars(command_);
-
-//  setRobotModelParameters();
+  robot_model::initializeCommandForStarlETH(command_);
 
 
 
@@ -143,26 +142,9 @@ void Model::reinitialize(double dt) {
 void Model::addVariablesToLog() {
   robotModel_->addVariablesToLog();
 
+  command_.addVariablesToLog(true);
 
   Eigen::Matrix<std::string, 12,1> names;
-  names << "LF_HAA_des_th", "LF_HFE_des_th", "LF_KFE_des_th",
-       "RF_HAA_des_th", "RF_HFE_des_th", "RF_KFE_des_th",
-       "LH_HAA_des_th", "LH_HFE_des_th", "LH_KFE_des_th",
-       "RH_HAA_des_th", "RH_HFE_des_th", "RH_KFE_des_th";
-  signal_logger::logger->addDoubleEigenMatrixToLog(command_.getDesiredJointPositions().toImplementation(), names);
-
-  names << "LF_HAA_des_thd", "LF_HFE_des_thd", "LF_KFE_des_thd",
-      "RF_HAA_des_thd", "RF_HFE_des_thd", "RF_KFE_des_thd",
-      "LH_HAA_des_thd", "LH_HFE_des_thd", "LH_KFE_des_thd",
-      "RH_HAA_des_thd", "RH_HFE_des_thd", "RH_KFE_des_thd";
-  signal_logger::logger->addDoubleEigenMatrixToLog(command_.getDesiredJointVelocities().toImplementation(), names);
-
-  names << "LF_HAA_uff", "LF_HFE_uff", "LF_KFE_uff",
-       "RF_HAA_uff", "RF_HFE_uff", "RF_KFE_uff",
-       "LH_HAA_uff", "LH_HFE_uff", "LH_KFE_uff",
-       "RH_HAA_uff", "RH_HFE_uff", "RH_KFE_uff";
-  signal_logger::logger->addDoubleEigenMatrixToLog(command_.getDesiredJointTorques().toImplementation(), names);
-
 
   names << "LF_HAA_th", "LF_HFE_th", "LF_KFE_th",
        "RF_HAA_th", "RF_HFE_th", "RF_KFE_th",
@@ -480,17 +462,13 @@ void Model::getRobotState(starleth_msgs::RobotStatePtr& robotState) {
 
 
 
-void Model::getSeActuatorCommands(starleth_msgs::SeActuatorCommandsPtr& actuatorCommands) {
+void Model::getSeActuatorCommands(series_elastic_actuator_msgs::SeActuatorCommandsPtr& actuatorCommands) {
   ros::Time stamp = ros::Time::now();
-  for (int i=0; i<actuatorCommands->commands.size(); i++) {
+  int i = 0;
+  for (auto& command : command_.getActuatorCommands()) {
     actuatorCommands->commands[i].header.stamp = stamp;
-    actuatorCommands->commands[i].mode = command_.getDesiredControlModes()(i);
-    //std::cout << i << ":  " << (command_.getDesiredJointPositions()(i) - actuatorCommands->commands[i].jointPosition)/fabs(actuatorCommands->commands[i].jointPosition - command_.getDesiredJointPositions()(i)) << "  " << command_.getDesiredJointVelocities()(i)/fabs(command_.getDesiredJointVelocities()(i)) << std::endl;
-    actuatorCommands->commands[i].jointPosition = command_.getDesiredJointPositions()(i);
-    actuatorCommands->commands[i].jointVelocity = command_.getDesiredJointVelocities()(i);
-    actuatorCommands->commands[i].motorVelocity = command_.getDesiredMotorVelocities()(i);
-    actuatorCommands->commands[i].jointTorque = command_.getDesiredJointTorques()(i);
-    //std::cout << i << " motor vel: " << command_.getDesiredMotorVelocities()(i) << std::endl;
+    series_elastic_actuator_ros::ConvertRosMessages::writeToMessage(actuatorCommands->commands[i], command);
+    ++i;
   }
 }
 
@@ -555,23 +533,22 @@ void Model::setMocapData(const geometry_msgs::TransformStamped::ConstPtr& msg) {
   robotModel_->sensors().getMocap()->setRotation(Eigen::Quaterniond(msg->transform.rotation.w, msg->transform.rotation.x, msg->transform.rotation.y, msg->transform.rotation.z));
 }
 
-void Model::setSeActuatorStates(const starleth_msgs::SeActuatorStates::ConstPtr& msg) {
-  robot_model::VectorQj motorPositions;
-  robot_model::VectorQj motorVelocities;
-  robot_model::VectorQj motorDesiredVelocities;
-  robot_model::VectorQj motorCurrents;
-
-  for (int i=0; i<motorPositions.size(); i++) {
-    motorPositions[i] = msg->readings[i].motorPosition;
-    motorVelocities[i] = msg->readings[i].motorVelocity;
-    motorCurrents[i] = msg->readings[i].motorCurrent;
-    motorDesiredVelocities[i] = msg->readings[i].motorDesiredVelocity;
-    robotModel_->sensors().getMotorCurrents()(i) = msg->readings[i].motorDesiredCurrent;
+void Model::setSeActuatorReadings(const series_elastic_actuator_msgs::SeActuatorReadings::ConstPtr& msg) {
+  for (int i=0; i<msg->readings.size(); i++) {
+    setSeActuatorState(i, msg->readings[i].state);
+    setSeActuatorCommanded(i, msg->readings[i].commanded);
   }
-  robotModel_->sensors().setMotorPos(motorPositions);
-  robotModel_->sensors().setMotorVel(motorVelocities);
-  robotModel_->sensors().setMotorCurrents(motorCurrents);
-  robotModel_->sensors().setDesiredMotorVel(motorDesiredVelocities);
 }
+
+void Model::setSeActuatorState(const int iJoint, const series_elastic_actuator_msgs::SeActuatorState& state) {
+  robotModel_->sensors().getMotorPos()(iJoint) = state.actuatorPosition;
+  robotModel_->sensors().getMotorVel()(iJoint) = state.actuatorVelocity;
+  robotModel_->sensors().getMotorCurrents()(iJoint) = state.current;
+}
+
+void Model::setSeActuatorCommanded(const int iJoint, const series_elastic_actuator_msgs::SeActuatorCommand& commanded) {
+  robotModel_->sensors().getDesiredMotorVel()(iJoint) = commanded.actuatorVelocity;
+}
+
 
 } /* namespace model */

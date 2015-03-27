@@ -370,9 +370,9 @@ bool ControllerRos<Controller_>::updateCommand(double dt,
 template<typename Controller_>
 void ControllerRos<Controller_>::sendEmergencyCommand()
 {
-  command_.getDesiredControlModes().toImplementation().fill(
-      Command::AM_MotorVelocity);
-  command_.getDesiredMotorVelocities().setZero();
+  for (auto& command : command_.getActuatorCommands()) {
+    command.setMode(robot_model::Command::Mode::MODE_FREEZE);
+  }
 }
 
 template<typename Controller_>

@@ -31,8 +31,7 @@
  * @date    Oct, 2014
  */
 
-#ifndef LOCOMOTION_CONTROLLER_LOCOMOTIONCONTROLLER_HPP_
-#define LOCOMOTION_CONTROLLER_LOCOMOTIONCONTROLLER_HPP_
+#pragma once
 
 #include <ros/ros.h>
 #include <roscpp_nodewrap/NodeImpl.h>
@@ -40,7 +39,8 @@
 
 #include <starleth_msgs/RobotState.h>
 #include <sensor_msgs/Joy.h>
-#include <starleth_msgs/SeActuatorCommands.h>
+#include <series_elastic_actuator_msgs/SeActuatorCommands.h>
+#include <series_elastic_actuator_msgs/SeActuatorReadings.h>
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/TransformStamped.h>
 
@@ -87,7 +87,7 @@ class LocomotionController : public nodewrap::NodeImpl
                      locomotion_controller_msgs::EmergencyStop::Response &res);
   void commandVelocityCallback(const geometry_msgs::Twist::ConstPtr& msg);
   void mocapCallback(const geometry_msgs::TransformStamped::ConstPtr& msg);
-  void seActuatorStatesCallback(const starleth_msgs::SeActuatorStates::ConstPtr& msg);
+  void seActuatorReadingsCallback(const series_elastic_actuator_msgs::SeActuatorReadings::ConstPtr& msg);
 
   void initializeMessages();
   void initializeServices();
@@ -110,7 +110,7 @@ class LocomotionController : public nodewrap::NodeImpl
 
   // this is only temporary:
   ros::Subscriber mocapSubscriber_;
-  ros::Subscriber seActuatorStatesSubscriber_;
+  ros::Subscriber seActuatorReadingsSubscriber_;
 
   ros::Publisher jointCommandsPublisher_;
   ros::ServiceServer switchControllerService_;
@@ -118,7 +118,7 @@ class LocomotionController : public nodewrap::NodeImpl
   ros::ServiceServer getAvailableControllersService_;
   ros::ServiceClient resetStateEstimatorClient_;
 
-  starleth_msgs::SeActuatorCommandsPtr jointCommands_;
+  series_elastic_actuator_msgs::SeActuatorCommandsPtr jointCommands_;
 
 
 
@@ -130,5 +130,3 @@ class LocomotionController : public nodewrap::NodeImpl
 };
 
 } /* namespace locomotion_controller */
-
-#endif /* LOCOMOTION_CONTROLLER_LOCOMOTIONCONTROLLER_HPP_ */
