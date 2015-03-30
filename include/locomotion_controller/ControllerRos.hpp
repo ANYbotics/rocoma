@@ -46,6 +46,7 @@
 
 #include <roco/controllers/ControllerAdapterInterface.hpp>
 #include <signal_logger/logger.hpp>
+#include <robot_model/robot_model.hpp>
 
 #include "locomotion_controller/ControllerManager.hpp"
 

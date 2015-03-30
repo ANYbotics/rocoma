@@ -32,14 +32,14 @@
  */
 
 #include <pluginlib/class_list_macros.h>
+#include <ros/callback_queue.h>
+#include <ros/package.h>
 
 #include "locomotion_controller/LocomotionController.hpp"
 
-#include "robotUtils/terrains/TerrainPlane.hpp"
-
-#include <ros/callback_queue.h>
-
+// Messages
 #include <locomotion_controller_msgs/ResetStateEstimator.h>
+
 
 #include <robot_model/starleth/starleth.hpp>
 #include <starleth_description/starleth_se_actuator_commands.hpp>
@@ -49,7 +49,7 @@
 #include <signal_logger_std/LoggerStd.hpp>
 #include <signal_logger_ros/LoggerRos.hpp>
 #include <signal_logger/LoggerNone.hpp>
-#include <ros/package.h>
+
 
 #include <chrono>
 #include <cstdint>
@@ -142,7 +142,7 @@ void LocomotionController::initializeMessages() {
   //--- Initialize joint commands.
   {
     std::lock_guard<std::mutex> lock(mutexJointCommands_);
-    jointCommands_.reset(new starleth_msgs::SeActuatorCommands);
+    jointCommands_.reset(new series_elastic_actuator_msgs::SeActuatorCommands);
     starleth_description::initializeSeActuatorCommandsForStarlETH(*jointCommands_);
   }
   //---
@@ -156,7 +156,7 @@ void LocomotionController::initializeServices() {
 }
 
 void LocomotionController::initializePublishers() {
-  jointCommandsPublisher_ = advertise<starleth_msgs::SeActuatorCommands>("command_seactuators","/command_seactuators", 100);
+  jointCommandsPublisher_ = advertise<series_elastic_actuator_msgs::SeActuatorCommands>("command_seactuators","/command_seactuators", 100);
 }
 
 void LocomotionController::initializeSubscribers() {
@@ -164,7 +164,7 @@ void LocomotionController::initializeSubscribers() {
   commandVelocitySubscriber_ = subscribe("command_velocity", "/command_velocity", 100, &LocomotionController::commandVelocityCallback, ros::TransportHints().tcpNoDelay());
   //--- temporary
   mocapSubscriber_ = subscribe("mocap", "mocap", 100, &LocomotionController::mocapCallback, ros::TransportHints().tcpNoDelay());
-  seActuatorStatesSubscriber_ = subscribe("actuator_states", "/actuator_states", 100, &LocomotionController::seActuatorStatesCallback, ros::TransportHints().tcpNoDelay());
+  seActuatorReadingsSubscriber_ = subscribe("actuator_readings", "/actuator_readings", 100, &LocomotionController::seActuatorReadingsCallback, ros::TransportHints().tcpNoDelay());
   //---
 
   // this should be last since it will start the controller loop
@@ -183,7 +183,7 @@ void LocomotionController::publish()  {
       model_.getSeActuatorCommands(jointCommands_);
     }
 
-    starleth_msgs::SeActuatorCommandsConstPtr jointCommands(new starleth_msgs::SeActuatorCommands(*jointCommands_));
+    series_elastic_actuator_msgs::SeActuatorCommandsConstPtr jointCommands(new series_elastic_actuator_msgs::SeActuatorCommands (*jointCommands_));
     jointCommandsPublisher_.publish(jointCommands);
     //ros::spinOnce(); // todo: required?
   }
@@ -294,9 +294,9 @@ void LocomotionController::mocapCallback(const geometry_msgs::TransformStamped::
   model_.setMocapData(msg);
 }
 
-void LocomotionController::seActuatorStatesCallback(const starleth_msgs::SeActuatorStates::ConstPtr& msg) {
+void LocomotionController::seActuatorReadingsCallback(const series_elastic_actuator_msgs::SeActuatorReadings::ConstPtr& msg) {
   std::lock_guard<std::mutex> lock(mutexModelAndControllerManager_);
-  model_.setSeActuatorStates(msg);
+  model_.setSeActuatorReadings(msg);
 }
 
 } /* namespace locomotion_controller */

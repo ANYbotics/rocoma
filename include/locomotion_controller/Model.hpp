@@ -47,8 +47,10 @@
 #include <geometry_msgs/TransformStamped.h>
 #include <starleth_msgs/RobotState.h>
 #include <sensor_msgs/Joy.h>
-#include <starleth_msgs/SeActuatorCommands.h>
-#include <starleth_msgs/SeActuatorStates.h>
+#include <series_elastic_actuator_msgs/SeActuatorCommands.h>
+#include <series_elastic_actuator_msgs/SeActuatorReadings.h>
+#include <series_elastic_actuator_msgs/SeActuatorCommand.h>
+#include <series_elastic_actuator_msgs/SeActuatorState.h>
 
 #include <robot_model/State.hpp>
 #include <robot_model/Command.hpp>
@@ -97,15 +99,17 @@ class Model
   void initializeJointState(sensor_msgs::JointState& jointState) const;
 
   void getRobotState(starleth_msgs::RobotStatePtr& robotState);
-  void getSeActuatorCommands(starleth_msgs::SeActuatorCommandsPtr& actuatorCommands);
+  void getSeActuatorCommands(series_elastic_actuator_msgs::SeActuatorCommandsPtr& actuatorCommands);
   void getPose(geometry_msgs::PoseWithCovarianceStampedPtr& pose);
   void getTwist(geometry_msgs::TwistWithCovarianceStampedPtr& pose);
 
   void setJoystickCommands(const sensor_msgs::Joy::ConstPtr& msg);
   void setCommandVelocity(const geometry_msgs::Twist::ConstPtr& msg);
   void setMocapData(const geometry_msgs::TransformStamped::ConstPtr& msg);
-  void setSeActuatorStates(const starleth_msgs::SeActuatorStates::ConstPtr& msg);
 
+  void setSeActuatorReadings(const series_elastic_actuator_msgs::SeActuatorReadings::ConstPtr& readings);
+  void setSeActuatorState(const int iJoint, const series_elastic_actuator_msgs::SeActuatorState& state);
+  void setSeActuatorCommanded(const int iJoint, const series_elastic_actuator_msgs::SeActuatorCommand& commanded);
   robot_model::RobotModel* getRobotModel();
   robotTerrain::TerrainBase* getTerrainModel();
   robot_model::State& getState();
