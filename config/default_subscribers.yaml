@@ -15,6 +15,10 @@ subscribers:
     topic: /sensors/actuator_states
     queue_size: 100
     latch: false
+  actuator_readings: 
+    topic: /sensors/actuator_readings
+    queue_size: 100
+    latch: false
   mocap: 
     topic: /starleth/pose
     queue_size: 100
