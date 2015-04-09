@@ -521,10 +521,10 @@ void Model::setJoystickCommands(const sensor_msgs::Joy::ConstPtr& msg) {
 }
 
 
-void Model::setCommandVelocity(const geometry_msgs::Twist::ConstPtr& msg) {
-	 robotModel_->sensors().getDesRobotVelocity()->setDesSagittalVelocity(msg->linear.x);
-	 robotModel_->sensors().getDesRobotVelocity()->setDesCoronalVelocity(msg->linear.y);
-	 robotModel_->sensors().getDesRobotVelocity()->setDesTurningRate(msg->angular.z);
+void Model::setCommandVelocity(const geometry_msgs::Twist& twist) {
+	 robotModel_->sensors().getDesRobotVelocity()->setDesSagittalVelocity(twist.linear.x);
+	 robotModel_->sensors().getDesRobotVelocity()->setDesCoronalVelocity(twist.linear.y);
+	 robotModel_->sensors().getDesRobotVelocity()->setDesTurningRate(twist.angular.z);
 }
 
 void Model::setMocapData(const geometry_msgs::TransformStamped::ConstPtr& msg) {

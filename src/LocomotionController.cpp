@@ -231,23 +231,31 @@ void LocomotionController::updateControllerAndPublish(const starleth_msgs::Robot
 void LocomotionController::joystickCallback(const sensor_msgs::Joy::ConstPtr& msg) {
   std::lock_guard<std::mutex> lock(mutexJoystick_);
   std::lock_guard<std::mutex> lockControllerManager(mutexModelAndControllerManager_);
-  model_.setJoystickCommands(msg);
 
-
-  // START + LF buttons
-  if (msg->buttons[4] == 1 && msg->buttons[7] == 1 ) {
-    locomotion_controller_msgs::SwitchController::Request  req;
-    locomotion_controller_msgs::SwitchController::Response res;
-    req.name = defaultController_;
-    if(!controllerManager_.switchController(req,res)) {
-    }
-    ROS_INFO("Switched task by joystick (status: %d)",res.status);
-
-  }
-  // RB button
-  if (msg->buttons[5] == 1 ) {
-    NODEWRAP_WARN("Emergency stop by joystick!");
+  ros::Duration age = (ros::Time::now()-msg->header.stamp);
+  if (age >= ros::Duration(4.0)) {
     controllerManager_.emergencyStop();
+    NODEWRAP_WARN("Joystick message is %lf seconds old! Called emergency stop!", age.toSec());
+  }
+  else {
+    model_.setJoystickCommands(msg);
+
+
+    // START + LF buttons
+    if (msg->buttons[4] == 1 && msg->buttons[7] == 1 ) {
+      locomotion_controller_msgs::SwitchController::Request  req;
+      locomotion_controller_msgs::SwitchController::Response res;
+      req.name = defaultController_;
+      if(!controllerManager_.switchController(req,res)) {
+      }
+      ROS_INFO("Switched task by joystick (status: %d)",res.status);
+
+    }
+    // RB button
+    if (msg->buttons[5] == 1 ) {
+      NODEWRAP_WARN("Emergency stop by joystick!");
+      controllerManager_.emergencyStop();
+    }
   }
 }
 
@@ -283,9 +291,19 @@ bool LocomotionController::emergencyStop(locomotion_controller_msgs::EmergencySt
   return result;
 }
 
-void LocomotionController::commandVelocityCallback(const geometry_msgs::Twist::ConstPtr& msg) {
+void LocomotionController::commandVelocityCallback(const geometry_msgs::TwistStamped::ConstPtr& msg) {
   std::lock_guard<std::mutex> lock(mutexModelAndControllerManager_);
-	model_.setCommandVelocity(msg);
+
+  // Ignore old messages for safety
+  ros::Duration age = (ros::Time::now()-msg->header.stamp);
+  if (age >= ros::Duration(2.0)) {
+    ROS_WARN("Ignoring commanded velocity which is %lf seconds old. Commanded velocity was set to zero.", age.toSec());
+    model_.setCommandVelocity(geometry_msgs::Twist());
+  }
+  else {
+    model_.setCommandVelocity(msg->twist);
+  }
+
 }
 
 void LocomotionController::mocapCallback(const geometry_msgs::TransformStamped::ConstPtr& msg)

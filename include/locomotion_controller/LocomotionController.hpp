@@ -41,7 +41,7 @@
 #include <sensor_msgs/Joy.h>
 #include <series_elastic_actuator_msgs/SeActuatorCommands.h>
 #include <series_elastic_actuator_msgs/SeActuatorReadings.h>
-#include <geometry_msgs/Twist.h>
+#include <geometry_msgs/TwistStamped.h>
 #include <geometry_msgs/TransformStamped.h>
 
 #include "locomotion_controller/Model.hpp"
@@ -85,7 +85,7 @@ class LocomotionController : public nodewrap::NodeImpl
   void joystickCallback(const sensor_msgs::Joy::ConstPtr& msg);
   bool emergencyStop(locomotion_controller_msgs::EmergencyStop::Request  &req,
                      locomotion_controller_msgs::EmergencyStop::Response &res);
-  void commandVelocityCallback(const geometry_msgs::Twist::ConstPtr& msg);
+  void commandVelocityCallback(const geometry_msgs::TwistStamped::ConstPtr& msg);
   void mocapCallback(const geometry_msgs::TransformStamped::ConstPtr& msg);
   void seActuatorReadingsCallback(const series_elastic_actuator_msgs::SeActuatorReadings::ConstPtr& msg);
 
