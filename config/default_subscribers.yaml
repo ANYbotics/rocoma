@@ -8,7 +8,7 @@ subscribers:
     queue_size: 100
     latch: false
   command_velocity: 
-    topic: /pose_controller/command_velocity
+    topic: /navigation_safety_checker/command_velocity
     queue_size: 100
     latch: false
   actuator_states: 
