@@ -284,7 +284,7 @@ bool ControllerRos<Controller_>::advanceController(double dt)
       return true;
     }
     updateCommand(dt, false);
-    signal_logger::logger->collectLoggerData();
+    if (signal_logger::logger) signal_logger::logger->collectLoggerData();
   } catch (std::exception& e) {
     ROCO_WARN_STREAM("Exception caught: " << e.what());
     emergencyStop();

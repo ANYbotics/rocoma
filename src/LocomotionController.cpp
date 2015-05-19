@@ -48,8 +48,6 @@
 #include <signal_logger/LoggerNone.hpp>
 #include <signal_logger_std/LoggerStd.hpp>
 #include <signal_logger_ros/LoggerRos.hpp>
-#include <signal_logger/LoggerNone.hpp>
-
 
 #include <chrono>
 #include <cstdint>
@@ -122,7 +120,6 @@ void LocomotionController::init() {
     model_.getRobotModel()->params().printParams();
     model_.addVariablesToLog();
 
-
     controllerManager_.setIsRealRobot(isRealRobot_);
     controllerManager_.setupControllers(timeStep_, model_.getState(), model_.getCommand(), getNodeHandle());
   }
@@ -136,8 +133,8 @@ void LocomotionController::init() {
   /*
    * Start workers
    */
-  addWorker("controller", ros::Rate(400), &LocomotionController::updateControllerWorker);
-  addWorker("publish", ros::Rate(samplingTime), &LocomotionController::loggerWorker);
+  controllerWorker_ = addWorker("controller", ros::Rate(400), &LocomotionController::updateControllerWorker);
+// loggerWorker_ =  addWorker("logger", ros::Rate(samplingTime), &LocomotionController::loggerWorker);
 }
 
 void LocomotionController::cleanup() {
@@ -204,13 +201,13 @@ void LocomotionController::robotStateCallback(const starleth_msgs::RobotState::C
 //  updateControllerAndPublish(msg);
 }
 
-
 bool LocomotionController::updateControllerWorker(const nodewrap::WorkerEvent& event) {
+  std::chrono::time_point<std::chrono::steady_clock> start, end;
 
   {
     std::unique_lock<std::mutex> lock(mutexRobotState_);
 
-    if ( !robotState_ || (robotStateStamp_ >= robotState_->header.stamp) ) {
+    if ( !robotState_ || ( robotState_->header.stamp <= robotStateStamp_ ) ) {
       rcvdRobotState_.wait(lock);
     }
 
@@ -218,9 +215,27 @@ bool LocomotionController::updateControllerWorker(const nodewrap::WorkerEvent& e
     robotStateStamp_ = robotState_->header.stamp;
   }
 
+  //-- Start measuring computation time.
+  start = std::chrono::steady_clock::now();
   controllerManager_.updateController();
-
   publish();
+  //---
+
+  //-- Measure computation time.
+  end = std::chrono::steady_clock::now();
+  int64_t elapsedTimeNSecs = std::chrono::duration_cast<std::chrono::nanoseconds>(end -
+      start).count();
+  int64_t timeStep = (int64_t)(timeStep_*1e9);
+  if (elapsedTimeNSecs > timeStep) {
+    NODEWRAP_WARN("Computation of locomotion controller is not real-time! Elapsed time: %lf ms\n", (double)elapsedTimeNSecs*1e-6);
+  }
+  if (elapsedTimeNSecs > timeStep*10) {
+      NODEWRAP_ERROR("Computation took more than 10 times the maximum allowed computation time (%lf ms)!", timeStep_*1e-3);
+      std::lock_guard<std::mutex> lock(mutexModelAndControllerManager_);
+      controllerManager_.emergencyStop();
+  }
+  //---
+
 
   return true;
 }
