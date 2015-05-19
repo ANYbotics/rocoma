@@ -57,6 +57,10 @@
 
 #include <memory>
 #include <mutex>
+#include <condition_variable>
+
+
+#include <roscpp_nodewrap/Worker.h>
 
 
 namespace locomotion_controller {
@@ -96,6 +100,12 @@ class LocomotionController : public nodewrap::NodeImpl
 
   void updateControllerAndPublish(const starleth_msgs::RobotState::ConstPtr& robotState);
 
+  /*
+   * Worker callbacks
+   */
+  bool updateControllerWorker(const nodewrap::WorkerEvent& event);
+  bool loggerWorker(const nodewrap::WorkerEvent& event);
+
  private:
   double timeStep_;
   bool isRealRobot_;
@@ -120,12 +130,21 @@ class LocomotionController : public nodewrap::NodeImpl
 
   series_elastic_actuator_msgs::SeActuatorCommandsPtr jointCommands_;
 
-
+  starleth_msgs::RobotStateConstPtr robotState_;
 
   std::mutex mutexJointCommands_;
   std::mutex mutexJoystick_;
   std::mutex mutexModelAndControllerManager_;
   std::mutex mutexUpdateControllerAndPublish_;
+  std::mutex mutexRobotState_;
+
+  /*
+   * Nodewrap worker
+   */
+  nodewrap::Worker controllerWorker_;
+  nodewrap::Worker loggerWorker_;
+  std::condition_variable rcvdRobotState_;
+  ros::Time robotStateStamp_;
 
 };
 

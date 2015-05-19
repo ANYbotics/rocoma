@@ -132,6 +132,12 @@ void LocomotionController::init() {
   initializeServices();
   initializePublishers();
   initializeSubscribers();
+
+  /*
+   * Start workers
+   */
+  addWorker("controller", ros::Rate(400), &LocomotionController::updateControllerWorker);
+  addWorker("publish", ros::Rate(samplingTime), &LocomotionController::loggerWorker);
 }
 
 void LocomotionController::cleanup() {
@@ -189,8 +195,39 @@ void LocomotionController::publish()  {
   }
 
 }
+
 void LocomotionController::robotStateCallback(const starleth_msgs::RobotState::ConstPtr& msg) {
-  updateControllerAndPublish(msg);
+//  std::lock_guard<std::mutex> lock(mutexRobotState_);
+  std::unique_lock<std::mutex> lock(mutexRobotState_);
+  robotState_ = msg;
+  rcvdRobotState_.notify_all();
+//  updateControllerAndPublish(msg);
+}
+
+
+bool LocomotionController::updateControllerWorker(const nodewrap::WorkerEvent& event) {
+
+  {
+    std::unique_lock<std::mutex> lock(mutexRobotState_);
+
+    if ( !robotState_ || (robotStateStamp_ >= robotState_->header.stamp) ) {
+      rcvdRobotState_.wait(lock);
+    }
+
+    model_.setRobotState(robotState_);
+    robotStateStamp_ = robotState_->header.stamp;
+  }
+
+  controllerManager_.updateController();
+
+  publish();
+
+  return true;
+}
+
+bool LocomotionController::loggerWorker(const nodewrap::WorkerEvent& event) {
+//  publish();
+  return true;
 }
 
 void LocomotionController::updateControllerAndPublish(const starleth_msgs::RobotState::ConstPtr& robotState) {
