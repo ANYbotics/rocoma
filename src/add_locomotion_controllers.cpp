@@ -166,6 +166,13 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
    manager->addController(controllerLocoBound);
 #endif
 
+#ifdef USE_TASK_LOCOEXAMPLE
+   auto controllerLocoExample = new ControllerRos<loco_example::LocoExample>(state, command);
+   controllerLocoExample->setControllerManager(manager);
+   controllerLocoExample->setIsRealRobotFromManager(manager->isRealRobot());
+   manager->addController(controllerLocoExample);
+#endif
+
 }
 
 }
