@@ -189,11 +189,11 @@ void LocomotionController::publish()  {
   }
 
 }
-void LocomotionController::robotStateCallback(const starleth_msgs::RobotState::ConstPtr& msg) {
+void LocomotionController::robotStateCallback(const quadruped_msgs::RobotState::ConstPtr& msg) {
   updateControllerAndPublish(msg);
 }
 
-void LocomotionController::updateControllerAndPublish(const starleth_msgs::RobotState::ConstPtr& robotState) {
+void LocomotionController::updateControllerAndPublish(const quadruped_msgs::RobotState::ConstPtr& robotState) {
   //-- Start measuring computation time.
   std::chrono::time_point<std::chrono::steady_clock> start, end;
   start = std::chrono::steady_clock::now();

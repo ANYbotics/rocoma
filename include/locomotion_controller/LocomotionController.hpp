@@ -37,7 +37,7 @@
 #include <roscpp_nodewrap/NodeImpl.h>
 #include <roscpp_nodewrap/Nodelet.h>
 
-#include <starleth_msgs/RobotState.h>
+#include <quadruped_msgs/RobotState.h>
 #include <sensor_msgs/Joy.h>
 #include <series_elastic_actuator_msgs/SeActuatorCommands.h>
 #include <series_elastic_actuator_msgs/SeActuatorReadings.h>
@@ -81,7 +81,7 @@ class LocomotionController : public nodewrap::NodeImpl
 
  protected:
   void publish();
-  void robotStateCallback(const starleth_msgs::RobotState::ConstPtr& msg);
+  void robotStateCallback(const quadruped_msgs::RobotState::ConstPtr& msg);
   void joystickCallback(const sensor_msgs::Joy::ConstPtr& msg);
   bool emergencyStop(locomotion_controller_msgs::EmergencyStop::Request  &req,
                      locomotion_controller_msgs::EmergencyStop::Response &res);
@@ -94,7 +94,7 @@ class LocomotionController : public nodewrap::NodeImpl
   void initializePublishers();
   void initializeSubscribers();
 
-  void updateControllerAndPublish(const starleth_msgs::RobotState::ConstPtr& robotState);
+  void updateControllerAndPublish(const quadruped_msgs::RobotState::ConstPtr& robotState);
 
  private:
   double timeStep_;
