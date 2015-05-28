@@ -79,7 +79,7 @@ const robot_model::Command& Model::getCommand() const {
   return command_;
 }
 
-void Model::initializeForController(double dt, bool isRealRobot) {
+void Model::initializeForController(double dt, bool isRealRobot, const std::string& pathToUrdfFile) {
   robotModel_.reset(new robot_model::RobotModel(dt));
 
 
@@ -101,6 +101,10 @@ void Model::initializeForController(double dt, bool isRealRobot) {
 
   /* activate sensor noise */
   robotModel_->sensors().setIsAddingSensorNoise(false);
+
+  /* initialize model from URDF file */
+  robotModel_->initModelFromUrdfFile(pathToUrdfFile);
+
   /* initialize robot model */
   robotModel_->init();
 

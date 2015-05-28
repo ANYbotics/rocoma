@@ -118,7 +118,10 @@ void LocomotionController::init() {
     std::lock_guard<std::mutex> lockControllerManager(mutexModelAndControllerManager_);
 
     // Initialize robot and terrain models
-    model_.initializeForController(timeStep_,isRealRobot_);
+    const std::string& urdfPath = ros::package::getPath("gen_robot_model") + "/resources/";
+    const std::string& urdfFileName = "starleth_minimal.urdf";
+    const std::string& urdfModelFile = urdfPath + urdfFileName;
+    model_.initializeForController(timeStep_,isRealRobot_, urdfModelFile);
     model_.getRobotModel()->params().printParams();
     model_.addVariablesToLog();
 

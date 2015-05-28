@@ -35,8 +35,6 @@
 #include <locomotion_controller/ControllerManager.hpp>
 #include <locomotion_controller/ControllerRos.hpp>
 
-#include <ros/package.h>
-
 #include <roco_assembly/controllers.hpp>
 
 namespace locomotion_controller {
