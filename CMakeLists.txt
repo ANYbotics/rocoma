@@ -103,24 +103,21 @@ add_library(locomotion_controller
   src/add_locomotion_controllers.cpp
   src/LocomotionController.cpp
 )
-
-#add_dependencies(locomotion_controller locomotion_controller_msgs_generate_messages_cpp roco robot_utils robot_model roco_freeze roco_assembly kindr quadruped_msgs)
 add_dependencies(locomotion_controller ${catkin_EXPORTED_TARGETS})
-
 target_link_libraries(locomotion_controller
     model
    ${catkin_LIBRARIES}
 )
 
 add_executable(locomotion_controller_node src/locomotion_controller_node.cpp)
-
+add_dependencies(locomotion_controller_node ${catkin_EXPORTED_TARGETS})
 target_link_libraries(locomotion_controller_node
    model
    locomotion_controller
    ${catkin_LIBRARIES}
 )
 
-add_dependencies(locomotion_controller_node ${catkin_EXPORTED_TARGETS})
+
 
 #############
 ## Install ##

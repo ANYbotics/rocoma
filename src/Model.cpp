@@ -83,6 +83,9 @@ void Model::initializeForController(double dt, bool isRealRobot, const std::stri
   robotModel_.reset(new robot_model::RobotModel(dt));
 
 
+  /* initialize model from URDF file */
+  robotModel_->initModelFromUrdfFile(pathToUrdfFile);
+
   state_.setRobotModelPtr(this->getRobotModel());
   state_.setTerrainPtr(this->getTerrainModel());
   robot_model::initializeStateForStarlETH(state_);
@@ -102,8 +105,6 @@ void Model::initializeForController(double dt, bool isRealRobot, const std::stri
   /* activate sensor noise */
   robotModel_->sensors().setIsAddingSensorNoise(false);
 
-  /* initialize model from URDF file */
-  robotModel_->initModelFromUrdfFile(pathToUrdfFile);
 
   /* initialize robot model */
   robotModel_->init();
