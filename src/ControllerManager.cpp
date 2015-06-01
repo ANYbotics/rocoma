@@ -32,17 +32,19 @@
  */
 #include "locomotion_controller/ControllerManager.hpp"
 #include "locomotion_controller/ControllerRos.hpp"
+#include <locomotion_controller/LocomotionController.hpp>
 
 #include "signal_logger_ros/LoggerRos.hpp"
 
 namespace locomotion_controller {
 
-ControllerManager::ControllerManager() :
+ControllerManager::ControllerManager(locomotion_controller::LocomotionController* locomotionController) :
     timeStep_(0.0),
     isInitializingTask_(false),
     controllers_(),
     activeController_(nullptr),
-    isRealRobot_(false)
+    isRealRobot_(false),
+    locomotionController_(locomotionController)
 {
 
 }
@@ -51,7 +53,11 @@ ControllerManager::~ControllerManager()
 {
 }
 
-void ControllerManager::setupControllers(double dt, robot_model::State& state, robot_model::Command& command, ros::NodeHandle& nodeHandle)  {
+void ControllerManager::setupControllers(
+    double dt, robot_model::State& state, robot_model::Command& command,
+    ros::NodeHandle& nodeHandle,
+    locomotion_controller::LocomotionController* locomotionController)
+{
   timeStep_ = dt;
 
   /* Create controller freeze, which is active until estimator converged*/
@@ -67,7 +73,7 @@ void ControllerManager::setupControllers(double dt, robot_model::State& state, r
 
 
 
-  add_locomotion_controllers(this, state, command, nodeHandle);
+  add_locomotion_controllers(this, state, command, nodeHandle, locomotionController);
 
 }
 
@@ -148,6 +154,9 @@ bool ControllerManager::switchController(locomotion_controller_msgs::SwitchContr
         res.status = res.STATUS_SWITCHED;
         ROS_INFO("Switched to controller %s", initController->getName().c_str());
         activeController_ = initController;
+
+        const std::string& workerName = initController->getName()+"_worker";
+        locomotionController_->addWorker(workerName, ros::Rate(25), &Controller::logData, true);
       }
       else {
         // switch to freeze controller

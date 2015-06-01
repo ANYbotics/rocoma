@@ -175,7 +175,7 @@ void Model::addVariablesToLog() {
 
 }
 
-void Model::setRobotState(const starleth_msgs::RobotState::ConstPtr& robotState) {
+void Model::setRobotState(const quadruped_msgs::RobotState::ConstPtr& robotState) {
 
   namespace rot = kindr::rotations::eigen_impl;
 
@@ -368,7 +368,7 @@ void Model::setRobotState(const sensor_msgs::ImuPtr& imu,
 
 }
 
-void Model::initializeRobotState(starleth_msgs::RobotStatePtr& robotState) const {
+void Model::initializeRobotState(quadruped_msgs::RobotStatePtr& robotState) const {
   starleth_description::initializeRobotStateForStarlETH(*robotState);
 }
 
@@ -376,7 +376,7 @@ void Model::initializeJointState(sensor_msgs::JointState& jointState) const {
   starleth_description::initializeJointStateForStarlETH(jointState);
 }
 
-void Model::getRobotState(starleth_msgs::RobotStatePtr& robotState) {
+void Model::getRobotState(quadruped_msgs::RobotStatePtr& robotState) {
   namespace rot = kindr::rotations::eigen_impl;
 
   kindr::rotations::eigen_impl::RotationQuaternionAD rquatWorldToBaseActive(

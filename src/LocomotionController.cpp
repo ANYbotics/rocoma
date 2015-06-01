@@ -63,7 +63,7 @@ LocomotionController::LocomotionController():
     timeStep_(0.0025),
     isRealRobot_(false),
     model_(),
-    controllerManager_(),
+    controllerManager_(this),
     defaultController_("LocoDemo")
 {
 
@@ -121,7 +121,7 @@ void LocomotionController::init() {
     model_.addVariablesToLog();
 
     controllerManager_.setIsRealRobot(isRealRobot_);
-    controllerManager_.setupControllers(timeStep_, model_.getState(), model_.getCommand(), getNodeHandle());
+    controllerManager_.setupControllers(timeStep_, model_.getState(), model_.getCommand(), getNodeHandle(), this);
   }
   //---
 
@@ -193,7 +193,7 @@ void LocomotionController::publish()  {
 
 }
 
-void LocomotionController::robotStateCallback(const starleth_msgs::RobotState::ConstPtr& msg) {
+void LocomotionController::robotStateCallback(const quadruped_msgs::RobotState::ConstPtr& msg) {
 //  std::lock_guard<std::mutex> lock(mutexRobotState_);
   std::unique_lock<std::mutex> lock(mutexRobotState_);
   robotState_ = msg;
@@ -245,7 +245,7 @@ bool LocomotionController::loggerWorker(const nodewrap::WorkerEvent& event) {
   return true;
 }
 
-void LocomotionController::updateControllerAndPublish(const starleth_msgs::RobotState::ConstPtr& robotState) {
+void LocomotionController::updateControllerAndPublish(const quadruped_msgs::RobotState::ConstPtr& robotState) {
   //-- Start measuring computation time.
   std::chrono::time_point<std::chrono::steady_clock> start, end;
   start = std::chrono::steady_clock::now();

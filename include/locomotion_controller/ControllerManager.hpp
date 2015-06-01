@@ -52,7 +52,13 @@
 namespace locomotion_controller {
 
 class ControllerManager;
-void add_locomotion_controllers(locomotion_controller::ControllerManager* manager, robot_model::State& state, robot_model::Command& command, ros::NodeHandle& nodeHandle);
+class LocomotionController;
+
+void add_locomotion_controllers(
+    locomotion_controller::ControllerManager* manager,
+    robot_model::State& state, robot_model::Command& command,
+    ros::NodeHandle& nodeHandle,
+    locomotion_controller::LocomotionController* locomotionController);
 
 class ControllerManager
 {
@@ -60,11 +66,14 @@ class ControllerManager
   typedef roco::controllers::ControllerInterface Controller;
   typedef roco::controllers::ControllerInterface* ControllerPtr;
  public:
-  ControllerManager();
+  ControllerManager(locomotion_controller::LocomotionController* locomotionController);
   virtual ~ControllerManager();
 
   void updateController();
-  void setupControllers(double dt, robot_model::State& state, robot_model::Command& command, ros::NodeHandle& nodeHandle);
+  void setupControllers(
+      double dt, robot_model::State& state, robot_model::Command& command,
+      ros::NodeHandle& nodeHandle,
+      locomotion_controller::LocomotionController* locomotionController);
   void addController(ControllerPtr controller);
   bool switchController(locomotion_controller_msgs::SwitchController::Request  &req,
                         locomotion_controller_msgs::SwitchController::Response &res);
@@ -84,6 +93,7 @@ class ControllerManager
   boost::ptr_vector<Controller> controllers_;
   ControllerPtr activeController_;
   bool isRealRobot_;
+  locomotion_controller::LocomotionController* locomotionController_;
 };
 
 } /* namespace locomotion_controller */
