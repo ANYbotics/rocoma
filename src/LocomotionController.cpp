@@ -62,6 +62,7 @@ namespace locomotion_controller {
 LocomotionController::LocomotionController():
     timeStep_(0.0025),
     isRealRobot_(false),
+    samplingFrequency_(1.0),
     model_(),
     controllerManager_(this),
     defaultController_("LocoDemo")
@@ -87,9 +88,8 @@ void LocomotionController::init() {
   if (loggingScriptFilename.empty()){
     loggingScriptFilename = ros::package::getPath("locomotion_controller") + std::string{"/config/logging.script"};
   }
-  double samplingTime;
-  getNodeHandle().param<double>("logger/sampling_time", samplingTime, 60.0);
-  NODEWRAP_INFO("Initialize logger with sampling time: %lfs and script: %s.", samplingTime, loggingScriptFilename.c_str());
+  getNodeHandle().param<double>("logger/sampling_time", samplingFrequency_, 60.0);
+  NODEWRAP_INFO("Initialize logger with sampling time: %lfs and script: %s.", samplingFrequency_, loggingScriptFilename.c_str());
 
   std::string loggerClass;
   getNodeHandle().param<std::string>("logger/class", loggerClass, "std");
@@ -97,7 +97,7 @@ void LocomotionController::init() {
     // initialize ros logger
     signal_logger::logger.reset(new signal_logger_ros::LoggerRos(getNodeHandle()));
     signal_logger_ros::LoggerRos* loggerRos = static_cast<signal_logger_ros::LoggerRos*>(signal_logger::logger.get());
-    loggerRos->setPublishFrequency(samplingTime);
+    loggerRos->setPublishFrequency(samplingFrequency_);
   } else if (loggerClass.compare("std") == 0) {
     // initialize std logger as fallback logger
     signal_logger::logger.reset(new signal_logger_std::LoggerStd());
@@ -107,8 +107,8 @@ void LocomotionController::init() {
     signal_logger::logger.reset(new signal_logger::LoggerNone());
   }
 
-  signal_logger::logger->initLogger((int)(1.0/timeStep_), (int)(1.0/timeStep_), samplingTime, loggingScriptFilename);
-  NODEWRAP_INFO("Initialize logger with sampling time: %lfs, sampling frequency: %d and script: %s.", samplingTime, (int)(1.0/timeStep_), loggingScriptFilename.c_str());
+  signal_logger::logger->initLogger((int)(1.0/timeStep_), (int)(1.0/timeStep_), samplingFrequency_, loggingScriptFilename);
+  NODEWRAP_INFO("Initialize logger with sampling time: %lfs, sampling frequency: %d and script: %s.", samplingFrequency_, (int)(1.0/timeStep_), loggingScriptFilename.c_str());
   //---
 
   //--- Configure controllers
@@ -134,11 +134,22 @@ void LocomotionController::init() {
    * Start workers
    */
   controllerWorker_ = addWorker("controller", ros::Rate(400), &LocomotionController::updateControllerWorker);
-// loggerWorker_ =  addWorker("logger", ros::Rate(samplingTime), &LocomotionController::loggerWorker);
 }
 
 void LocomotionController::cleanup() {
 
+}
+
+
+nodewrap::Worker LocomotionController::addLogWorker(
+    const std::string& name, const nodewrap::WorkerOptions& defaultOptions)
+{
+  return this->addWorker(name, defaultOptions);
+}
+
+
+double LocomotionController::getSamplingFrequency() const {
+  return samplingFrequency_;
 }
 
 void LocomotionController::initializeMessages() {
@@ -240,10 +251,6 @@ bool LocomotionController::updateControllerWorker(const nodewrap::WorkerEvent& e
   return true;
 }
 
-bool LocomotionController::loggerWorker(const nodewrap::WorkerEvent& event) {
-//  publish();
-  return true;
-}
 
 void LocomotionController::updateControllerAndPublish(const quadruped_msgs::RobotState::ConstPtr& robotState) {
   //-- Start measuring computation time.

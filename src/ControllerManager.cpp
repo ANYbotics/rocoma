@@ -94,7 +94,10 @@ void ControllerManager::addController(ControllerPtr controller)  {
 
 
 void ControllerManager::updateController() {
-  activeController_->advanceController(timeStep_);
+  {
+    std::lock_guard<std::mutex> lock(activeControllerMutex_);
+    activeController_->advanceController(timeStep_);
+  }
 }
 
 bool ControllerManager::emergencyStop() {
@@ -141,28 +144,34 @@ bool ControllerManager::switchController(locomotion_controller_msgs::SwitchContr
 
 
       // reset the ros logger
-      if (signal_logger::logger.get()->getLoggerType()
-          == signal_logger::LoggerBase::LoggerType::TypeRos) {
-        signal_logger_ros::LoggerRos* loggerRos =
-            dynamic_cast<signal_logger_ros::LoggerRos*>(signal_logger::logger
-                .get());
-        loggerRos->clearCollectedVariables();
-      }
+//      std::lock_guard<std::mutex> lock(activeControllerMutex_);
+//      {
+//        if (signal_logger::logger.get()->getLoggerType()
+//            == signal_logger::LoggerBase::LoggerType::TypeRos) {
+//          signal_logger_ros::LoggerRos* loggerRos =
+//              dynamic_cast<signal_logger_ros::LoggerRos*>(signal_logger::logger
+//                  .get());
+//          loggerRos->clearCollectedVariables();
+//        }
+//      }
 
       initController->initializeController(timeStep_);
       if (initController->isInitialized()) {
         res.status = res.STATUS_SWITCHED;
-        ROS_INFO("Switched to controller %s", initController->getName().c_str());
-        activeController_ = initController;
+        ROS_INFO("Switched to controller %s",
+                 initController->getName().c_str());
 
-        const std::string& workerName = initController->getName()+"_worker";
-        locomotionController_->addWorker(workerName, ros::Rate(25), &Controller::logData, true);
+        {
+          std::lock_guard<std::mutex> lock(activeControllerMutex_);
+          activeController_->cancelWorkers();
+          activeController_ = initController;
+        }
       }
       else {
         // switch to freeze controller
         switchToEmergencyTask();
         res.status = res.STATUS_ERROR;
-        ROS_INFO("Could not switched to controller %s", initController->getName().c_str());
+        ROS_INFO("Could not switch to controller %s", initController->getName().c_str());
       }
       return true;
     }
@@ -181,6 +190,10 @@ bool ControllerManager::getAvailableControllers(locomotion_controller_msgs::GetA
   }
 
   return true;
+}
+
+locomotion_controller::LocomotionController* ControllerManager::getLocomotionController() {
+  return locomotionController_;
 }
 
 bool ControllerManager::isRealRobot() const {

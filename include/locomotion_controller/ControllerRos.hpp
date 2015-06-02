@@ -49,6 +49,7 @@
 #include <robot_model/robot_model.hpp>
 
 #include "locomotion_controller/ControllerManager.hpp"
+#include "locomotion_controller/LocomotionController.hpp"
 
 #include <iostream>
 #include <exception>      // std::exception
@@ -92,6 +93,9 @@ class ControllerRos:  public roco::controllers::ControllerAdapterInterface, publ
   virtual Command& getCommand();
 
   virtual void emergencyStop();
+
+  virtual void cancelWorkers();
+
  protected:
   bool updateState(double dt, bool checkState=true);
   bool updateCommand(double dt, bool forceSendingControlModes);
@@ -107,6 +111,14 @@ class ControllerRos:  public roco::controllers::ControllerAdapterInterface, publ
   Command& command_;
   ControllerManager* controllerManager_;
   std::string emergencyStopControllerName_;
+
+  nodewrap::Worker logWorker_;
+  nodewrap::Worker signalLoggerWorker_;
+
+  // Worker callbacks
+  virtual bool loggerWorker(const nodewrap::WorkerEvent& event);
+  virtual bool signalLoggerWorker(const nodewrap::WorkerEvent& event);
+
 };
 
 

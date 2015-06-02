@@ -82,6 +82,19 @@ class LocomotionController : public nodewrap::NodeImpl
   void init();
   void cleanup();
 
+  template<class T>
+  nodewrap::Worker addLogWorker(const std::string& name,
+                                const ros::Rate& defaultRate,
+                                bool (T::*fp)(const nodewrap::WorkerEvent&))
+  {
+    return this->addWorker<T>(name, defaultRate, fp);
+  }
+
+  nodewrap::Worker addLogWorker(const std::string& name,
+                                const nodewrap::WorkerOptions& defaultOptions);
+
+  double getSamplingFrequency() const;
+
 
  protected:
   void publish();
@@ -104,11 +117,11 @@ class LocomotionController : public nodewrap::NodeImpl
    * Worker callbacks
    */
   bool updateControllerWorker(const nodewrap::WorkerEvent& event);
-  bool loggerWorker(const nodewrap::WorkerEvent& event);
 
  private:
   double timeStep_;
   bool isRealRobot_;
+  double samplingFrequency_;
   std::string defaultController_;
 
   model::Model model_;
@@ -142,7 +155,6 @@ class LocomotionController : public nodewrap::NodeImpl
    * Nodewrap worker
    */
   nodewrap::Worker controllerWorker_;
-  nodewrap::Worker loggerWorker_;
   std::condition_variable rcvdRobotState_;
   ros::Time robotStateStamp_;
 

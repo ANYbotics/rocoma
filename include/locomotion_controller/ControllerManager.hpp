@@ -49,6 +49,8 @@
 
 #include <boost/ptr_container/ptr_vector.hpp>
 
+#include <mutex>
+
 namespace locomotion_controller {
 
 class ControllerManager;
@@ -85,6 +87,9 @@ class ControllerManager
   bool switchControllerAfterEmergencyStop();
   bool isRealRobot() const;
   void setIsRealRobot(bool isRealRobot);
+
+  locomotion_controller::LocomotionController* getLocomotionController();
+
  protected:
   void switchToEmergencyTask();
  protected:
@@ -94,6 +99,8 @@ class ControllerManager
   ControllerPtr activeController_;
   bool isRealRobot_;
   locomotion_controller::LocomotionController* locomotionController_;
+
+  std::mutex activeControllerMutex_;
 };
 
 } /* namespace locomotion_controller */
