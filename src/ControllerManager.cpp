@@ -174,6 +174,18 @@ bool ControllerManager::getAvailableControllers(locomotion_controller_msgs::GetA
   return true;
 }
 
+
+
+bool ControllerManager::getActiveController(locomotion_controller_msgs::GetActiveController::Request &req,
+                                            locomotion_controller_msgs::GetActiveController::Response &res) {
+
+  res.active_controller_name = activeController_->getName();
+  res.active_controller_locomotion_mode = activeController_->getLocomotionMode();
+
+  return true;
+}
+
+
 bool ControllerManager::isRealRobot() const {
 	return isRealRobot_;
 }

@@ -38,6 +38,7 @@
 #include <locomotion_controller_msgs/SwitchController.h>
 #include <locomotion_controller_msgs/EmergencyStop.h>
 #include <locomotion_controller_msgs/GetAvailableControllers.h>
+#include <locomotion_controller_msgs/GetActiveController.h>
 
 #include <locomotion_controller/Model.hpp>
 
@@ -71,6 +72,9 @@ class ControllerManager
 
   bool getAvailableControllers(locomotion_controller_msgs::GetAvailableControllers::Request &req,
                                locomotion_controller_msgs::GetAvailableControllers::Response &res);
+
+  bool getActiveController(locomotion_controller_msgs::GetActiveController::Request &req,
+                           locomotion_controller_msgs::GetActiveController::Response &res);
 
   bool emergencyStop();
   bool switchControllerAfterEmergencyStop();
