@@ -119,7 +119,7 @@ void LocomotionController::init() {
 
     // Initialize robot and terrain models
     const std::string& urdfPath = ros::package::getPath("robot_model") + "/resources/";
-    const std::string& urdfFileName = "starleth_standard.urdf";
+    const std::string& urdfFileName = "starleth_minimal.urdf";
     const std::string& urdfModelFile = urdfPath + urdfFileName;
     model_.initializeForController(timeStep_,isRealRobot_, urdfModelFile);
     model_.getRobotModel()->params().printParams();
