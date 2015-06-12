@@ -264,6 +264,16 @@ void Model::setRobotState(const quadruped_msgs::RobotState::ConstPtr& robotState
   robotModel_->sensors().getSimMainBodyPose()->setQb(Qb);
   robotModel_->sensors().getSimMainBodyPose()->setdQb(dQb);
 
+
+
+  robotModel_->getQuadrupedModel()->setMainBodyGeneralizedPositions(Qb);
+  robotModel_->getQuadrupedModel()->setMainBodyGeneralizedVelocities(dQb);
+  robotModel_->getQuadrupedModel()->setJointGeneralizedPositions(jointPositions);
+  robotModel_->getQuadrupedModel()->setJointGeneralizedVelocities(jointVelocities);
+  robotModel_->getQuadrupedModel()->updateKinematics(true, true, false);
+
+
+
   //ROS_INFO_STREAM("Qb: " << Qb.transpose());
   // todo: acceleration is missing!
 //  robotModel_.sensors().getSimMainBodyPose()->setddQb(ddQb);
