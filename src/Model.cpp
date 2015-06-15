@@ -268,8 +268,8 @@ void Model::setRobotState(const quadruped_msgs::RobotState::ConstPtr& robotState
 
   robotModel_->getQuadrupedModel()->setMainBodyGeneralizedPositions(Qb);
   robotModel_->getQuadrupedModel()->setMainBodyGeneralizedVelocities(dQb);
-  robotModel_->getQuadrupedModel()->setJointGeneralizedPositions(jointPositions);
-  robotModel_->getQuadrupedModel()->setJointGeneralizedVelocities(jointVelocities);
+  robotModel_->getQuadrupedModel()->setJointPositions(jointPositions);
+  robotModel_->getQuadrupedModel()->setJointVelocities(jointVelocities);
   robotModel_->getQuadrupedModel()->updateKinematics(true, true, false);
 
 
