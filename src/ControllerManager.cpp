@@ -143,21 +143,6 @@ bool ControllerManager::switchController(locomotion_controller_msgs::SwitchContr
     if (req.name == controller.getName()) {
       ControllerPtr initController = &controller;
 
-//      isInitializingTask_ = true;
-
-
-      // reset the ros logger
-//      std::lock_guard<std::mutex> lock(activeControllerMutex_);
-//      {
-//        if (signal_logger::logger.get()->getLoggerType()
-//            == signal_logger::LoggerBase::LoggerType::TypeRos) {
-//          signal_logger_ros::LoggerRos* loggerRos =
-//              dynamic_cast<signal_logger_ros::LoggerRos*>(signal_logger::logger
-//                  .get());
-//          loggerRos->clearCollectedVariables();
-//        }
-//      }
-
       initController->initializeController(timeStep_);
       if (initController->isInitialized()) {
         res.status = res.STATUS_SWITCHED;
