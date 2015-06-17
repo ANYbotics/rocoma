@@ -95,6 +95,7 @@ class ControllerRos:  public roco::controllers::ControllerAdapterInterface, publ
   virtual void emergencyStop();
 
   virtual void cancelWorkers();
+  virtual void startWorkers();
 
  protected:
   bool updateState(double dt, bool checkState=true);

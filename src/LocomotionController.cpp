@@ -133,7 +133,7 @@ void LocomotionController::init() {
   /*
    * Start workers
    */
-  controllerWorker_ = addWorker("controller", ros::Rate(400), &LocomotionController::updateControllerWorker);
+  controllerWorker_ = addWorker("controller", 400, &LocomotionController::updateControllerWorker);
 }
 
 void LocomotionController::cleanup() {

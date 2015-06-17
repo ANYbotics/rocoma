@@ -181,6 +181,40 @@ bool ControllerRos<Controller_>::createController(double dt)
       emergencyStop();
       return true;
     }
+
+
+
+    //--- start logging in a worker thread
+    nodewrap::WorkerOptions loggerWorkerOptions;
+    loggerWorkerOptions.autostart = false;
+    loggerWorkerOptions.frequency = 30.0;
+    loggerWorkerOptions.callback = boost::bind(
+        &ControllerRos<Controller_>::loggerWorker, this, _1);
+
+    const std::string& workerName = this->getName() + "_worker";
+    logWorker_ = controllerManager_->getLocomotionController()->addLogWorker(
+        workerName, loggerWorkerOptions);
+    //---
+
+    //--- start signal logging in a worker thread
+    nodewrap::WorkerOptions signalLoggerWorkerOptions;
+    signalLoggerWorkerOptions.autostart = false;
+
+    double samplingTime = controllerManager_->getLocomotionController()
+        ->getSamplingFrequency();
+
+    signalLoggerWorkerOptions.frequency = samplingTime;
+    signalLoggerWorkerOptions.callback = boost::bind(
+        &ControllerRos<Controller_>::signalLoggerWorker, this, _1);
+
+    const std::string& signalLoggerWorkerName = this->getName()
+        + "_signal_logger_worker";
+    signalLoggerWorker_ = controllerManager_->getLocomotionController()
+        ->addLogWorker(signalLoggerWorkerName, signalLoggerWorkerOptions);
+
+
+
+
     this->isCreated_ = true;
   } catch (std::exception& e) {
     ROCO_WARN_STREAM("Exception caught: " << e.what());
@@ -220,36 +254,6 @@ bool ControllerRos<Controller_>::initializeController(double dt)
     }
     updateCommand(dt, true);
 
-    //--- start logging in a worker thread
-    nodewrap::WorkerOptions loggerWorkerOptions;
-    loggerWorkerOptions.autostart = true;
-    loggerWorkerOptions.rate = ros::Rate(30);
-    loggerWorkerOptions.callback = boost::bind(
-        &ControllerRos<Controller_>::loggerWorker, this, _1);
-
-    const std::string& workerName = this->getName() + "_worker";
-    logWorker_ = controllerManager_->getLocomotionController()->addLogWorker(
-        workerName, loggerWorkerOptions);
-    //---
-
-
-    //--- start signal logging in a worker thread
-    nodewrap::WorkerOptions signalLoggerWorkerOptions;
-    signalLoggerWorkerOptions.autostart = true;
-
-    double samplingTime = controllerManager_->getLocomotionController()->getSamplingFrequency();
-
-    signalLoggerWorkerOptions.rate = ros::Rate(samplingTime);
-    signalLoggerWorkerOptions.callback = boost::bind(
-        &ControllerRos<Controller_>::signalLoggerWorker, this, _1);
-
-    const std::string& signalLoggerWorkerName = this->getName()
-        + "_signal_logger_worker";
-    signalLoggerWorker_ = controllerManager_->getLocomotionController()
-        ->addLogWorker(signalLoggerWorkerName, signalLoggerWorkerOptions);
-    //---
-
-
     this->isInitialized_ = true;
 
   } catch (std::exception& e) {
@@ -268,9 +272,20 @@ bool ControllerRos<Controller_>::initializeController(double dt)
 }
 
 template<typename Controller_>
+void ControllerRos<Controller_>::startWorkers() {
+
+  ROCO_INFO_STREAM(
+        "[" << this->getName() << "] Starting workers.");
+  logWorker_.start();
+  signalLoggerWorker_.start();
+  //---
+
+}
+
+template<typename Controller_>
 void ControllerRos<Controller_>::cancelWorkers() {
-  logWorker_.cancel();
-  signalLoggerWorker_.cancel();
+  logWorker_.cancel(true);
+  signalLoggerWorker_.cancel(true);
 }
 
 
@@ -444,11 +459,17 @@ void ControllerRos<Controller_>::emergencyStop()
 {
   ROCO_INFO("ControllerRos::emergencyStop() called!");
   sendEmergencyCommand();
+
   if (this->getName() != emergencyStopControllerName_) {
     signal_logger::logger->stopLogger();
     signal_logger::logger->saveLoggerData();
     controllerManager_->switchControllerAfterEmergencyStop();
   }
+
+  cancelWorkers();
+
+//  sendEmergencyState(false);
+//  sendEmergencyState(true);
 }
 
 template<typename Controller_>

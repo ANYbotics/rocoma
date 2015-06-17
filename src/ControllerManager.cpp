@@ -115,8 +115,11 @@ void ControllerManager::switchToEmergencyTask() {
   if (activeController_->getName() != "Freeze") {
     for (auto& controller : controllers_) {
       if (controller.getName() == "Freeze") {
-        activeController_ = &controller;
-        activeController_->resetController(timeStep_);
+        {
+          std::lock_guard<std::mutex> lock(activeControllerMutex_);
+          activeController_ = &controller;
+          activeController_->resetController(timeStep_);
+        }
         return;
       }
     }
@@ -164,8 +167,11 @@ bool ControllerManager::switchController(locomotion_controller_msgs::SwitchContr
         {
           std::lock_guard<std::mutex> lock(activeControllerMutex_);
           activeController_->cancelWorkers();
+          activeController_->shutdownRos();
           activeController_ = initController;
+          activeController_->startWorkers();
         }
+
       }
       else {
         // switch to freeze controller
@@ -173,6 +179,7 @@ bool ControllerManager::switchController(locomotion_controller_msgs::SwitchContr
         res.status = res.STATUS_ERROR;
         ROS_INFO("Could not switch to controller %s", initController->getName().c_str());
       }
+
       return true;
     }
   }
