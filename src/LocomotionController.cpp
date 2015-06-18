@@ -133,7 +133,20 @@ void LocomotionController::init() {
   /*
    * Start workers
    */
-  controllerWorker_ = addWorker("controller", 400, &LocomotionController::updateControllerWorker);
+//  controllerWorker_ = addWorker("controller", 400, &LocomotionController::updateControllerWorker);
+
+
+  nodewrap::WorkerOptions workerOptions;
+  workerOptions.callback = boost::bind(&LocomotionController::updateControllerWorker, this, _1);
+  workerOptions.frequency = 400;
+  workerOptions.autostart = true;
+  workerOptions.synchronous = false;
+  workerOptions.privateCallbackQueue = true;
+  workerOptions.priority = 99;
+  controllerWorker_ = addWorker("controller", workerOptions);
+
+
+
 }
 
 void LocomotionController::cleanup() {
@@ -205,10 +218,17 @@ void LocomotionController::publish()  {
 }
 
 void LocomotionController::robotStateCallback(const quadruped_msgs::RobotState::ConstPtr& msg) {
+
+
 //  std::lock_guard<std::mutex> lock(mutexRobotState_);
+  {
   std::unique_lock<std::mutex> lock(mutexRobotState_);
+
   robotState_ = msg;
+  }
   rcvdRobotState_.notify_all();
+//  controllerWorker_.wake();
+
 //  updateControllerAndPublish(msg);
 }
 
