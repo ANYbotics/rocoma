@@ -27,7 +27,7 @@
 */
 /*!
  * @file    ControllerManager.hpp
- * @author  Christian Gehring
+ * @author  Christian Gehring, Dario Bellicoso
  * @date    Oct, 2014
  */
 
@@ -43,10 +43,11 @@
 #include <locomotion_controller/Model.hpp>
 
 #include "roco_freeze/RocoFreeze.hpp"
-//#include "robotTask/tasks/tasks.hpp"
 #include <roco/controllers/ControllerInterface.hpp>
 #include <robot_model/State.hpp>
 #include <robot_model/Command.hpp>
+
+#include <any_msgs/State.h>
 
 #include <boost/ptr_container/ptr_vector.hpp>
 
@@ -80,6 +81,9 @@ class ControllerManager
   bool switchControllerAfterEmergencyStop();
   bool isRealRobot() const;
   void setIsRealRobot(bool isRealRobot);
+
+  void notifyEmergencyState();
+
  protected:
   void switchToEmergencyTask();
  protected:
@@ -88,6 +92,12 @@ class ControllerManager
   boost::ptr_vector<Controller> controllers_;
   ControllerPtr activeController_;
   bool isRealRobot_;
+
+  //--- Notify an emergency stop
+  void publishEmergencyState(bool emergencyState);
+  ros::Publisher emergencyStopStatePublisher_;
+  any_msgs::State emergencyStopStateMsg_;
+  //---
 };
 
 } /* namespace locomotion_controller */
