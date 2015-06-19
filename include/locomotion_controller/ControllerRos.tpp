@@ -227,10 +227,7 @@ bool ControllerRos<Controller_>::createController(double dt)
 
 
 template<typename Controller_>
-bool ControllerRos<Controller_>::addWorker(const roco::WorkerOptions&  options) {
-
-  ROCO_INFO("adding worker");
-
+roco::WorkerHandle ControllerRos<Controller_>::addWorker(const roco::WorkerOptions&  options) {
   workers_.emplace(options.name_, WorkerWrapper());
   auto& wrapper = workers_[options.name_];
   wrapper.options_ = options;
@@ -243,7 +240,21 @@ bool ControllerRos<Controller_>::addWorker(const roco::WorkerOptions&  options) 
   workerOptions.callback = boost::bind(&WorkerWrapper::workerCallback, wrapper, _1);
 
   wrapper.worker_ = controllerManager_->getLocomotionController()->addLogWorker(options.name_, workerOptions);
+
+  roco::WorkerHandle workerHandle;
+  workerHandle.name_ = options.name_;
 }
+
+template<typename Controller_>
+bool ControllerRos<Controller_>::startWorker(const roco::WorkerHandle& workerHandle) {
+  workers_[workerHandle.name_].worker_.start();
+}
+
+template<typename Controller_>
+bool ControllerRos<Controller_>::cancelWorker(const roco::WorkerHandle& workerHandle) {
+  workers_[workerHandle.name_].worker_.cancel();
+}
+
 
 template<typename Controller_>
 bool ControllerRos<Controller_>::initializeController(double dt)
@@ -293,17 +304,14 @@ bool ControllerRos<Controller_>::initializeController(double dt)
 
 template<typename Controller_>
 void ControllerRos<Controller_>::startWorkers() {
-
-  ROCO_INFO_STREAM(
-        "[" << this->getName() << "] Starting workers.");
+  ROCO_INFO_STREAM("[" << this->getName() << "] Starting workers.");
   logWorker_.start();
   signalLoggerWorker_.start();
-  //---
-
 }
 
 template<typename Controller_>
 void ControllerRos<Controller_>::cancelWorkers() {
+  ROCO_INFO_STREAM("[" << this->getName() << "] Canceling workers.");
   logWorker_.cancel(true);
   signalLoggerWorker_.cancel(true);
 }
