@@ -392,6 +392,9 @@ void ControllerRos<Controller_>::emergencyStop()
     signal_logger::logger->saveLoggerData();
     controllerManager_->switchControllerAfterEmergencyStop();
   }
+
+  controllerManager_->notifyEmergencyState();
+
 }
 
 template<typename Controller_>

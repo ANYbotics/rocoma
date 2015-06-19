@@ -45,6 +45,7 @@
 #include <roco/time/TimeStd.hpp>
 
 #include <roco/controllers/ControllerAdapterInterface.hpp>
+#include <roco/controllers/LocomotionController.hpp>
 #include <signal_logger/logger.hpp>
 #include <robot_model/robot_model.hpp>
 
@@ -55,9 +56,8 @@
 
 namespace locomotion_controller {
 
-
 template<typename Controller_>
-class ControllerRos:  public roco::controllers::ControllerAdapterInterface, public Controller_
+class ControllerRos:  public roco::controllers::ControllerAdapterInterface, public Controller_, virtual public roco::controllers::LocomotionController
 {
  public:
   typedef Controller_ Controller;
