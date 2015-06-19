@@ -196,7 +196,7 @@ bool ControllerManager::getActiveController(locomotion_controller_msgs::GetActiv
                                             locomotion_controller_msgs::GetActiveController::Response &res) {
 
   res.active_controller_name = activeController_->getName();
-  res.active_controller_locomotion_mode = activeController_->getLocomotionMode();
+  res.active_controller_locomotion_mode = activeController_->getCurrentControlName();
 
   return true;
 }
