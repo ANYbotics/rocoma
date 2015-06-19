@@ -105,7 +105,6 @@ add_library(locomotion_controller
   src/LocomotionController.cpp
 )
 
-#add_dependencies(locomotion_controller locomotion_controller_msgs_generate_messages_cpp roco robot_utils robot_model roco_freeze roco_assembly kindr quadruped_msgs)
 add_dependencies(locomotion_controller ${catkin_EXPORTED_TARGETS})
 
 target_link_libraries(locomotion_controller

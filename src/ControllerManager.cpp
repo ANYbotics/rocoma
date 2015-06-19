@@ -70,7 +70,7 @@ void ControllerManager::setupControllers(double dt, robot_model::State& state, r
   add_locomotion_controllers(this, state, command, nodeHandle);
 
   emergencyStopStatePublisher_.shutdown();
-  emergencyStopStatePublisher_ = nodeHandle.advertise<any_msgs::State>("emergency_stop", 100);
+  emergencyStopStatePublisher_ = nodeHandle.advertise<any_msgs::State>("notify_emergency_stop", 100);
 }
 
 void ControllerManager::addController(ControllerPtr controller)  {
