@@ -151,10 +151,12 @@ bool ControllerManager::switchController(locomotion_controller_msgs::SwitchContr
 
         {
           std::lock_guard<std::mutex> lock(activeControllerMutex_);
-          activeController_->cancelWorkers();
-          activeController_->shutdownRos();
+//          activeController_->cancelWorkers();
+//          activeController_->shutdownRos();
+          activeController_->stopController();
           activeController_ = initController;
-          activeController_->startWorkers();
+
+//          activeController_->startWorkers();
         }
 
       }

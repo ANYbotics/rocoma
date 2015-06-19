@@ -225,6 +225,26 @@ bool ControllerRos<Controller_>::createController(double dt)
   return true;
 }
 
+
+template<typename Controller_>
+bool ControllerRos<Controller_>::addWorker(const roco::WorkerOptions&  options) {
+
+  ROCO_INFO("adding worker");
+
+  workers_.emplace(options.name_, WorkerWrapper());
+  auto& wrapper = workers_[options.name_];
+  wrapper.options_ = options;
+
+  nodewrap::WorkerOptions workerOptions;
+  workerOptions.autostart = options.autostart_;
+  workerOptions.frequency = options.frequency_;
+  workerOptions.priority = options.priority_;
+  workerOptions.synchronous = options.synchronous_;
+  workerOptions.callback = boost::bind(&WorkerWrapper::workerCallback, wrapper, _1);
+
+  wrapper.worker_ = controllerManager_->getLocomotionController()->addLogWorker(options.name_, workerOptions);
+}
+
 template<typename Controller_>
 bool ControllerRos<Controller_>::initializeController(double dt)
 {
@@ -450,10 +470,15 @@ void ControllerRos<Controller_>::sendEmergencyCommand()
 template<typename Controller_>
 bool ControllerRos<Controller_>::stopController()
 {
+  cancelWorkers();
+
   this->isRunning_ = false;
+  this->stop();
   this->emergencyStop();
+
   return true;
 }
+
 template<typename Controller_>
 void ControllerRos<Controller_>::emergencyStop()
 {
@@ -468,8 +493,6 @@ void ControllerRos<Controller_>::emergencyStop()
 
   cancelWorkers();
 
-//  sendEmergencyState(false);
-//  sendEmergencyState(true);
 }
 
 template<typename Controller_>

@@ -50,6 +50,7 @@
 
 #include "locomotion_controller/ControllerManager.hpp"
 #include "locomotion_controller/LocomotionController.hpp"
+#include "locomotion_controller/WorkerWrapper.hpp"
 
 #include <iostream>
 #include <exception>      // std::exception
@@ -97,6 +98,8 @@ class ControllerRos:  public roco::controllers::ControllerAdapterInterface, publ
   virtual void cancelWorkers();
   virtual void startWorkers();
 
+  virtual bool addWorker(const roco::WorkerOptions&  options);
+
  protected:
   bool updateState(double dt, bool checkState=true);
   bool updateCommand(double dt, bool forceSendingControlModes);
@@ -115,6 +118,8 @@ class ControllerRos:  public roco::controllers::ControllerAdapterInterface, publ
 
   nodewrap::Worker logWorker_;
   nodewrap::Worker signalLoggerWorker_;
+
+  std::map<std::string, WorkerWrapper> workers_;
 
   // Worker callbacks
   virtual bool loggerWorker(const nodewrap::WorkerEvent& event);
