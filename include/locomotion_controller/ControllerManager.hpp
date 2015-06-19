@@ -43,7 +43,7 @@
 #include <locomotion_controller/Model.hpp>
 
 #include "roco_freeze/RocoFreeze.hpp"
-#include <roco/controllers/ControllerInterface.hpp>
+#include <roco/controllers/LocomotionControllerInterface.hpp>
 #include <robot_model/State.hpp>
 #include <robot_model/Command.hpp>
 
@@ -59,8 +59,8 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
 class ControllerManager
 {
  public:
-  typedef roco::controllers::ControllerInterface Controller;
-  typedef roco::controllers::ControllerInterface* ControllerPtr;
+  typedef roco::controllers::LocomotionControllerInterface Controller;
+  typedef roco::controllers::LocomotionControllerInterface* ControllerPtr;
  public:
   ControllerManager();
   virtual ~ControllerManager();
