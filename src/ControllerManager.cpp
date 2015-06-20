@@ -69,6 +69,8 @@ void ControllerManager::setupControllers(double dt, robot_model::State& state, r
 
   add_locomotion_controllers(this, state, command, nodeHandle);
 
+  emergencyStopStatePublisher_.shutdown();
+  emergencyStopStatePublisher_ = nodeHandle.advertise<any_msgs::State>("notify_emergency_stop", 100);
 }
 
 void ControllerManager::addController(ControllerPtr controller)  {
@@ -113,6 +115,20 @@ void ControllerManager::switchToEmergencyTask() {
     }
     throw std::runtime_error("Controller 'freeze' not found!");
   }
+}
+
+
+void ControllerManager::notifyEmergencyState() {
+  publishEmergencyState(false);
+  publishEmergencyState(true);
+}
+
+void ControllerManager::publishEmergencyState(bool emergencyState) {
+  emergencyStopStateMsg_.stamp = ros::Time::now();
+  emergencyStopStateMsg_.is_ok = emergencyState;
+
+  any_msgs::StatePtr stateMsg( new any_msgs::State(emergencyStopStateMsg_) );
+  emergencyStopStatePublisher_.publish( any_msgs::StateConstPtr(stateMsg) );
 }
 
 
@@ -173,6 +189,18 @@ bool ControllerManager::getAvailableControllers(locomotion_controller_msgs::GetA
 
   return true;
 }
+
+
+
+bool ControllerManager::getActiveController(locomotion_controller_msgs::GetActiveController::Request &req,
+                                            locomotion_controller_msgs::GetActiveController::Response &res) {
+
+  res.active_controller_name = activeController_->getName();
+  res.active_controller_locomotion_mode = activeController_->getLocomotionModeName();
+
+  return true;
+}
+
 
 bool ControllerManager::isRealRobot() const {
 	return isRealRobot_;

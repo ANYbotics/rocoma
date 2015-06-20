@@ -116,6 +116,7 @@ class LocomotionController : public nodewrap::NodeImpl
   ros::ServiceServer switchControllerService_;
   ros::ServiceServer emergencyStopService_;
   ros::ServiceServer getAvailableControllersService_;
+  ros::ServiceServer getActiveControllerService_;
   ros::ServiceClient resetStateEstimatorClient_;
 
   series_elastic_actuator_msgs::SeActuatorCommandsPtr jointCommands_;
