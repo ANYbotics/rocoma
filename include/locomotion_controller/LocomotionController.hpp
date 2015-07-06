@@ -100,6 +100,7 @@ class LocomotionController : public nodewrap::NodeImpl
   double timeStep_;
   bool isRealRobot_;
   std::string defaultController_;
+  std::string defaultRobot_;
 
   model::Model model_;
   ControllerManager controllerManager_;

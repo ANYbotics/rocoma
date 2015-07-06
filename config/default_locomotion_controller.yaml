@@ -6,3 +6,6 @@ logger:
   sampling_time: 60
   script: ""
   class: "ros"
+
+robot:
+  name: anymal_minimal

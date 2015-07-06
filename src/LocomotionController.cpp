@@ -66,7 +66,8 @@ LocomotionController::LocomotionController():
     isRealRobot_(false),
     model_(),
     controllerManager_(),
-    defaultController_("LocoDemo")
+    defaultController_("LocoDemo"),
+    defaultRobot_("anymal")
 {
 
 
@@ -81,6 +82,7 @@ void LocomotionController::init() {
   getNodeHandle().param<double>("controller/time_step", timeStep_, 0.0025);
   getNodeHandle().param<bool>("controller/is_real_robot", isRealRobot_, false);
   getNodeHandle().param<std::string>("controller/default", defaultController_, "LocoDemo");
+  getNodeHandle().param<std::string>("robot/name", defaultRobot_, "anymal");
   //---
 
   //--- Configure logger.
@@ -119,7 +121,7 @@ void LocomotionController::init() {
 
     // Initialize robot and terrain models
     const std::string& urdfPath = ros::package::getPath("quadruped_model") + "/resources/";
-    const std::string& urdfFileName = "starleth_minimal.urdf";
+    const std::string& urdfFileName = defaultRobot_ + ".urdf";
     const std::string& urdfModelFile = urdfPath + urdfFileName;
     model_.initializeForController(timeStep_,isRealRobot_, urdfModelFile);
     model_.getRobotModel()->params().printParams();
