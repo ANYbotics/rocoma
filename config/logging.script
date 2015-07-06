@@ -361,3 +361,9 @@ time
 /loco/rightHindLeg/swingDuration
 /loco/rightHindLeg/loadFactor
 /loco/rightHindLeg/currentState
+/loco/terrain_perception/planeNormalInWorldFrame_x
+/loco/terrain_perception/planeNormalInWorldFrame_y
+/loco/terrain_perception/planeNormalInWorldFrame_z
+/foothold_gen/constrained_offset_heading
+/foothold_gen/constrained_offset_lateral
+/foothold_gen/constrained_offset_angular
