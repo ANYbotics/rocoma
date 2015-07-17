@@ -8,4 +8,4 @@ logger:
   class: "ros"
 
 robot:
-  name: anymal_minimal
+  name: starleth

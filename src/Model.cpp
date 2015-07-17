@@ -27,14 +27,16 @@
 */
 /*!
  * @file    Model.cpp
- * @author  Christian Gehring
+ * @author  Christian Gehring, Dario Bellicoso
  * @date    Oct, 2014
  */
 
 #include "locomotion_controller/Model.hpp"
 #include "robotUtils/terrains/TerrainPlane.hpp"
 #include <starleth_description/starleth_robot_state.hpp>
-#include <robot_model/starleth/starleth.hpp>
+#include <quadruped_model/robots/starleth.hpp>
+#include <quadruped_model/robots/anymal.hpp>
+#include <quadruped_model/robots/quadrupeds.hpp>
 #include <signal_logger/logger.hpp>
 #include <series_elastic_actuator_ros/ConvertRosMessages.hpp>
 
@@ -82,14 +84,14 @@ const robot_model::Command& Model::getCommand() const {
 void Model::initializeForController(double dt, bool isRealRobot, const std::string& pathToUrdfFile) {
   robotModel_.reset(new robot_model::RobotModel(dt));
 
-
   /* initialize model from URDF file */
   robotModel_->initModelFromUrdfFile(pathToUrdfFile);
 
   state_.setRobotModelPtr(this->getRobotModel());
   state_.setTerrainPtr(this->getTerrainModel());
-  robot_model::initializeStateForStarlETH(state_);
-  robot_model::initializeCommandForStarlETH(command_);
+
+  quadruped_model::quadrupeds::initializeState(state_);
+  robot_model::starleth::initializeCommand(command_);
 
 
 
@@ -114,14 +116,17 @@ void Model::initializeForController(double dt, bool isRealRobot, const std::stri
 }
 
 
-void Model::initializeForStateEstimator(double dt, bool isRealRobot) {
+void Model::initializeForStateEstimator(double dt, bool isRealRobot, const std::string& pathToUrdfFile) {
   robotModel_.reset(new robot_model::RobotModel(dt));
+  /* initialize model from URDF file */
+  robotModel_->initModelFromUrdfFile(pathToUrdfFile);
+
   //setRobotModelParameters();
   state_.setRobotModelPtr(this->getRobotModel());
   state_.setTerrainPtr(this->getTerrainModel());
-  robot_model::initializeStateForStarlETH(state_);
-  robot_model::initializeCommandForStarlETH(command_);
+  quadruped_model::quadrupeds::initializeState(state_);
 
+  robot_model::starleth::initializeCommand(command_);
 
   robotModel_->setIsRealRobot(false);
   /* Select estimator: */

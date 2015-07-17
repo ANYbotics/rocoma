@@ -82,7 +82,7 @@ class Model
   Model();
   virtual ~Model();
   void initializeForController(double dt,bool isRealRobot, const std::string& pathToUrdfFile);
-  void initializeForStateEstimator(double dt, bool isRealRobot);
+  void initializeForStateEstimator(double dt, bool isRealRobot, const std::string& pathToUrdfFile);
   void reinitialize(double dt);
   void addVariablesToLog();
 
