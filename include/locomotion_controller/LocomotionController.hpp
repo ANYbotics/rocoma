@@ -95,12 +95,13 @@ class LocomotionController : public nodewrap::NodeImpl
   void initializeSubscribers();
 
   void updateControllerAndPublish(const quadruped_msgs::RobotState::ConstPtr& robotState);
+  const std::string& getQuadrupedName() const;
 
  private:
   double timeStep_;
   bool isRealRobot_;
   std::string defaultController_;
-  std::string defaultRobot_;
+  std::string quadrupedName_;
 
   model::Model model_;
   ControllerManager controllerManager_;
