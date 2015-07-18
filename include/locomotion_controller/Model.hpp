@@ -81,8 +81,14 @@ class Model
  public:
   Model();
   virtual ~Model();
-  void initializeForController(double dt,bool isRealRobot, const std::string& pathToUrdfFile);
-  void initializeForStateEstimator(double dt, bool isRealRobot, const std::string& pathToUrdfFile);
+  void initializeForController(double dt,
+                               bool isRealRobot,
+                               const std::string& pathToUrdfFile,
+                               const quadruped_model::Quadrupeds& quadruped);
+  void initializeForStateEstimator(double dt,
+                                   bool isRealRobot,
+                                   const std::string& pathToUrdfFile,
+                                   const quadruped_model::Quadrupeds& quadruped);
   void reinitialize(double dt);
   void addVariablesToLog();
 

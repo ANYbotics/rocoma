@@ -123,7 +123,12 @@ void LocomotionController::init() {
     const std::string& urdfPath = ros::package::getPath("quadruped_model") + "/resources/";
     const std::string& urdfFileName = quadrupedName_ + "_minimal.urdf";
     const std::string& urdfModelFile = urdfPath + urdfFileName;
-    model_.initializeForController(timeStep_,isRealRobot_, urdfModelFile);
+
+    quadruped_model::Quadrupeds quadrupedEnum;
+    if (quadrupedName_ == "starleth") quadrupedEnum = quadruped_model::Quadrupeds::StarlETH;
+    if (quadrupedName_ == "anymal") quadrupedEnum = quadruped_model::Quadrupeds::Anymal;
+
+    model_.initializeForController(timeStep_,isRealRobot_, urdfModelFile, quadrupedEnum);
     model_.getRobotModel()->params().printParams();
     model_.addVariablesToLog();
 

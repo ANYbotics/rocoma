@@ -81,7 +81,7 @@ const robot_model::Command& Model::getCommand() const {
   return command_;
 }
 
-void Model::initializeForController(double dt, bool isRealRobot, const std::string& pathToUrdfFile) {
+void Model::initializeForController(double dt, bool isRealRobot, const std::string& pathToUrdfFile, const quadruped_model::Quadrupeds& quadruped) {
   robotModel_.reset(new robot_model::RobotModel(dt));
 
   /* initialize model from URDF file */
@@ -91,9 +91,18 @@ void Model::initializeForController(double dt, bool isRealRobot, const std::stri
   state_.setTerrainPtr(this->getTerrainModel());
 
   quadruped_model::quadrupeds::initializeState(state_);
-  robot_model::starleth::initializeCommand(command_);
 
-
+  switch (quadruped) {
+    case(quadruped_model::Quadrupeds::StarlETH): {
+      robot_model::quadrupeds::starleth::initializeCommand(command_);
+    } break;
+    case(quadruped_model::Quadrupeds::Anymal): {
+      robot_model::quadrupeds::starleth::initializeCommand(command_);
+    } break;
+    default: {
+      throw std::runtime_error("[Model::initializeForController] Invalid quadruped enum.");
+    } break;
+  }
 
   robotModel_->setIsRealRobot(isRealRobot);
   /* Select estimator: */
@@ -116,7 +125,7 @@ void Model::initializeForController(double dt, bool isRealRobot, const std::stri
 }
 
 
-void Model::initializeForStateEstimator(double dt, bool isRealRobot, const std::string& pathToUrdfFile) {
+void Model::initializeForStateEstimator(double dt, bool isRealRobot, const std::string& pathToUrdfFile, const quadruped_model::Quadrupeds& quadruped) {
   robotModel_.reset(new robot_model::RobotModel(dt));
   /* initialize model from URDF file */
   robotModel_->initModelFromUrdfFile(pathToUrdfFile);
@@ -126,7 +135,17 @@ void Model::initializeForStateEstimator(double dt, bool isRealRobot, const std::
   state_.setTerrainPtr(this->getTerrainModel());
   quadruped_model::quadrupeds::initializeState(state_);
 
-  robot_model::starleth::initializeCommand(command_);
+  switch (quadruped) {
+    case(quadruped_model::Quadrupeds::StarlETH): {
+      robot_model::quadrupeds::starleth::initializeCommand(command_);
+    } break;
+    case(quadruped_model::Quadrupeds::Anymal): {
+      robot_model::quadrupeds::starleth::initializeCommand(command_);
+    } break;
+    default: {
+      throw std::runtime_error("[Model::initializeForController] Invalid quadruped enum.");
+    } break;
+  }
 
   robotModel_->setIsRealRobot(false);
   /* Select estimator: */
