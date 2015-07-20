@@ -46,7 +46,7 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
 
 #ifdef USE_TASK_LOCODEMO
   auto controllerLocoDemo = new ControllerRos<loco_demo::LocoDemo>(state, command);
-  controllerLocoDemo->setParameterPath(ros::package::getPath("loco_demo"));
+  controllerLocoDemo->setParameterPath(ros::package::getPath("loco_demo_parameters") + "/" + quadrupedName);
   controllerLocoDemo->setControllerManager(manager);
   controllerLocoDemo->setIsRealRobotFromManager(manager->isRealRobot());
   manager->addController(controllerLocoDemo);
@@ -54,7 +54,7 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
 
 #ifdef USE_TASK_LOCODEMO_ROS
   auto controllerLocoDemoRos = new ControllerRos<loco_demo_ros::LocoDemoRos>(state, command);
-  controllerLocoDemoRos->setParameterPath(ros::package::getPath("loco_demo"));
+  controllerLocoDemoRos->setParameterPath(ros::package::getPath("loco_demo_parameters") + "/" + quadrupedName);
   controllerLocoDemoRos->setControllerManager(manager);
   controllerLocoDemoRos->setIsRealRobotFromManager(manager->isRealRobot());
   controllerLocoDemoRos->setNodeHandle(nodeHandle);
