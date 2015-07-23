@@ -294,6 +294,8 @@ void Model::setRobotState(const quadruped_msgs::RobotState::ConstPtr& robotState
   robotModel_->getQuadrupedModel()->setMainBodyGeneralizedVelocities(dQb);
   robotModel_->getQuadrupedModel()->setJointPositions(jointPositions);
   robotModel_->getQuadrupedModel()->setJointVelocities(jointVelocities);
+  robotModel_->getQuadrupedModel()->setMainBodyLocalAngularVelocity(localAngularVelocityKindr.toImplementation());
+  robotModel_->getQuadrupedModel()->setMainBodyGlobalAngularVelocity(globalAngularVelocity);
   robotModel_->getQuadrupedModel()->updateKinematics(true, true, false);
 
 
