@@ -34,12 +34,14 @@
 #include "locomotion_controller/Model.hpp"
 #include "robotUtils/terrains/TerrainPlane.hpp"
 #include <starleth_description/starleth_robot_state.hpp>
-#include <quadruped_model/robots/starleth.hpp>
-#include <quadruped_model/robots/anymal.hpp>
-#include <quadruped_model/robots/quadrupeds.hpp>
+
 #include <signal_logger/logger.hpp>
 #include <series_elastic_actuator_ros/ConvertRosMessages.hpp>
 
+// quadruped state and command helpers
+#include <quadruped_model/robots/starleth.hpp>
+#include <quadruped_model/robots/anymal.hpp>
+#include <quadruped_model/robots/quadrupeds.hpp>
 
 namespace model {
 
@@ -191,7 +193,6 @@ void Model::addVariablesToLog() {
        "RF_HAA_load", "RF_HFE_load", "RF_KFE_load",
        "LH_HAA_load", "LH_HFE_load", "LH_KFE_load",
        "RH_HAA_load", "RH_HFE_load", "RH_KFE_load";
-//  robotUtils::logger->addToLog(measJointTorques_, names);
   signal_logger::logger->addDoubleEigenMatrixToLog(state_.getJointTorques().toImplementation(), names);
 
 
