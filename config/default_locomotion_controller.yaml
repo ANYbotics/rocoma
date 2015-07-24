@@ -7,5 +7,6 @@ logger:
   script: ""
   class: "ros"
 
-robot:
+quadruped:
   name: starleth
+  setup: minimal
