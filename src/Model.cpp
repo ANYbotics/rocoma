@@ -39,6 +39,7 @@
 #include <series_elastic_actuator_ros/ConvertRosMessages.hpp>
 
 // quadruped state and command helpers
+#include <quadruped_model/common/quadruped_model_common.hpp>
 #include <quadruped_model/robots/starleth.hpp>
 #include <quadruped_model/robots/anymal.hpp>
 #include <quadruped_model/robots/quadrupeds.hpp>
@@ -47,7 +48,7 @@ namespace model {
 
 Model::Model():
   updateStamp_(0.0),
-  robotModel_(),
+  quadrupedModel_(),
   terrain_(),
   state_(),
   command_()
@@ -62,116 +63,116 @@ Model::~Model()
 }
 
 
-robot_model::RobotModel* Model::getRobotModel() {
-  return robotModel_.get();
+quadruped_model::QuadrupedModel* Model::getQuadrupedModel() {
+  return quadrupedModel_.get();
 }
 robotTerrain::TerrainBase* Model::getTerrainModel() {
   return terrain_.get();
 }
 
-robot_model::State& Model::getState() {
+quadruped_model::State& Model::getState() {
   return state_;
 }
-robot_model::Command& Model::getCommand() {
+quadruped_model::Command& Model::getCommand() {
   return command_;
 }
 
-const robot_model::State& Model::getState() const {
+const quadruped_model::State& Model::getState() const {
   return state_;
 }
-const robot_model::Command& Model::getCommand() const {
+const quadruped_model::Command& Model::getCommand() const {
   return command_;
 }
 
 void Model::initializeForController(double dt, bool isRealRobot, const std::string& pathToUrdfFile, const quadruped_model::Quadrupeds& quadruped) {
-  robotModel_.reset(new robot_model::RobotModel(dt));
+  quadrupedModel_.reset(new quadruped_model::QuadrupedModel(dt));
 
   /* initialize model from URDF file */
-  robotModel_->initModelFromUrdfFile(pathToUrdfFile);
+  quadrupedModel_->initModelFromUrdfFile(pathToUrdfFile);
 
-  state_.setRobotModelPtr(this->getRobotModel());
+  state_.setQuadrupedModelPtr(this->getQuadrupedModel());
   state_.setTerrainPtr(this->getTerrainModel());
 
   quadruped_model::quadrupeds::initializeState(state_);
 
   switch (quadruped) {
     case(quadruped_model::Quadrupeds::StarlETH): {
-      robot_model::quadrupeds::starleth::initializeCommand(command_);
+      quadruped_model::quadrupeds::starleth::initializeCommand(command_);
     } break;
     case(quadruped_model::Quadrupeds::Anymal): {
-      robot_model::quadrupeds::starleth::initializeCommand(command_);
+      quadruped_model::quadrupeds::anymal::initializeCommand(command_);
     } break;
     default: {
       throw std::runtime_error("[Model::initializeForController] Invalid quadruped enum.");
     } break;
   }
 
-  robotModel_->setIsRealRobot(isRealRobot);
-  /* Select estimator: */
-  robotModel_->est().setActualEstimator(robot_model::PE_SL); // feed through of simulated states
-  //  robotModel.est().setActualEstimator(robot_model::PE_ObservabilityConstrainedEKF); // activate this estimator
-  //  robotModel.est().setActualEstimator(robot_model::PE_LSE); // not used
+  quadrupedModel_->setIsRealRobot(isRealRobot);
 
-  robotModel_->est().getActualEstimator()->setVerboseLevel(0);
-  robotModel_->est().getActualEstimator()->setIsPlayingAudio(false);
+//  /* Select estimator: */
+//  robotModel_->est().setActualEstimator(robot_model::PE_SL); // feed through of simulated states
+//  //  robotModel.est().setActualEstimator(robot_model::PE_ObservabilityConstrainedEKF); // activate this estimator
+//  //  robotModel.est().setActualEstimator(robot_model::PE_LSE); // not used
+//
+//  robotModel_->est().getActualEstimator()->setVerboseLevel(0);
+//  robotModel_->est().getActualEstimator()->setIsPlayingAudio(false);
+//
 
   /* activate sensor noise */
-  robotModel_->sensors().setIsAddingSensorNoise(false);
-
-
+  quadrupedModel_->getSensors().setIsAddingSensorNoise(false);
   /* initialize robot model */
-  robotModel_->init();
+  quadrupedModel_->init();
 
   terrain_.reset(new robotTerrain::TerrainPlane());
-
 }
 
 
 void Model::initializeForStateEstimator(double dt, bool isRealRobot, const std::string& pathToUrdfFile, const quadruped_model::Quadrupeds& quadruped) {
-  robotModel_.reset(new robot_model::RobotModel(dt));
-  /* initialize model from URDF file */
-  robotModel_->initModelFromUrdfFile(pathToUrdfFile);
+  quadrupedModel_.reset(new quadruped_model::QuadrupedModel(dt));
+  quadrupedModel_->initModelFromUrdfFile(pathToUrdfFile);
 
-  //setRobotModelParameters();
-  state_.setRobotModelPtr(this->getRobotModel());
+  state_.setQuadrupedModelPtr(this->getQuadrupedModel());
   state_.setTerrainPtr(this->getTerrainModel());
   quadruped_model::quadrupeds::initializeState(state_);
 
   switch (quadruped) {
     case(quadruped_model::Quadrupeds::StarlETH): {
-      robot_model::quadrupeds::starleth::initializeCommand(command_);
+      quadruped_model::quadrupeds::starleth::initializeCommand(command_);
     } break;
     case(quadruped_model::Quadrupeds::Anymal): {
-      robot_model::quadrupeds::starleth::initializeCommand(command_);
+      quadruped_model::quadrupeds::anymal::initializeCommand(command_);
     } break;
     default: {
       throw std::runtime_error("[Model::initializeForController] Invalid quadruped enum.");
     } break;
   }
 
-  robotModel_->setIsRealRobot(false);
-  /* Select estimator: */
-  robotModel_->est().setActualEstimator(robot_model::PE_ObservabilityConstrainedEKF); // feed through of simulated states
-  //  robotModel.est().setActualEstimator(robot_model::PE_ObservabilityConstrainedEKF); // activate this estimator
-  //  robotModel.est().setActualEstimator(robot_model::PE_LSE); // not used
+  quadrupedModel_->setIsRealRobot(false);
 
-  robotModel_->est().getActualEstimator()->setIsPlayingAudio(true);
-  robotModel_->est().getActualEstimator()->setPathToAudioFiles(std::string(getenv("LAB_ROOT")) + std::string{"/starleth_audio_files/locomotion_controller/"});
+  //fixme
+  /* Select estimator: */
+//  robotModel_->est().setActualEstimator(robot_model::PE_ObservabilityConstrainedEKF); // feed through of simulated states
+//  //  robotModel.est().setActualEstimator(robot_model::PE_ObservabilityConstrainedEKF); // activate this estimator
+//  //  robotModel.est().setActualEstimator(robot_model::PE_LSE); // not used
+//
+//  robotModel_->est().getActualEstimator()->setIsPlayingAudio(true);
+//  robotModel_->est().getActualEstimator()->setPathToAudioFiles(std::string(getenv("LAB_ROOT")) + std::string{"/starleth_audio_files/locomotion_controller/"});
+
   /* activate sensor noise */
-  robotModel_->sensors().setIsAddingSensorNoise(false);
+  quadrupedModel_->getSensors().setIsAddingSensorNoise(false);
   /* initialize robot model */
-  robotModel_->init();
+  quadrupedModel_->init();
 
   terrain_.reset(new robotTerrain::TerrainPlane());
-
 }
 
 void Model::reinitialize(double dt) {
-  robotModel_->init();
+  // fixme
+//  robotModel_->init();
 }
 
 void Model::addVariablesToLog() {
-  robotModel_->addVariablesToLog();
+//  robotModel_->addVariablesToLog();
 
   command_.addVariablesToLog(true);
 
@@ -196,9 +197,9 @@ void Model::addVariablesToLog() {
   signal_logger::logger->addDoubleEigenMatrixToLog(state_.getJointTorques().toImplementation(), names);
 
 
-  Eigen::Matrix<std::string, 4,1> contactNames;
-  contactNames << "LF_CONTACT_FLAG", "RF_CONTACT_FLAG", "LH_CONTACT_FLAG", "RH_CONTACT_FLAG";
-  signal_logger::logger->addIntEigenMatrixToLog(robotModel_->contacts().getCA(), contactNames);
+//  Eigen::Matrix<std::string, 4,1> contactNames;
+//  contactNames << "LF_CONTACT_FLAG", "RF_CONTACT_FLAG", "LH_CONTACT_FLAG", "RH_CONTACT_FLAG";
+//  signal_logger::logger->addIntEigenMatrixToLog(robotModel_->contacts().getCA(), contactNames);
 
   signal_logger::logger->updateLogger(true);
 
@@ -209,17 +210,16 @@ void Model::setRobotState(const quadruped_msgs::RobotState::ConstPtr& robotState
 
   namespace rot = kindr::rotations::eigen_impl;
 
-  static robot_model::VectorQb Qb = robot_model::VectorQb::Zero();
-  static robot_model::VectorQb dQb = robot_model::VectorQb::Zero();
-  static robot_model::VectorQb ddQb = robot_model::VectorQb::Zero();
-  static robot_model::VectorAct jointTorques;
-  static robot_model::VectorQj jointPositions;
-  static robot_model::VectorQj jointVelocities;
+  static quadruped_model::VectorQb Qb = quadruped_model::VectorQb::Zero();
+  static quadruped_model::VectorQb dQb = quadruped_model::VectorQb::Zero();
+  static quadruped_model::VectorQb ddQb = quadruped_model::VectorQb::Zero();
+  static quadruped_model::VectorAct jointTorques;
+  static quadruped_model::VectorQj jointPositions;
+  static quadruped_model::VectorQj jointVelocities;
 
   Qb(0) = robotState->pose.position.x;
   Qb(1) = robotState->pose.position.y;
   Qb(2) = robotState->pose.position.z;
-
 
   RotationQuaternion orientationWorldToBase(robotState->pose.orientation.w,
                                             robotState->pose.orientation.x,
@@ -243,16 +243,16 @@ void Model::setRobotState(const quadruped_msgs::RobotState::ConstPtr& robotState
 
 
    LocalAngularVelocity localAngularVelocityKindr(robotState->twist.angular.x,
-                                             robotState->twist.angular.y,
-                                             robotState->twist.angular.z);
-    const Eigen::Vector3d drpy = rot::EulerAnglesXyzDiffPD(
-        rot::EulerAnglesXyzPD(orientationWorldToBase), localAngularVelocityKindr)
-        .toImplementation();
+                                                 robotState->twist.angular.y,
+                                                 robotState->twist.angular.z);
+  const Eigen::Vector3d drpy = rot::EulerAnglesXyzDiffPD(
+      rot::EulerAnglesXyzPD(orientationWorldToBase), localAngularVelocityKindr)
+      .toImplementation();
 
-    dQb.tail(3) = drpy;
+  dQb.tail(3) = drpy;
 
-    Eigen::Vector3d globalAngularVelocity = orientationWorldToBase.inverseRotate(localAngularVelocityKindr.toImplementation());
-
+  Eigen::Vector3d globalAngularVelocity = orientationWorldToBase.inverseRotate(
+      localAngularVelocityKindr.toImplementation());
 
   /* set contacts */
   static Eigen::Vector4i contactFlags;
@@ -271,10 +271,10 @@ void Model::setRobotState(const quadruped_msgs::RobotState::ConstPtr& robotState
     force.y() = robotState->contacts[iFoot].wrench.force.y;
     force.z() = robotState->contacts[iFoot].wrench.force.z;
 
-    robotModel_->sensors().setContactForceCSw(iFoot, force);
-    robotModel_->sensors().setContactNormalCSw(iFoot, normal);
-
+    quadrupedModel_->getSensors().setContactForceCSw(iFoot, force);
+    quadrupedModel_->getSensors().setContactNormalCSw(iFoot, normal);
   }
+
   for (int i = 0; i < jointPositions.size(); i++) {
     jointTorques(i) = robotState->joints.effort[i];
     jointPositions(i) = robotState->joints.position[i];
@@ -282,22 +282,23 @@ void Model::setRobotState(const quadruped_msgs::RobotState::ConstPtr& robotState
   }
 
   /* update robot model */
-  robotModel_->sensors().setJointTorques(jointTorques);
-  robotModel_->sensors().setJointPos(jointPositions);
-  robotModel_->sensors().setJointVel(jointVelocities);
-//  robotModel_->sensors().setJointAcc(jointAccelerations);
-  robotModel_->sensors().getSimMainBodyPose()->setQb(Qb);
-  robotModel_->sensors().getSimMainBodyPose()->setdQb(dQb);
+//  robotModel_->sensors().setJointTorques(jointTorques);
+//  robotModel_->sensors().setJointPos(jointPositions);
+//  robotModel_->sensors().setJointVel(jointVelocities);
+////  robotModel_->sensors().setJointAcc(jointAccelerations);
+//  robotModel_->sensors().getSimMainBodyPose()->setQb(Qb);
+//  robotModel_->sensors().getSimMainBodyPose()->setdQb(dQb);
+//
 
 
-
-  robotModel_->getQuadrupedModel()->setMainBodyGeneralizedPositions(Qb);
-  robotModel_->getQuadrupedModel()->setMainBodyGeneralizedVelocities(dQb);
-  robotModel_->getQuadrupedModel()->setJointPositions(jointPositions);
-  robotModel_->getQuadrupedModel()->setJointVelocities(jointVelocities);
-  robotModel_->getQuadrupedModel()->setMainBodyLocalAngularVelocity(localAngularVelocityKindr.toImplementation());
-  robotModel_->getQuadrupedModel()->setMainBodyGlobalAngularVelocity(globalAngularVelocity);
-  robotModel_->getQuadrupedModel()->updateKinematics(true, true, false);
+  quadrupedModel_->setMainBodyGeneralizedPositions(Qb);
+  quadrupedModel_->setMainBodyGeneralizedVelocities(dQb);
+  quadrupedModel_->setJointPositions(jointPositions);
+  quadrupedModel_->setJointVelocities(jointVelocities);
+  quadrupedModel_->setJointTorques(jointTorques);
+  quadrupedModel_->setMainBodyLocalAngularVelocity(localAngularVelocityKindr.toImplementation());
+  quadrupedModel_->setMainBodyGlobalAngularVelocity(globalAngularVelocity);
+  quadrupedModel_->updateKinematics(true, true, false);
 
 
 
@@ -305,24 +306,21 @@ void Model::setRobotState(const quadruped_msgs::RobotState::ConstPtr& robotState
   // todo: acceleration is missing!
 //  robotModel_.sensors().getSimMainBodyPose()->setddQb(ddQb);
 
+  // fixme
+  quadrupedModel_->getSensors().getSimMainBodyPose()->setLinearVelocityBaseInWorldFrame(I_v_B);
+  quadrupedModel_->getSensors().getSimMainBodyPose()->setLinearVelocityBaseInBaseFrame(B_v_B);
+  quadrupedModel_->getSensors().getSimMainBodyPose()->setAngularVelocityBaseInWorldFrame(globalAngularVelocity);
+  quadrupedModel_->getSensors().getSimMainBodyPose()->setAngularVelocityBaseInBaseFrame(localAngularVelocityKindr.toImplementation());
+//   todo: acceleration is missing!
+//  quadrupedModel_->getSensors().getSimMainBodyPose()->setLinearAccelerationBaseInWorldFrame(I_a_B);
 
-  robotModel_->sensors().getSimMainBodyPose()->setLinearVelocityBaseInWorldFrame(I_v_B);
-  robotModel_->sensors().getSimMainBodyPose()->setLinearVelocityBaseInBaseFrame(B_v_B);
-  robotModel_->sensors().getSimMainBodyPose()->setAngularVelocityBaseInWorldFrame(globalAngularVelocity);
-  robotModel_->sensors().getSimMainBodyPose()->setAngularVelocityBaseInBaseFrame(localAngularVelocityKindr.toImplementation());
-  // todo: acceleration is missing!
-//  robotModel_->sensors().getSimMainBodyPose()->setLinearAccelerationBaseInWorldFrame(I_a_B);
+//   fixme
+  quadrupedModel_->getSensors().updateSimulatedIMU();
+  quadrupedModel_->getSensors().setContactFlags(contactFlags);
+  quadrupedModel_->update();
 
-  robotModel_->sensors().updateSimulatedIMU();
-  robotModel_->sensors().setContactFlags(contactFlags);
-
-  robotModel_->update();
   state_.copyStateFromRobotModel();
-
-  state_.setStatus((robot_model::State::StateStatus)robotState->state);
-
-  //ROS_INFO_STREAM("q.Qb: " << robotModel_->q().getQb().transpose());
-
+  state_.setStatus((quadruped_model::State::StateStatus)robotState->state);
 }
 
 void Model::setRobotState(const sensor_msgs::ImuPtr& imu,
@@ -332,9 +330,6 @@ void Model::setRobotState(const sensor_msgs::ImuPtr& imu,
                    const geometry_msgs::WrenchStampedPtr& contactForceLh,
                    const geometry_msgs::WrenchStampedPtr& contactForceRh,
                    const Eigen::Vector4i& contactFlags) {
-
-
-
   namespace rot = kindr::rotations::eigen_impl;
 
   static robot_model::VectorQb Qb = robot_model::VectorQb::Zero();
@@ -348,37 +343,34 @@ void Model::setRobotState(const sensor_msgs::ImuPtr& imu,
   Eigen::Vector3d normal = Eigen::Vector3d::UnitZ();
 
 
-
-
   force.x() = contactForceLf->wrench.force.x;
   force.y() = contactForceLf->wrench.force.y;
   force.z() = contactForceLf->wrench.force.z;
-  robotModel_->sensors().setContactForceCSw(0, force);
-  robotModel_->sensors().setContactNormalCSw(0, normal);
+  quadrupedModel_->getSensors().setContactForceCSw(0, force);
+  quadrupedModel_->getSensors().setContactNormalCSw(0, normal);
 
 
   force.x() = contactForceRf->wrench.force.x;
   force.y() = contactForceRf->wrench.force.y;
   force.z() = contactForceRf->wrench.force.z;
-  robotModel_->sensors().setContactForceCSw(1, force);
-  robotModel_->sensors().setContactNormalCSw(1, normal);
+  quadrupedModel_->getSensors().setContactForceCSw(1, force);
+  quadrupedModel_->getSensors().setContactNormalCSw(1, normal);
 
 
   force.x() = contactForceLh->wrench.force.x;
   force.y() = contactForceLh->wrench.force.y;
   force.z() = contactForceLh->wrench.force.z;
-  robotModel_->sensors().setContactForceCSw(2, force);
-  robotModel_->sensors().setContactNormalCSw(2, normal);
+  quadrupedModel_->getSensors().setContactForceCSw(2, force);
+  quadrupedModel_->getSensors().setContactNormalCSw(2, normal);
 
 
   force.x() = contactForceRh->wrench.force.x;
   force.y() = contactForceRh->wrench.force.y;
   force.z() = contactForceRh->wrench.force.z;
-  robotModel_->sensors().setContactForceCSw(3, force);
-  robotModel_->sensors().setContactNormalCSw(3, normal);
+  quadrupedModel_->getSensors().setContactForceCSw(3, force);
+  quadrupedModel_->getSensors().setContactNormalCSw(3, normal);
 
-
-  robotModel_->sensors().setContactFlags(contactFlags);
+  quadrupedModel_->getSensors().setContactFlags(contactFlags);
 
   for (int i = 0; i < jointPositions.size(); i++) {
     jointTorques(i) =  jointState->effort[i];
@@ -386,28 +378,25 @@ void Model::setRobotState(const sensor_msgs::ImuPtr& imu,
     jointVelocities(i) = jointState->velocity[i];
   }
 
-
   Eigen::Vector3d accData;
   accData.x() = imu->linear_acceleration.x;
   accData.y() = imu->linear_acceleration.y;
   accData.z() = imu->linear_acceleration.z;
-  robotModel_->sensors().getIMU()->setAccelerometerData(accData);
+  quadrupedModel_->getSensors().getIMU()->setAccelerometerData(accData);
   Eigen::Vector3d gyrData;
   gyrData.x() = imu->angular_velocity.x;
   gyrData.y() = imu->angular_velocity.y;
   gyrData.z() = imu->angular_velocity.z;
-  robotModel_->sensors().getIMU()->setGyrometerData(gyrData);
+  quadrupedModel_->getSensors().getIMU()->setGyrometerData(gyrData);
 
   /* update robot model */
-  robotModel_->sensors().setJointTorques(jointTorques);
-  robotModel_->sensors().setJointPos(jointPositions);
-  robotModel_->sensors().setJointVel(jointVelocities);
+  quadrupedModel_->getSensors().setJointTorques(jointTorques);
+  quadrupedModel_->getSensors().setJointPos(jointPositions);
+  quadrupedModel_->getSensors().setJointVel(jointVelocities);
 
-  robotModel_->update();
+  quadrupedModel_->update();
   updateStamp_ = ros::Time::now();
   state_.copyStateFromRobotModel();
-
-
 }
 
 void Model::initializeRobotState(quadruped_msgs::RobotStatePtr& robotState) const {
@@ -425,9 +414,7 @@ void Model::getRobotState(quadruped_msgs::RobotStatePtr& robotState) {
       robotModel_->est().getActualEstimator()->getQuat());
   const RotationQuaternion  orientationWorldToBase = rquatWorldToBaseActive.getPassive();
 
-  const Position positionWorldToBaseInWorldFrame = Position(
-      robotModel_->kin()[robot_model::JT_World2Base_CSw]->getPos());
-
+  const Position positionWorldToBaseInWorldFrame = Position(quadrupedModel_->getPositionWorldToBody(quadruped_model::BodyEnum::BASE));
 
   const LinearVelocity linearVelocityBaseInWorldFrame(robotModel_->kin()[robot_model::JT_World2Base_CSw]->getVel());
   const LocalAngularVelocity angularVelocityBaseInBaseFrame(orientationWorldToBase.rotate(robotModel_->est().getOmega()));
@@ -456,27 +443,29 @@ void Model::getRobotState(quadruped_msgs::RobotStatePtr& robotState) {
 
   robotState->joints.header.stamp = updateStamp_;
 
-  JointPositions jointPositions(robotModel_->q().getQj());
-  JointVelocities jointVelocities(robotModel_->q().getdQj());
-  JointTorques jointTorques(robotModel_->sensors().getJointTorques());
+//  JointPositions jointPositions(robotModel_->q().getQj());
+//  JointVelocities jointVelocities(robotModel_->q().getdQj());
+//  JointTorques jointTorques(robotModel_->sensors().getJointTorques());
+
+  JointPositions  jointPositions(quadrupedModel_->getJointPositions());
+  JointVelocities jointVelocities(quadrupedModel_->getJointVelocities());
+  JointTorques    jointTorques(quadrupedModel_->getJointTorques());
+
   for (int i=0; i<jointPositions.Dimension; i++) {
-    robotState->joints.position[i]= jointPositions(i);
-    robotState->joints.velocity[i] = jointVelocities(i);
-    robotState->joints.effort[i]= jointTorques(i);
+    robotState->joints.position[i]  = jointPositions(i);
+    robotState->joints.velocity[i]  = jointVelocities(i);
+    robotState->joints.effort[i]    = jointTorques(i);
   }
 
-
   for (int i=0; i<robotState->contacts.size(); i++) {
-
-
     robotState->contacts[i].header.stamp = updateStamp_;
 
-    const Force force(robotModel_->sensors().getContactForceCSw(i));
+    const Force force(quadrupedModel_->getSensors().getContactForceCSw(i));
     robotState->contacts[i].wrench.force.x = force.x();
     robotState->contacts[i].wrench.force.y = force.y();
     robotState->contacts[i].wrench.force.z = force.z();
 
-    Vector normal(robotModel_->sensors().getContactNormalCSw(i));
+    Vector normal(quadrupedModel_->getSensors().getContactNormalCSw(i));
     robotState->contacts[i].normal.x = normal.x();
     robotState->contacts[i].normal.y = normal.y();
     robotState->contacts[i].normal.z = normal.z();

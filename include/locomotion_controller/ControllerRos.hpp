@@ -34,7 +34,7 @@
  */
 /*!
 * @file     ControllerRos.hpp
-* @author   Christian Gehring
+* @author   Christian Gehring, Dario Bellicoso
 * @date     Dec, 2014
 * @brief
 */
@@ -47,7 +47,11 @@
 #include <roco/controllers/ControllerAdapterInterface.hpp>
 #include <roco/controllers/LocomotionController.hpp>
 #include <signal_logger/logger.hpp>
-#include <robot_model/robot_model.hpp>
+
+//#include <robot_model/robot_model.hpp>
+#include "quadruped_model/common/topology.hpp"
+#include "quadruped_model/common/containers.hpp"
+#include "quadruped_model/common/Command.hpp"
 
 #include "locomotion_controller/ControllerManager.hpp"
 
@@ -57,7 +61,9 @@
 namespace locomotion_controller {
 
 template<typename Controller_>
-class ControllerRos:  public roco::controllers::ControllerAdapterInterface, public Controller_, virtual public roco::controllers::LocomotionController
+class ControllerRos:  public roco::controllers::ControllerAdapterInterface,
+                      public Controller_,
+                      virtual public roco::controllers::LocomotionController
 {
  public:
   typedef Controller_ Controller;

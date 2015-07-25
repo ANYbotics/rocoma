@@ -44,8 +44,8 @@
 
 #include "roco_freeze/RocoFreeze.hpp"
 #include <roco/controllers/LocomotionControllerInterface.hpp>
-#include <robot_model/State.hpp>
-#include <robot_model/Command.hpp>
+#include <quadruped_model/common/State.hpp>
+#include <quadruped_model/common/Command.hpp>
 
 #include <any_msgs/State.h>
 
@@ -54,7 +54,10 @@
 namespace locomotion_controller {
 
 class ControllerManager;
-void add_locomotion_controllers(locomotion_controller::ControllerManager* manager, robot_model::State& state, robot_model::Command& command, ros::NodeHandle& nodeHandle);
+void add_locomotion_controllers(locomotion_controller::ControllerManager* manager,
+                                quadruped_model::State& state,
+                                quadruped_model::Command& command,
+                                ros::NodeHandle& nodeHandle);
 
 class ControllerManager
 {
@@ -66,7 +69,9 @@ class ControllerManager
   virtual ~ControllerManager();
 
   void updateController();
-  void setupControllers(double dt, robot_model::State& state, robot_model::Command& command, ros::NodeHandle& nodeHandle);
+  void setupControllers(double dt, quadruped_model::State& state,
+                        quadruped_model::Command& command,
+                        ros::NodeHandle& nodeHandle);
   void addController(ControllerPtr controller);
   bool switchController(locomotion_controller_msgs::SwitchController::Request  &req,
                         locomotion_controller_msgs::SwitchController::Response &res);

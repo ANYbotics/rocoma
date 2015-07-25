@@ -24,6 +24,8 @@
   <depend>signal_logger_ros</depend>
   
   <depend>robot_model</depend>
+  <depend>quadruped_model</depend>
+  
   <depend>roco_freeze</depend>
   <depend>kindr</depend>
   <depend>series_elastic_actuator_ros</depend>

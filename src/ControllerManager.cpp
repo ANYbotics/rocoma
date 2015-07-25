@@ -51,7 +51,7 @@ ControllerManager::~ControllerManager()
 {
 }
 
-void ControllerManager::setupControllers(double dt, robot_model::State& state, robot_model::Command& command, ros::NodeHandle& nodeHandle)  {
+void ControllerManager::setupControllers(double dt, quadruped_model::State& state, quadruped_model::Command& command, ros::NodeHandle& nodeHandle)  {
   timeStep_ = dt;
 
   /* Create controller freeze, which is active until estimator converged*/
@@ -64,8 +64,6 @@ void ControllerManager::setupControllers(double dt, robot_model::State& state, r
   if (!activeController_->initializeController(timeStep_)) {
     ROS_FATAL("Could not initialized NoTask!");
   }
-
-
 
   add_locomotion_controllers(this, state, command, nodeHandle);
 

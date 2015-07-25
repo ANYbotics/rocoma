@@ -34,7 +34,7 @@
  */
 /*!
  * @file     ControllerRos.tpp
- * @author   Christian Gehring
+ * @author   Christian Gehring, Dario Bellicoso
  * @date     Dec, 2014
  * @brief
  */
@@ -371,7 +371,7 @@ template<typename Controller_>
 void ControllerRos<Controller_>::sendEmergencyCommand()
 {
   for (auto& command : command_.getActuatorCommands()) {
-    command.setMode(robot_model::Command::Mode::MODE_FREEZE);
+    command.setMode(quadruped_model::Command::Mode::MODE_FREEZE);
   }
 }
 
