@@ -23,7 +23,6 @@
   <depend>signal_logger_std</depend>
   <depend>signal_logger_ros</depend>
   
-  <depend>robot_model</depend>
   <depend>quadruped_model</depend>
   
   <depend>roco_freeze</depend>

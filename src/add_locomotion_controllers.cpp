@@ -27,7 +27,7 @@
 */
 /*!
  * @file    locomotion_controllers.cpp
- * @author  Christian Gehring
+ * @author  Christian Gehring, Dario Bellicoso
  * @date    Oct, 2014
  */
 #include <ros/package.h>
@@ -39,7 +39,10 @@
 
 namespace locomotion_controller {
 
-void add_locomotion_controllers(locomotion_controller::ControllerManager* manager, robot_model::State& state, robot_model::Command& command, ros::NodeHandle& nodeHandle) {
+void add_locomotion_controllers(locomotion_controller::ControllerManager* manager,
+                                quadruped_model::State& state,
+                                quadruped_model::Command& command,
+                                ros::NodeHandle& nodeHandle) {
 
   std::string quadrupedName;
   nodeHandle.param<std::string>("robot/name", quadrupedName, "");

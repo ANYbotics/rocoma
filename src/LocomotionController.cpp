@@ -41,7 +41,9 @@
 #include <locomotion_controller_msgs/ResetStateEstimator.h>
 
 
-#include <robot_model/starleth/starleth.hpp>
+//#include <robot_model/starleth/starleth.hpp>
+#include <quadruped_model/robots/quadrupeds.hpp>
+#include <quadruped_model/robots/starleth.hpp>
 #include <starleth_description/starleth_se_actuator_commands.hpp>
 
 #include <signal_logger/logger.hpp>
@@ -129,7 +131,7 @@ void LocomotionController::init() {
     if (quadrupedName_ == "anymal") quadrupedEnum = quadruped_model::Quadrupeds::Anymal;
 
     model_.initializeForController(timeStep_,isRealRobot_, urdfModelFile, quadrupedEnum);
-    model_.getRobotModel()->params().printParams();
+//    model_.getRobotModel()->params().printParams();
     model_.addVariablesToLog();
 
     controllerManager_.setIsRealRobot(isRealRobot_);

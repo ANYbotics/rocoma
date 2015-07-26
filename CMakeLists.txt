@@ -45,7 +45,6 @@ find_package(catkin REQUIRED COMPONENTS
   signal_logger
   signal_logger_std
   signal_logger_ros
-  robot_model
   quadruped_model
   roco_freeze
   roco_assembly
@@ -76,7 +75,7 @@ endif()
 catkin_package(
  INCLUDE_DIRS include 
  LIBRARIES locomotion_controller model
- CATKIN_DEPENDS roscpp_nodewrap locomotion_controller_msgs starleth_description roco robot_utils signal_logger signal_logger_std signal_logger_ros robot_model roco_freeze roco_assembly series_elastic_actuator_ros quadruped_msgs any_msgs quadruped_model
+ CATKIN_DEPENDS roscpp_nodewrap locomotion_controller_msgs starleth_description roco robot_utils signal_logger signal_logger_std signal_logger_ros roco_freeze roco_assembly series_elastic_actuator_ros quadruped_msgs any_msgs quadruped_model
 # DEPENDS system_lib
 )
 

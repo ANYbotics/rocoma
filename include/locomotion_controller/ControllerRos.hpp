@@ -48,7 +48,6 @@
 #include <roco/controllers/LocomotionController.hpp>
 #include <signal_logger/logger.hpp>
 
-//#include <robot_model/robot_model.hpp>
 #include "quadruped_model/common/topology.hpp"
 #include "quadruped_model/common/containers.hpp"
 #include "quadruped_model/common/Command.hpp"

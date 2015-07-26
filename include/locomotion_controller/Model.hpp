@@ -50,6 +50,7 @@
 #include <series_elastic_actuator_msgs/SeActuatorCommand.h>
 #include <series_elastic_actuator_msgs/SeActuatorState.h>
 
+#include <quadruped_model/QuadrupedModel.hpp>
 #include <quadruped_model/common/State.hpp>
 #include <quadruped_model/common/Command.hpp>
 
@@ -64,6 +65,7 @@ class Model
  public:
   static constexpr int numberOfJoints_ = 12;
   typedef kindr::rotations::eigen_impl::RotationQuaternionPD RotationQuaternion;
+  typedef kindr::rotations::eigen_impl::RotationMatrixPD     RotationMatrix;
   typedef kindr::rotations::eigen_impl::EulerAnglesZyxPD EulerAnglesZyx;
   typedef kindr::rotations::eigen_impl::LocalAngularVelocityPD LocalAngularVelocity;
   typedef kindr::rotations::eigen_impl::AngleAxisPD AngleAxis;
@@ -89,7 +91,7 @@ class Model
   void reinitialize(double dt);
   void addVariablesToLog();
 
-  void setRobotModelParameters();
+//  void setRobotModelParameters();
   void setRobotState(const quadruped_msgs::RobotState::ConstPtr& robotState);
   void setRobotState(const sensor_msgs::ImuPtr& imu,
                      const sensor_msgs::JointStatePtr& jointState,
