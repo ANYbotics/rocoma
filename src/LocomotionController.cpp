@@ -41,10 +41,12 @@
 #include <locomotion_controller_msgs/ResetStateEstimator.h>
 
 
-//#include <robot_model/starleth/starleth.hpp>
 #include <quadruped_model/robots/quadrupeds.hpp>
 #include <quadruped_model/robots/starleth.hpp>
-#include <starleth_description/starleth_se_actuator_commands.hpp>
+#include <quadruped_model/robots/anymal.hpp>
+
+#include <quadruped_assembly/quadrupeds.hpp>
+//#include <starleth_description/starleth_se_actuator_commands.hpp>
 
 #include <signal_logger/logger.hpp>
 #include <signal_logger/LoggerNone.hpp>
@@ -159,7 +161,8 @@ void LocomotionController::initializeMessages() {
   {
     std::lock_guard<std::mutex> lock(mutexJointCommands_);
     jointCommands_.reset(new series_elastic_actuator_msgs::SeActuatorCommands);
-    starleth_description::initializeSeActuatorCommandsForStarlETH(*jointCommands_);
+//    starleth_description::initializeSeActuatorCommandsForStarlETH(*jointCommands_);
+    quadruped_description::initializeSeActuatorCommands(*jointCommands_);
   }
   //---
 }
