@@ -86,7 +86,7 @@ void LocomotionController::init() {
   getNodeHandle().param<double>("controller/time_step", timeStep_, 0.0025);
   getNodeHandle().param<bool>("controller/is_real_robot", isRealRobot_, false);
   getNodeHandle().param<std::string>("controller/default", defaultController_, "LocoDemo");
-  getNodeHandle().param<std::string>("robot/name", quadrupedName_, "starleth");
+  getNodeHandle().param<std::string>("quadruped/name", quadrupedName_, "starleth");
   //---
 
   //--- Configure logger.
