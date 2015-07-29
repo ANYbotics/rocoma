@@ -3,12 +3,12 @@
 <launch>
   
   <!-- Arguments -->
-  <arg name="debug"           default=""/>
-  <arg name="quadruped_name"  default=""/>
+  <arg name="launch_prefix"   default=""/>
+  <arg name="quadruped_name"  default="anymal"/>
   <arg name="quadruped_setup" default="minimal"/>
      
   <!-- Locomotion controller -->
-  <node pkg="locomotion_controller" type="locomotion_controller_node" name="locomotion_controller" output="screen" launch-prefix="$(arg debug)">
+  <node pkg="locomotion_controller" type="locomotion_controller_node" name="locomotion_controller" output="screen" launch-prefix="$(arg launch_prefix)">
     
     <!-- Load configuration files -->
     <rosparam command="load" file="$(find locomotion_controller)/config/default_locomotion_controller.yaml"/>
