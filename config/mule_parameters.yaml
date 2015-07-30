@@ -1,6 +1,0 @@
-controller:
-  time_step: 0.0025
-  is_real_robot: false
-logger:
-  sampling_time: 60
-  script: ""

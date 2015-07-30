@@ -1,8 +1,11 @@
 controller:
   time_step: 0.0025
-  is_real_robot: true
   default: LocoDemo
+
 logger:
   sampling_time: 60
   script: ""
-  class: "std"
+
+quadruped:
+  name: anymal
+  setup: minimal

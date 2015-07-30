@@ -1,16 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?> 
+  
 <launch>
-<!--    <node name="joystick" pkg="joy" type="joy_node" >
-      <remap from="/joy" to="/locomotion_controller/sensors/joy" />
-    </node>
- -->:
-	<include file="$(find locomotion_controller)/launch/locomotion_controller.launch" />
+
+  <include file="$(find locomotion_controller)/launch/locomotion_controller.launch" />
 
 	<node pkg="mule_simulator" type="mule_simulator_node" name="mule_simulator" output="screen">
 	  <rosparam file="$(find mule_simulator)/config/default_mule_simulator.yaml" command="load" />
 	  <rosparam file="$(find mule_simulator)/config/all_publishers.yaml" command="load" />
 	  <rosparam file="$(find mule_simulator)/config/default_subscribers.yaml" command="load" />
 	</node>
-
 
 </launch>
