@@ -49,14 +49,12 @@ ControllerManager::ControllerManager(locomotion_controller::LocomotionController
 
 }
 
+
 ControllerManager::~ControllerManager()
 {
-  switchControllerWorker_.cancel();
+
 }
 
-ros::CallbackQueue& ControllerManager::getSwitchControllerQueue() {
-  return switchControllerQueue_;
-}
 
 void ControllerManager::setupControllers(
     double dt, robot_model::State& state, robot_model::Command& command,
@@ -78,24 +76,8 @@ void ControllerManager::setupControllers(
 
   add_locomotion_controllers(this, state, command, nodeHandle, locomotionController);
 
-  //--- Switch controller worker
-  nodewrap::WorkerOptions switchControllerWorkerOptions;
-  switchControllerWorkerOptions.autostart = false;
-  switchControllerWorkerOptions.frequency = 0.0;
-  switchControllerWorkerOptions.callback = boost::bind(&ControllerManager::switchControllerWorker, this, _1);
-  const std::string& workerName = "switch_controller_worker";
-  switchControllerWorkerOptions.synchronous = false;
-  switchControllerWorkerOptions.privateCallbackQueue = true;
-  switchControllerWorkerOptions.priority = 80;
-  switchControllerWorker_ = locomotionController_->addLogWorker(workerName, switchControllerWorkerOptions);
-  locomotionController_->addLogWorker(workerName, switchControllerWorkerOptions);
-  switchControllerWorker_.start();
-  //---
-
   emergencyStopStatePublisher_.shutdown();
   emergencyStopStatePublisher_ = nodeHandle.advertise<any_msgs::State>("notify_emergency_stop", 100);
-
-  nodeHandle_ = nodeHandle;
 }
 
 void ControllerManager::addController(ControllerPtr controller)  {
@@ -132,7 +114,6 @@ bool ControllerManager::switchControllerAfterEmergencyStop() {
 }
 
 void ControllerManager::switchToEmergencyTask() {
-
   std::lock_guard<std::mutex> lock(activeControllerMutex_);
   if (activeController_->getName() != "Freeze") {
     for (auto& controller : controllers_) {
@@ -162,19 +143,6 @@ void ControllerManager::publishEmergencyState(bool emergencyState) {
 }
 
 
-bool ControllerManager::switchControllerWorker(const nodewrap::WorkerEvent& event) {
-
-  static const double timeout = 0.01;
-
-  while (nodeHandle_.ok()) {
-    switchControllerQueue_.callAvailable(ros::WallDuration(timeout));
-  }
-
-  return true;
-
-}
-
-
 bool ControllerManager::switchController(locomotion_controller_msgs::SwitchController::Request  &req,
                                          locomotion_controller_msgs::SwitchController::Response &res)
 {
@@ -189,22 +157,16 @@ bool ControllerManager::switchController(locomotion_controller_msgs::SwitchContr
   for (auto& controller : controllers_) {
     if (req.name == controller.getName()) {
 
-      switchToEmergencyTask();
-
       ControllerPtr initController = &controller;
-
       initController->initializeController(timeStep_);
+
       if (initController->isInitialized()) {
+        activeController_->stopController();
+        activeController_ = initController;
+
         res.status = res.STATUS_SWITCHED;
-        ROS_INFO("Switched to controller %s",
-                 initController->getName().c_str());
-
-        {
-          std::lock_guard<std::mutex> lock(activeControllerMutex_);
-          activeController_->stopController();
-          activeController_ = initController;
-        }
-
+                ROS_INFO("Switched to controller %s",
+                         initController->getName().c_str());
       }
       else {
         // switch to freeze controller

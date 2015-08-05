@@ -35,7 +35,6 @@
 #define LOCOMOTION_CONTROLLER_CONTROLLERMANAGER_HPP_
 
 #include <ros/ros.h>
-#include <ros/callback_queue.h>
 #include <locomotion_controller_msgs/SwitchController.h>
 #include <locomotion_controller_msgs/EmergencyStop.h>
 #include <locomotion_controller_msgs/GetAvailableControllers.h>
@@ -99,29 +98,17 @@ class ControllerManager
   locomotion_controller::LocomotionController* getLocomotionController();
   void notifyEmergencyState();
 
-  ros::CallbackQueue& getSwitchControllerQueue();
-
-
  protected:
   void switchToEmergencyTask();
-  std::string switchToControllerName_;
-  nodewrap::Worker switchControllerWorker_;
-  bool switchControllerWorker(const nodewrap::WorkerEvent& event);
 
- protected:
   double timeStep_;
   bool isInitializingTask_;
   boost::ptr_vector<Controller> controllers_;
   ControllerPtr activeController_;
   bool isRealRobot_;
 
-  ros::NodeHandle nodeHandle_;
-
   locomotion_controller::LocomotionController* locomotionController_;
-
   std::mutex activeControllerMutex_;
-
-  ros::CallbackQueue switchControllerQueue_;
 
   //--- Notify an emergency stop
   void publishEmergencyState(bool emergencyState);

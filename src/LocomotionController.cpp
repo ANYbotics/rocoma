@@ -180,27 +180,12 @@ void LocomotionController::initializeMessages() {
 }
 
 void LocomotionController::initializeServices() {
-
-  ros::AdvertiseServiceOptions advertiseServiceOptionsForSwitchController =
-      ros::AdvertiseServiceOptions::create<
-          locomotion_controller_msgs::SwitchController>(
-          "switch_controller",
-          boost::bind(&ControllerManager::switchController,
-                      &this->controllerManager_, _1, _2),
-          ros::VoidConstPtr(),
-          &this->controllerManager_.getSwitchControllerQueue());
-  switchControllerService_ = getNodeHandle().advertiseService(advertiseServiceOptionsForSwitchController);
-
-//  switchControllerService_ = getNodeHandle().advertiseService("switch_controller", &ControllerManager::switchController, &this->controllerManager_);
-
-
-
+  switchControllerService_ = getNodeHandle().advertiseService("switch_controller", &ControllerManager::switchController, &this->controllerManager_);
   getAvailableControllersService_ = getNodeHandle().advertiseService("get_available_controllers", &ControllerManager::getAvailableControllers, &this->controllerManager_);
   getActiveControllerService_ = getNodeHandle().advertiseService("get_active_controller", &ControllerManager::getActiveController, &this->controllerManager_);
   emergencyStopService_ = advertiseService("emergency_stop", "/emergency_stop", &LocomotionController::emergencyStop);
   resetStateEstimatorClient_ = serviceClient<locomotion_controller_msgs::ResetStateEstimator>("reset_state_estimator", "/reset_state_estimator");
   //resetStateEstimatorClient_.waitForExistence();
-
 }
 
 void LocomotionController::initializePublishers() {
