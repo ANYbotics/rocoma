@@ -118,13 +118,11 @@ class ControllerRos:  public roco::controllers::ControllerAdapterInterface, publ
   ControllerManager* controllerManager_;
   std::string emergencyStopControllerName_;
 
-  nodewrap::Worker logWorker_;
   nodewrap::Worker signalLoggerWorker_;
 
   std::map<std::string, WorkerWrapper> workers_;
 
   // Worker callbacks
-  virtual bool loggerWorker(const nodewrap::WorkerEvent& event);
   virtual bool signalLoggerWorker(const nodewrap::WorkerEvent& event);
 
 };

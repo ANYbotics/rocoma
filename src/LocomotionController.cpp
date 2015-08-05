@@ -158,7 +158,7 @@ void LocomotionController::cleanup() {
 }
 
 
-nodewrap::Worker LocomotionController::addLogWorker(
+nodewrap::Worker LocomotionController::addWrappedWorker(
     const std::string& name, const nodewrap::WorkerOptions& defaultOptions)
 {
   return this->addWorker(name, defaultOptions);

@@ -2,7 +2,7 @@
  * WorkerWrapper.hpp
  *
  *  Created on: Jun 18, 2015
- *      Author: dario
+ *      Author: Dario Bellicoso
  */
 
 #pragma once

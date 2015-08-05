@@ -182,20 +182,6 @@ bool ControllerRos<Controller_>::createController(double dt)
       return true;
     }
 
-
-
-    //--- start logging in a worker thread
-    nodewrap::WorkerOptions loggerWorkerOptions;
-    loggerWorkerOptions.autostart = false;
-    loggerWorkerOptions.frequency = 30.0;
-    loggerWorkerOptions.callback = boost::bind(
-        &ControllerRos<Controller_>::loggerWorker, this, _1);
-
-    const std::string& workerName = this->getName() + "_worker";
-    logWorker_ = controllerManager_->getLocomotionController()->addLogWorker(
-        workerName, loggerWorkerOptions);
-    //---
-
     //--- start signal logging in a worker thread
     nodewrap::WorkerOptions signalLoggerWorkerOptions;
     signalLoggerWorkerOptions.autostart = false;
@@ -210,10 +196,7 @@ bool ControllerRos<Controller_>::createController(double dt)
     const std::string& signalLoggerWorkerName = this->getName()
         + "_signal_logger_worker";
     signalLoggerWorker_ = controllerManager_->getLocomotionController()
-        ->addLogWorker(signalLoggerWorkerName, signalLoggerWorkerOptions);
-
-
-
+        ->addWrappedWorker(signalLoggerWorkerName, signalLoggerWorkerOptions);
 
     this->isCreated_ = true;
   } catch (std::exception& e) {
@@ -239,10 +222,12 @@ roco::WorkerHandle ControllerRos<Controller_>::addWorker(const roco::WorkerOptio
   workerOptions.synchronous = options.synchronous_;
   workerOptions.callback = boost::bind(&WorkerWrapper::workerCallback, wrapper, _1);
 
-  wrapper.worker_ = controllerManager_->getLocomotionController()->addLogWorker(options.name_, workerOptions);
+  wrapper.worker_ = controllerManager_->getLocomotionController()->addWrappedWorker(options.name_, workerOptions);
 
   roco::WorkerHandle workerHandle;
   workerHandle.name_ = options.name_;
+
+  return workerHandle;
 }
 
 template<typename Controller_>
@@ -305,14 +290,12 @@ bool ControllerRos<Controller_>::initializeController(double dt)
 template<typename Controller_>
 void ControllerRos<Controller_>::startWorkers() {
   ROCO_INFO_STREAM("[" << this->getName() << "] Starting workers.");
-  logWorker_.start();
   signalLoggerWorker_.start();
 }
 
 template<typename Controller_>
 void ControllerRos<Controller_>::cancelWorkers() {
   ROCO_INFO_STREAM("[" << this->getName() << "] Canceling workers.");
-  logWorker_.cancel(true);
   signalLoggerWorker_.cancel(true);
 }
 
@@ -348,12 +331,6 @@ bool ControllerRos<Controller_>::resetController(double dt)
   signal_logger::logger->startLogger();
   ROCO_INFO_STREAM("Reset controller " << this->getName() << " successfully!");
   return true;
-}
-
-
-template<typename Controller_>
-bool ControllerRos<Controller_>::loggerWorker(const nodewrap::WorkerEvent& event) {
-  return this->logData();
 }
 
 

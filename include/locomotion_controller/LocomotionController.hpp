@@ -83,15 +83,15 @@ class LocomotionController : public nodewrap::NodeImpl
   void cleanup();
 
   template<class T>
-  nodewrap::Worker addLogWorker(const std::string& name,
-                                const ros::Rate& defaultRate,
-                                bool (T::*fp)(const nodewrap::WorkerEvent&))
+  nodewrap::Worker addWrappedWorker(const std::string& name,
+                                    const ros::Rate& defaultRate,
+                                    bool (T::*fp)(const nodewrap::WorkerEvent&))
   {
     return this->addWorker<T>(name, defaultRate, fp);
   }
 
-  nodewrap::Worker addLogWorker(const std::string& name,
-                                const nodewrap::WorkerOptions& defaultOptions);
+  nodewrap::Worker addWrappedWorker(const std::string& name,
+                                    const nodewrap::WorkerOptions& defaultOptions);
 
   double getSamplingFrequency() const;
 
