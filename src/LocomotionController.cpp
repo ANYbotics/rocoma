@@ -37,6 +37,8 @@
 
 #include "locomotion_controller/LocomotionController.hpp"
 
+#include "locomotion_controller_msgs/SwitchController.h"
+
 // Messages
 #include <locomotion_controller_msgs/ResetStateEstimator.h>
 
@@ -48,6 +50,8 @@
 #include <signal_logger/LoggerNone.hpp>
 #include <signal_logger_std/LoggerStd.hpp>
 #include <signal_logger_ros/LoggerRos.hpp>
+
+#include <std_srvs/Empty.h>
 
 #include <chrono>
 #include <cstdint>
@@ -176,10 +180,27 @@ void LocomotionController::initializeMessages() {
 }
 
 void LocomotionController::initializeServices() {
-  switchControllerService_ = getNodeHandle().advertiseService("switch_controller", &ControllerManager::switchController, &this->controllerManager_);
+
+  ros::AdvertiseServiceOptions advertiseServiceOptionsForSwitchController =
+      ros::AdvertiseServiceOptions::create<
+          locomotion_controller_msgs::SwitchController>(
+          "switch_controller",
+          boost::bind(&ControllerManager::switchController,
+                      &this->controllerManager_, _1, _2),
+          ros::VoidConstPtr(),
+          &this->controllerManager_.getSwitchControllerQueue());
+  switchControllerService_ = getNodeHandle().advertiseService(advertiseServiceOptionsForSwitchController);
+
+//  switchControllerService_ = getNodeHandle().advertiseService("switch_controller", &ControllerManager::switchController, &this->controllerManager_);
+
+
+
   getAvailableControllersService_ = getNodeHandle().advertiseService("get_available_controllers", &ControllerManager::getAvailableControllers, &this->controllerManager_);
+  getActiveControllerService_ = getNodeHandle().advertiseService("get_active_controller", &ControllerManager::getActiveController, &this->controllerManager_);
   emergencyStopService_ = advertiseService("emergency_stop", "/emergency_stop", &LocomotionController::emergencyStop);
   resetStateEstimatorClient_ = serviceClient<locomotion_controller_msgs::ResetStateEstimator>("reset_state_estimator", "/reset_state_estimator");
+  //resetStateEstimatorClient_.waitForExistence();
+
 }
 
 void LocomotionController::initializePublishers() {
@@ -307,6 +328,7 @@ void LocomotionController::updateControllerAndPublish(const quadruped_msgs::Robo
   //---
 }
 
+
 void LocomotionController::joystickCallback(const sensor_msgs::Joy::ConstPtr& msg) {
   std::lock_guard<std::mutex> lock(mutexJoystick_);
   std::lock_guard<std::mutex> lockControllerManager(mutexModelAndControllerManager_);
@@ -320,7 +342,7 @@ void LocomotionController::joystickCallback(const sensor_msgs::Joy::ConstPtr& ms
     model_.setJoystickCommands(msg);
 
 
-    // START + LF buttons
+/*    // START + LF buttons
     if (msg->buttons[4] == 1 && msg->buttons[7] == 1 ) {
       locomotion_controller_msgs::SwitchController::Request  req;
       locomotion_controller_msgs::SwitchController::Response res;
@@ -329,12 +351,57 @@ void LocomotionController::joystickCallback(const sensor_msgs::Joy::ConstPtr& ms
       }
       ROS_INFO("Switched task by joystick (status: %d)",res.status);
 
+    }*/
+
+
+    // LT + LEFT JOY
+    if (msg->buttons[4] == 1 && msg->axes[6] == 1 ) {
+      locomotion_controller_msgs::SwitchController::Request  req;
+      locomotion_controller_msgs::SwitchController::Response res;
+      req.name = "LocoDemo";
+      if(!controllerManager_.switchController(req,res)) {
+      }
+      ROS_INFO("Switched task by joystick to LocoDemo (status: %d)",res.status);
+
     }
+    // LT + RIGHT JOY
+    if (msg->buttons[4] == 1 && msg->axes[6] == -1 ) {
+      locomotion_controller_msgs::SwitchController::Request  req;
+      locomotion_controller_msgs::SwitchController::Response res;
+      req.name = "Crawling";
+      if(!controllerManager_.switchController(req,res)) {
+      }
+      ROS_INFO("Switched task by joystick to LocoCrawling (status: %d)",res.status);
+
+    }
+
+
+
     // RB button
     if (msg->buttons[5] == 1 ) {
       NODEWRAP_WARN("Emergency stop by joystick!");
       controllerManager_.emergencyStop();
     }
+
+    // LT + RT
+    if (msg->axes[2] == -1 && msg->axes[5] == -1 ) {
+      ROS_INFO("Resetting state estimator by joystick.");
+      //---  Reset the estimator.
+      if (resetStateEstimatorClient_.exists()) {
+        ROS_INFO("Locomotion controller wants to reset state estimator.");
+        locomotion_controller_msgs::ResetStateEstimator resetEstimatorService;
+        resetEstimatorService.request.pose.orientation.w = 1.0;
+        if(!resetStateEstimatorClient_.call(resetEstimatorService)) {
+          ROS_ERROR("Locomotion controller could not reset state estimator.");
+        }
+
+      }
+      else {
+        ROS_ERROR("Service to reset estimator does not exist!");
+      }
+      //---
+    }
+
   }
 }
 
@@ -355,17 +422,19 @@ bool LocomotionController::emergencyStop(locomotion_controller_msgs::EmergencySt
 
 // The estimator does not have to be reset when an emergency stop is invoked!!
 
-//  //---  Reset the estimator.
-//  if (resetStateEstimatorClient_.exists()) {
-//	ROS_INFO("Locomotion controller wants to reset state estimator.");
-//    locomotion_controller_msgs::ResetStateEstimator resetEstimatorService;
-//    resetEstimatorService.request.pose.orientation.w = 1.0;
-//    if(!resetStateEstimatorClient_.call(resetEstimatorService)) {
-//      ROS_WARN("Locomotion controller could not reset state estimator.");
-//      result = false;
-//    }
-//  }
-//  //---
+/*
+ //---  Reset the estimator.
+ if (resetStateEstimatorClient_.exists()) {
+   ROS_INFO("Locomotion controller wants to reset state estimator.");
+   locomotion_controller_msgs::ResetStateEstimator resetEstimatorService;
+   resetEstimatorService.request.pose.orientation.w = 1.0;
+   if(!resetStateEstimatorClient_.call(resetEstimatorService)) {
+     ROS_WARN("Locomotion controller could not reset state estimator.");
+     result = false;
+   }
+ }
+ //---
+*/
 
   return result;
 }

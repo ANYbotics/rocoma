@@ -500,6 +500,7 @@ void ControllerRos<Controller_>::emergencyStop()
   }
 
   cancelWorkers();
+  controllerManager_->notifyEmergencyState();
 
 }
 

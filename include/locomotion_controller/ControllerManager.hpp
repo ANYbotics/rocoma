@@ -27,7 +27,7 @@
 */
 /*!
  * @file    ControllerManager.hpp
- * @author  Christian Gehring
+ * @author  Christian Gehring, Dario Bellicoso
  * @date    Oct, 2014
  */
 
@@ -35,21 +35,26 @@
 #define LOCOMOTION_CONTROLLER_CONTROLLERMANAGER_HPP_
 
 #include <ros/ros.h>
+#include <ros/callback_queue.h>
 #include <locomotion_controller_msgs/SwitchController.h>
 #include <locomotion_controller_msgs/EmergencyStop.h>
 #include <locomotion_controller_msgs/GetAvailableControllers.h>
+#include <locomotion_controller_msgs/GetActiveController.h>
 
 #include <locomotion_controller/Model.hpp>
 
 #include "roco_freeze/RocoFreeze.hpp"
-//#include "robotTask/tasks/tasks.hpp"
-#include <roco/controllers/ControllerInterface.hpp>
+#include <roco/controllers/LocomotionControllerInterface.hpp>
 #include <robot_model/State.hpp>
 #include <robot_model/Command.hpp>
+
+#include <any_msgs/State.h>
 
 #include <boost/ptr_container/ptr_vector.hpp>
 
 #include <mutex>
+
+#include <roscpp_nodewrap/worker/Worker.h>
 
 namespace locomotion_controller {
 
@@ -65,8 +70,8 @@ void add_locomotion_controllers(
 class ControllerManager
 {
  public:
-  typedef roco::controllers::ControllerInterface Controller;
-  typedef roco::controllers::ControllerInterface* ControllerPtr;
+  typedef roco::controllers::LocomotionControllerInterface Controller;
+  typedef roco::controllers::LocomotionControllerInterface* ControllerPtr;
  public:
   ControllerManager(locomotion_controller::LocomotionController* locomotionController);
   virtual ~ControllerManager();
@@ -83,24 +88,47 @@ class ControllerManager
   bool getAvailableControllers(locomotion_controller_msgs::GetAvailableControllers::Request &req,
                                locomotion_controller_msgs::GetAvailableControllers::Response &res);
 
+  bool getActiveController(locomotion_controller_msgs::GetActiveController::Request &req,
+                           locomotion_controller_msgs::GetActiveController::Response &res);
+
   bool emergencyStop();
   bool switchControllerAfterEmergencyStop();
   bool isRealRobot() const;
   void setIsRealRobot(bool isRealRobot);
 
   locomotion_controller::LocomotionController* getLocomotionController();
+  void notifyEmergencyState();
+
+  ros::CallbackQueue& getSwitchControllerQueue();
+
 
  protected:
   void switchToEmergencyTask();
+  std::string switchToControllerName_;
+  nodewrap::Worker switchControllerWorker_;
+  bool switchControllerWorker(const nodewrap::WorkerEvent& event);
+
  protected:
   double timeStep_;
   bool isInitializingTask_;
   boost::ptr_vector<Controller> controllers_;
   ControllerPtr activeController_;
   bool isRealRobot_;
+
+  ros::NodeHandle nodeHandle_;
+
   locomotion_controller::LocomotionController* locomotionController_;
 
   std::mutex activeControllerMutex_;
+
+  ros::CallbackQueue switchControllerQueue_;
+
+  //--- Notify an emergency stop
+  void publishEmergencyState(bool emergencyState);
+  ros::Publisher emergencyStopStatePublisher_;
+  any_msgs::State emergencyStopStateMsg_;
+  //---
+
 };
 
 } /* namespace locomotion_controller */
