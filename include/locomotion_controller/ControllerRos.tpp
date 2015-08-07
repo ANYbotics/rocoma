@@ -464,6 +464,16 @@ bool ControllerRos<Controller_>::stopController()
   return true;
 }
 
+
+template<typename Controller_>
+void ControllerRos<Controller_>::swapOut() {
+ROS_INFO("Calling swap out for controller %s",this->getName().c_str());
+  cancelWorkers();
+  this->isRunning_ = false;
+  this->stop();
+}
+
+
 template<typename Controller_>
 void ControllerRos<Controller_>::emergencyStop()
 {

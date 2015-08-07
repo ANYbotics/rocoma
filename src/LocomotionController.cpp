@@ -239,7 +239,7 @@ void LocomotionController::robotStateCallback(const quadruped_msgs::RobotState::
 }
 
 bool LocomotionController::updateControllerWorker(const nodewrap::WorkerEvent& event) {
-  std::chrono::time_point<std::chrono::steady_clock> start, end;
+  std::chrono::time_point<std::chrono::steady_clock> start, intermediate, end;
 
   {
     std::unique_lock<std::mutex> lock(mutexRobotState_);
@@ -255,6 +255,7 @@ bool LocomotionController::updateControllerWorker(const nodewrap::WorkerEvent& e
   //-- Start measuring computation time.
   start = std::chrono::steady_clock::now();
   controllerManager_.updateController();
+  intermediate = std::chrono::steady_clock::now();
   publish();
   //---
 
@@ -263,11 +264,22 @@ bool LocomotionController::updateControllerWorker(const nodewrap::WorkerEvent& e
   int64_t elapsedTimeNSecs = std::chrono::duration_cast<std::chrono::nanoseconds>(end -
       start).count();
   int64_t timeStep = (int64_t)(timeStep_*1e9);
+
   if (elapsedTimeNSecs > timeStep) {
     NODEWRAP_WARN("Computation of locomotion controller is not real-time! Elapsed time: %lf ms\n", (double)elapsedTimeNSecs*1e-6);
+
+    int64_t advanceElapsedTimeNSecs = std::chrono::duration_cast<std::chrono::nanoseconds>(intermediate - start).count();
+    NODEWRAP_WARN("Advance controller elapsed time: %lf ms\n", (double)advanceElapsedTimeNSecs*1e-6);
+    int64_t publishElapsedTimeNSecs = std::chrono::duration_cast<std::chrono::nanoseconds>(end - intermediate).count();
+    NODEWRAP_WARN("Publish elapsed time: %lf ms\n", (double)publishElapsedTimeNSecs*1e-6);
   }
   if (elapsedTimeNSecs > timeStep*10) {
       NODEWRAP_ERROR("Computation took more than 10 times the maximum allowed computation time (%lf ms)!", timeStep_*1e-3);
+      int64_t advanceElapsedTimeNSecs = std::chrono::duration_cast<std::chrono::nanoseconds>(intermediate - start).count();
+      NODEWRAP_WARN("Advance controller elapsed time: %lf ms\n", (double)advanceElapsedTimeNSecs*1e-6);
+      int64_t publishElapsedTimeNSecs = std::chrono::duration_cast<std::chrono::nanoseconds>(end - intermediate).count();
+      NODEWRAP_WARN("Publish elapsed time: %lf ms\n", (double)publishElapsedTimeNSecs*1e-6);
+
       std::lock_guard<std::mutex> lock(mutexModelAndControllerManager_);
       controllerManager_.emergencyStop();
   }

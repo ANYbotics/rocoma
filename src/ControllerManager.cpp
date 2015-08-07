@@ -158,13 +158,19 @@ bool ControllerManager::switchController(locomotion_controller_msgs::SwitchContr
     if (req.name == controller.getName()) {
 
       ControllerPtr initController = &controller;
+      ControllerPtr oldActiveController = activeController_;
+
       initController->initializeController(timeStep_);
 
       if (initController->isInitialized()) {
-        activeController_->stopController();
-        activeController_ = initController;
+       {
+          std::lock_guard<std::mutex> lock(activeControllerMutex_);
+          activeController_ = initController;
+       }
 
-        res.status = res.STATUS_SWITCHED;
+       oldActiveController->swapOut();
+
+       res.status = res.STATUS_SWITCHED;
                 ROS_INFO("Switched to controller %s",
                          initController->getName().c_str());
       }

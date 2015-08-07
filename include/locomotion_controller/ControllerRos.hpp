@@ -98,6 +98,8 @@ class ControllerRos:  public roco::controllers::ControllerAdapterInterface, publ
   virtual void cancelWorkers();
   virtual void startWorkers();
 
+  virtual void swapOut();
+
   virtual roco::WorkerHandle addWorker(const roco::WorkerOptions& options);
   virtual bool startWorker(const roco::WorkerHandle& workerHandle);
   virtual bool cancelWorker(const roco::WorkerHandle& workerHandle);
