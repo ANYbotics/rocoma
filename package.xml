@@ -12,11 +12,12 @@
   <depend>roscpp</depend>
   <depend>locomotion_controller_msgs</depend>
   <depend>quadruped_msgs</depend>
-  <depend>starleth_description</depend>
+  
   <depend>roscpp_nodewrap</depend>
   <depend>nodelet</depend>
   <depend>roco</depend>
   <depend>roco_assembly</depend>
+  <depend>quadruped_assembly</depend>
   <depend>robot_utils</depend>
   
   <depend>signal_logger</depend>

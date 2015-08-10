@@ -45,7 +45,7 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
                                 ros::NodeHandle& nodeHandle) {
 
   std::string quadrupedName;
-  nodeHandle.param<std::string>("robot/name", quadrupedName, "");
+  nodeHandle.param<std::string>("quadruped/name", quadrupedName, "starleth");
 
 #ifdef USE_TASK_LOCODEMO
   auto controllerLocoDemo = new ControllerRos<loco_demo::LocoDemo>(state, command);

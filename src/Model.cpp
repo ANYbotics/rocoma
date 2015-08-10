@@ -33,16 +33,17 @@
 
 #include "locomotion_controller/Model.hpp"
 #include "robotUtils/terrains/TerrainPlane.hpp"
-#include <starleth_description/starleth_robot_state.hpp>
 
 #include <signal_logger/logger.hpp>
 #include <series_elastic_actuator_ros/ConvertRosMessages.hpp>
 
 // quadruped state and command helpers
 #include <quadruped_model/common/quadruped_model_common.hpp>
-#include <quadruped_model/robots/starleth.hpp>
-#include <quadruped_model/robots/anymal.hpp>
 #include <quadruped_model/robots/quadrupeds.hpp>
+#include <quadruped_model/robots/anymal.hpp>
+#include <quadruped_model/robots/starleth.hpp>
+
+#include <quadruped_assembly/quadrupeds.hpp>
 
 namespace model {
 
@@ -109,17 +110,9 @@ void Model::initializeForController(double dt, bool isRealRobot, const std::stri
 
   quadrupedModel_->setIsRealRobot(isRealRobot);
 
-//  /* Select estimator: */
-//  robotModel_->est().setActualEstimator(robot_model::PE_SL); // feed through of simulated states
-//  //  robotModel.est().setActualEstimator(robot_model::PE_ObservabilityConstrainedEKF); // activate this estimator
-//  //  robotModel.est().setActualEstimator(robot_model::PE_LSE); // not used
-//
-//  robotModel_->est().getActualEstimator()->setVerboseLevel(0);
-//  robotModel_->est().getActualEstimator()->setIsPlayingAudio(false);
-//
-
   /* activate sensor noise */
   quadrupedModel_->getSensors().setIsAddingSensorNoise(false);
+
   /* initialize robot model */
   quadrupedModel_->init();
 
@@ -128,42 +121,7 @@ void Model::initializeForController(double dt, bool isRealRobot, const std::stri
 
 
 void Model::initializeForStateEstimator(double dt, bool isRealRobot, const std::string& pathToUrdfFile, const quadruped_model::Quadrupeds& quadruped) {
-//  quadrupedModel_.reset(new quadruped_model::QuadrupedModel(dt));
-//  quadrupedModel_->initModelFromUrdfFile(pathToUrdfFile);
-//
-//  state_.setQuadrupedModelPtr(this->getQuadrupedModel());
-//  state_.setTerrainPtr(this->getTerrainModel());
-//  quadruped_model::quadrupeds::initializeState(state_);
-//
-//  switch (quadruped) {
-//    case(quadruped_model::Quadrupeds::StarlETH): {
-//      quadruped_model::quadrupeds::starleth::initializeCommand(command_);
-//    } break;
-//    case(quadruped_model::Quadrupeds::Anymal): {
-//      quadruped_model::quadrupeds::anymal::initializeCommand(command_);
-//    } break;
-//    default: {
-//      throw std::runtime_error("[Model::initializeForController] Invalid quadruped enum.");
-//    } break;
-//  }
-//
-//  quadrupedModel_->setIsRealRobot(false);
-//
-//  //fixme
-//  /* Select estimator: */
-////  robotModel_->est().setActualEstimator(robot_model::PE_ObservabilityConstrainedEKF); // feed through of simulated states
-////  //  robotModel.est().setActualEstimator(robot_model::PE_ObservabilityConstrainedEKF); // activate this estimator
-////  //  robotModel.est().setActualEstimator(robot_model::PE_LSE); // not used
-////
-////  robotModel_->est().getActualEstimator()->setIsPlayingAudio(true);
-////  robotModel_->est().getActualEstimator()->setPathToAudioFiles(std::string(getenv("LAB_ROOT")) + std::string{"/starleth_audio_files/locomotion_controller/"});
-//
-//  /* activate sensor noise */
-//  quadrupedModel_->getSensors().setIsAddingSensorNoise(false);
-//  /* initialize robot model */
-//  quadrupedModel_->init();
-//
-//  terrain_.reset(new robotTerrain::TerrainPlane());
+
 }
 
 void Model::reinitialize(double dt) {
@@ -172,6 +130,7 @@ void Model::reinitialize(double dt) {
 }
 
 void Model::addVariablesToLog() {
+  // fixme
 //  robotModel_->addVariablesToLog();
 
   command_.addVariablesToLog(true);
@@ -237,12 +196,7 @@ void Model::setRobotState(const quadruped_msgs::RobotState::ConstPtr& robotState
   const Eigen::Vector3d I_v_B = orientationWorldToBase.inverseRotate(B_v_B);
   dQb.segment<3>(0) = I_v_B;
 
-//  static mule::Vector3d globalAngularVelocity;
-//  simulationManager.getRobotBaseAngularVelocityInWorldCoordinates(
-//      globalAngularVelocity, idStarleth);
-
-
-   LocalAngularVelocity localAngularVelocityKindr(robotState->twist.angular.x,
+  LocalAngularVelocity localAngularVelocityKindr(robotState->twist.angular.x,
                                                  robotState->twist.angular.y,
                                                  robotState->twist.angular.z);
   const Eigen::Vector3d drpy = rot::EulerAnglesXyzDiffPD(
@@ -389,11 +343,11 @@ void Model::setRobotState(const sensor_msgs::ImuPtr& imu,
 }
 
 void Model::initializeRobotState(quadruped_msgs::RobotStatePtr& robotState) const {
-  starleth_description::initializeRobotStateForStarlETH(*robotState);
+  quadruped_description::initializeRobotState(*robotState);
 }
 
 void Model::initializeJointState(sensor_msgs::JointState& jointState) const {
-  starleth_description::initializeJointStateForStarlETH(jointState);
+  quadruped_description::initializeJointState(jointState);
 }
 
 // used by state_estimator_rm

@@ -26,30 +26,32 @@ add_definitions(-DUSE_ROS)
 
 # This is a list of all catkin packages that depend on roco and which can be enabled or disabled with roco_assembly.
 set(CATKIN_ROCO_PKGS)
+set(CATKIN_QUADRUPED_PKGS)
 
 # This will fill ${CATKIN_ROCO_PKGS} with the enabled roco packages.
-find_package(catkin REQUIRED COMPONENTS roco_assembly)
+find_package(catkin REQUIRED COMPONENTS roco_assembly quadruped_assembly)
 
 include(${roco_assembly_SOURCE_PREFIX}/cmake/roco_ros.cmake)
 
 # This will overwrite the previous find_package(catkin).
-find_package(catkin REQUIRED COMPONENTS
-  roscpp
-  nodelet
-  roscpp_nodewrap
-  starleth_description
-  locomotion_controller_msgs
-  quadruped_msgs
-  roco
-  robot_utils
-  signal_logger
-  signal_logger_std
-  signal_logger_ros
-  quadruped_model
-  roco_freeze
-  roco_assembly
-  series_elastic_actuator_ros
-  any_msgs
+find_package(catkin 
+    REQUIRED COMPONENTS
+      roscpp
+      nodelet
+      roscpp_nodewrap
+      locomotion_controller_msgs
+      quadruped_msgs
+      roco
+      robot_utils
+      signal_logger
+      signal_logger_std
+      signal_logger_ros
+      quadruped_model
+      roco_freeze
+      roco_assembly
+      series_elastic_actuator_ros
+      any_msgs
+      quadruped_assembly
 )
 
 ## System dependencies are found with CMake's conventions
@@ -63,6 +65,14 @@ if(NOT kindr_FOUND)
   pkg_check_modules(kindr kindr REQUIRED)
 endif()
 
+if (USE_ANYMAL_DESCRIPTION)
+    add_definitions(-DUSE_ANYMAL_DESCRIPTION)
+endif(USE_ANYMAL_DESCRIPTION)
+
+if (USE_STARLETH_DESCRIPTION)
+    add_definitions(-DUSE_STARLETH_DESCRIPTION)
+endif(USE_STARLETH_DESCRIPTION)
+
 ###################################
 ## catkin specific configuration ##
 ###################################
@@ -75,7 +85,20 @@ endif()
 catkin_package(
  INCLUDE_DIRS include 
  LIBRARIES locomotion_controller model
- CATKIN_DEPENDS roscpp_nodewrap locomotion_controller_msgs starleth_description roco robot_utils signal_logger signal_logger_std signal_logger_ros roco_freeze roco_assembly series_elastic_actuator_ros quadruped_msgs any_msgs quadruped_model
+ CATKIN_DEPENDS 
+     roscpp_nodewrap 
+     locomotion_controller_msgs 
+     roco 
+     robot_utils 
+     signal_logger 
+     signal_logger_std 
+     signal_logger_ros 
+     roco_freeze 
+     roco_assembly 
+     quadruped_assembly 
+     series_elastic_actuator_ros 
+     quadruped_msgs any_msgs 
+     quadruped_model
 # DEPENDS system_lib
 )
 
