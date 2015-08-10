@@ -57,6 +57,8 @@
 #include <cstdint>
 #include <string>
 
+#include <robotUtils/timers/ChronoTimer.hpp>
+
 
 NODEWRAP_EXPORT_CLASS(locomotion_controller, locomotion_controller::LocomotionController)
 
@@ -149,9 +151,8 @@ void LocomotionController::init() {
   workerOptions.priority = 99;
   controllerWorker_ = addWorker("controller", workerOptions);
 
-
-
 }
+
 
 void LocomotionController::cleanup() {
 
@@ -168,6 +169,7 @@ nodewrap::Worker LocomotionController::addWrappedWorker(
 double LocomotionController::getSamplingFrequency() const {
   return samplingFrequency_;
 }
+
 
 void LocomotionController::initializeMessages() {
   //--- Initialize joint commands.
@@ -188,9 +190,29 @@ void LocomotionController::initializeServices() {
   //resetStateEstimatorClient_.waitForExistence();
 }
 
+
 void LocomotionController::initializePublishers() {
-  jointCommandsPublisher_ = advertise<series_elastic_actuator_msgs::SeActuatorCommands>("command_seactuators","/command_seactuators", 100);
+
+  /*****************************
+   * Initialize joint commands *
+   *****************************/
+  jointCommandsNumSubscribers_ = 0;
+  ros::AdvertiseOptions jointCommandsOptions;
+  jointCommandsOptions.init<series_elastic_actuator_msgs::SeActuatorCommands>("/command_seactuators",
+                                                                              100,
+                                                                              boost::bind(&LocomotionController::jointCommandsSubscriberConnect,this,_1),
+                                                                              boost::bind(&LocomotionController::jointCommandsSubscriberDisconnect,this,_1));
+
+  //todo: fix bug that prevents the connect and disconnect callbacks from being called
+//  jointCommandsCallbackQueue_.reset(new ros::CallbackQueue());
+//  jointCommandsOptions.callback_queue = jointCommandsCallbackQueue_.get();
+
+  jointCommandsPublisher_ = advertise("command_seactuators",jointCommandsOptions);
+  ROS_INFO_STREAM("commands topic name: " << jointCommandsPublisher_.getTopic());
+  /*****************************/
+
 }
+
 
 void LocomotionController::initializeSubscribers() {
   joystickSubscriber_ = subscribe("joy", "/joy", 100, &LocomotionController::joystickCallback, ros::TransportHints().tcpNoDelay());
@@ -206,37 +228,78 @@ void LocomotionController::initializeSubscribers() {
 }
 
 
+void LocomotionController::jointCommandsSubscriberConnect(const ros::SingleSubscriberPublisher& pub) {
+  jointCommandsNumSubscribers_++;
+  ROS_INFO_STREAM("increasing joint commands to: " << jointCommandsNumSubscribers_);
+}
+void LocomotionController::jointCommandsSubscriberDisconnect(const ros::SingleSubscriberPublisher& pub) {
+  jointCommandsNumSubscribers_--;
+  ROS_INFO_STREAM("decreasing joint commands to: " << jointCommandsNumSubscribers_);
+}
+
 
 void LocomotionController::publish()  {
 
-  if(jointCommandsPublisher_.getNumSubscribers() > 0u) {
-    std::lock_guard<std::mutex> lock(mutexJointCommands_);
-    {
-      std::lock_guard<std::mutex> lockControllerManager(mutexModelAndControllerManager_);
-      model_.getSeActuatorCommands(jointCommands_);
+  int64_t timeStep = (int64_t)(timeStep_*1e9);
+  robotUtils::ChronoTimer timer;
+  timer.pinTime();
+
+  if (jointCommandsNumSubscribers_ > 0u) {
+
+    int64_t nanoSecs = timer.getElapsedTimeNanoSec();
+    if (nanoSecs > timeStep) {
+      NODEWRAP_WARN("getNumSubscribers: %lf ms\n", (double)nanoSecs*1e-6);
     }
 
-    series_elastic_actuator_msgs::SeActuatorCommandsConstPtr jointCommands(new series_elastic_actuator_msgs::SeActuatorCommands (*jointCommands_));
-    jointCommandsPublisher_.publish(jointCommands);
-    //ros::spinOnce(); // todo: required?
+
+    series_elastic_actuator_msgs::SeActuatorCommandsPtr jointCommands;
+
+    {
+      std::lock_guard<std::mutex> lock(mutexJointCommands_);
+      jointCommands.reset(new series_elastic_actuator_msgs::SeActuatorCommands(*jointCommands_));
+    }
+    nanoSecs = timer.getElapsedTimeNanoSec();
+    if (nanoSecs > timeStep) {
+      NODEWRAP_WARN("Lock and reset of joint commands took: %lf ms\n", (double)nanoSecs*1e-6);
+    }
+
+
+
+
+    {
+      std::lock_guard<std::mutex> lockControllerManager(mutexModelAndControllerManager_);
+      model_.getSeActuatorCommands(jointCommands);
+    }
+    nanoSecs = timer.getElapsedTimeNanoSec();
+    if (nanoSecs > timeStep) {
+      NODEWRAP_WARN("model_.getSeActuatorCommands(jointCommands) took: %lf ms\n", (double)nanoSecs*1e-6);
+    }
+
+
+    jointCommandsPublisher_.publish(boost::const_pointer_cast<const series_elastic_actuator_msgs::SeActuatorCommands>(jointCommands));
+    nanoSecs = timer.getElapsedTimeNanoSec();
+    if (nanoSecs > timeStep) {
+      NODEWRAP_WARN("publish joint states: %lf ms\n", (double)nanoSecs*1e-6);
+    }
   }
 
 }
+
 
 void LocomotionController::robotStateCallback(const quadruped_msgs::RobotState::ConstPtr& msg) {
 
 
 //  std::lock_guard<std::mutex> lock(mutexRobotState_);
   {
-  std::unique_lock<std::mutex> lock(mutexRobotState_);
-
-  robotState_ = msg;
+    std::unique_lock<std::mutex> lock(mutexRobotState_);
+    robotState_ = msg;
   }
   rcvdRobotState_.notify_all();
 //  controllerWorker_.wake();
 
 //  updateControllerAndPublish(msg);
 }
+
 
 bool LocomotionController::updateControllerWorker(const nodewrap::WorkerEvent& event) {
   std::chrono::time_point<std::chrono::steady_clock> start, intermediate, end;

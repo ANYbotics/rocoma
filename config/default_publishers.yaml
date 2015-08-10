@@ -1,4 +1,4 @@
 publishers:
   command_seactuators:
     topic: /locomotion_controller/actuators
-    queue_size: 100
+    queue_size: 1

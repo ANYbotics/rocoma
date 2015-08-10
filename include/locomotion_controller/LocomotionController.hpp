@@ -159,6 +159,11 @@ class LocomotionController : public nodewrap::NodeImpl
   std::condition_variable rcvdRobotState_;
   ros::Time robotStateStamp_;
 
+  std::shared_ptr<ros::CallbackQueue> jointCommandsCallbackQueue_;
+  size_t jointCommandsNumSubscribers_;
+  void jointCommandsSubscriberConnect(const ros::SingleSubscriberPublisher& pub);
+  void jointCommandsSubscriberDisconnect(const ros::SingleSubscriberPublisher& pub);
+
 };
 
 } /* namespace locomotion_controller */
