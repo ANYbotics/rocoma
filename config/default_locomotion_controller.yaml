@@ -8,5 +8,5 @@ logger:
   class: "ros"
 
 quadruped:
-  name: starleth
+  name: anymal
   setup: minimal
