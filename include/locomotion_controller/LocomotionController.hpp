@@ -146,9 +146,10 @@ class LocomotionController : public nodewrap::NodeImpl
 
   quadruped_msgs::RobotStateConstPtr robotState_;
 
+//   std::mutex mutexControllerManager_;
   std::mutex mutexJointCommands_;
   std::mutex mutexJoystick_;
-  std::mutex mutexModelAndControllerManager_;
+  std::mutex mutexModel_;
   std::mutex mutexUpdateControllerAndPublish_;
   std::mutex mutexRobotState_;
 

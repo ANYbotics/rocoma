@@ -119,7 +119,7 @@ void LocomotionController::init() {
 
   //--- Configure controllers
   {
-    std::lock_guard<std::mutex> lockControllerManager(mutexModelAndControllerManager_);
+    std::lock_guard<std::mutex> lockModel(mutexModel_);
 
     // Initialize robot and terrain models
     model_.initializeForController(timeStep_,isRealRobot_);
@@ -139,9 +139,6 @@ void LocomotionController::init() {
   /*
    * Start workers
    */
-//  controllerWorker_ = addWorker("controller", 400, &LocomotionController::updateControllerWorker);
-
-
   nodewrap::WorkerOptions workerOptions;
   workerOptions.callback = boost::bind(&LocomotionController::updateControllerWorker, this, _1);
   workerOptions.frequency = 400;
@@ -203,11 +200,7 @@ void LocomotionController::initializePublishers() {
                                                                               boost::bind(&LocomotionController::jointCommandsSubscriberConnect,this,_1),
                                                                               boost::bind(&LocomotionController::jointCommandsSubscriberDisconnect,this,_1));
 
-  //todo: fix bug that prevents the connect and disconnect callbacks from being called
-//  jointCommandsCallbackQueue_.reset(new ros::CallbackQueue());
-//  jointCommandsOptions.callback_queue = jointCommandsCallbackQueue_.get();
-
-  jointCommandsPublisher_ = advertise("command_seactuators",jointCommandsOptions);
+  jointCommandsPublisher_ = advertise("command_seactuators", jointCommandsOptions);
   ROS_INFO_STREAM("commands topic name: " << jointCommandsPublisher_.getTopic());
   /*****************************/
 
@@ -239,86 +232,78 @@ void LocomotionController::jointCommandsSubscriberDisconnect(const ros::SingleSu
 
 
 void LocomotionController::publish()  {
-
-  int64_t timeStep = (int64_t)(timeStep_*1e9);
-  robotUtils::ChronoTimer timer;
-  timer.pinTime();
-
   if (jointCommandsNumSubscribers_ > 0u) {
-
-    int64_t nanoSecs = timer.getElapsedTimeNanoSec();
-    if (nanoSecs > timeStep) {
-      NODEWRAP_WARN("getNumSubscribers: %lf ms\n", (double)nanoSecs*1e-6);
-    }
-
-
     series_elastic_actuator_msgs::SeActuatorCommandsPtr jointCommands;
 
     {
       std::lock_guard<std::mutex> lock(mutexJointCommands_);
       jointCommands.reset(new series_elastic_actuator_msgs::SeActuatorCommands(*jointCommands_));
     }
-    nanoSecs = timer.getElapsedTimeNanoSec();
-    if (nanoSecs > timeStep) {
-      NODEWRAP_WARN("Lock and reset of joint commands took: %lf ms\n", (double)nanoSecs*1e-6);
-    }
-
-
-
 
     {
-      std::lock_guard<std::mutex> lockControllerManager(mutexModelAndControllerManager_);
+      std::lock_guard<std::mutex> lockModel(mutexModel_);
       model_.getSeActuatorCommands(jointCommands);
     }
-    nanoSecs = timer.getElapsedTimeNanoSec();
-    if (nanoSecs > timeStep) {
-      NODEWRAP_WARN("model_.getSeActuatorCommands(jointCommands) took: %lf ms\n", (double)nanoSecs*1e-6);
-    }
-
 
     jointCommandsPublisher_.publish(boost::const_pointer_cast<const series_elastic_actuator_msgs::SeActuatorCommands>(jointCommands));
-    nanoSecs = timer.getElapsedTimeNanoSec();
-    if (nanoSecs > timeStep) {
-      NODEWRAP_WARN("publish joint states: %lf ms\n", (double)nanoSecs*1e-6);
-    }
   }
 
 }
 
 
 void LocomotionController::robotStateCallback(const quadruped_msgs::RobotState::ConstPtr& msg) {
-
-
-//  std::lock_guard<std::mutex> lock(mutexRobotState_);
   {
     std::unique_lock<std::mutex> lock(mutexRobotState_);
     robotState_ = msg;
   }
+  
   rcvdRobotState_.notify_all();
-//  controllerWorker_.wake();
-
-//  updateControllerAndPublish(msg);
 }
 
 
 bool LocomotionController::updateControllerWorker(const nodewrap::WorkerEvent& event) {
-  std::chrono::time_point<std::chrono::steady_clock> start, intermediate, end;
-
+  std::chrono::time_point<std::chrono::steady_clock> start, end;
+  
   {
-    std::unique_lock<std::mutex> lock(mutexRobotState_);
+    bool robotStateOk = false;
+    
+    std::unique_lock<std::mutex> lockRobotState(mutexRobotState_);
 
-    if ( !robotState_ || ( robotState_->header.stamp <= robotStateStamp_ ) ) {
-      rcvdRobotState_.wait(lock);
+    // This indicates that we have never received a robot state, thus we just return
+    if ( !robotState_ )
+      return true;
+    
+    if ( robotState_->header.stamp <= robotStateStamp_ ) {
+      std::chrono::nanoseconds robotStateTimeoutNSecs((int64_t(10*timeStep_*1e9)));
+      
+      if (rcvdRobotState_.wait_for(lockRobotState, robotStateTimeoutNSecs) == std::cv_status::no_timeout) {
+        robotStateOk = true;
+      }
     }
+    else
+      robotStateOk = true;
 
-    model_.setRobotState(robotState_);
-    robotStateStamp_ = robotState_->header.stamp;
+    if (robotStateOk) {
+      {
+        std::lock_guard<std::mutex> lockModel(mutexModel_);
+        model_.setRobotState(robotState_);
+      }
+      
+      robotStateStamp_ = robotState_->header.stamp;
+    }
+    else {
+      NODEWRAP_ERROR("Robot state update was not received within 10 times the maximum allowed computation time (%lf ms)!", 10*timeStep_*1e3);
+
+      controllerManager_.emergencyStop();
+    }
   }
+  
 
   //-- Start measuring computation time.
   start = std::chrono::steady_clock::now();
+  
   controllerManager_.updateController();
-  intermediate = std::chrono::steady_clock::now();
+  
   publish();
   //---
 
@@ -330,24 +315,13 @@ bool LocomotionController::updateControllerWorker(const nodewrap::WorkerEvent& e
 
   if (elapsedTimeNSecs > timeStep) {
     NODEWRAP_WARN("Computation of locomotion controller is not real-time! Elapsed time: %lf ms\n", (double)elapsedTimeNSecs*1e-6);
-
-    int64_t advanceElapsedTimeNSecs = std::chrono::duration_cast<std::chrono::nanoseconds>(intermediate - start).count();
-    NODEWRAP_WARN("Advance controller elapsed time: %lf ms\n", (double)advanceElapsedTimeNSecs*1e-6);
-    int64_t publishElapsedTimeNSecs = std::chrono::duration_cast<std::chrono::nanoseconds>(end - intermediate).count();
-    NODEWRAP_WARN("Publish elapsed time: %lf ms\n", (double)publishElapsedTimeNSecs*1e-6);
   }
   if (elapsedTimeNSecs > timeStep*10) {
-      NODEWRAP_ERROR("Computation took more than 10 times the maximum allowed computation time (%lf ms)!", timeStep_*1e-3);
-      int64_t advanceElapsedTimeNSecs = std::chrono::duration_cast<std::chrono::nanoseconds>(intermediate - start).count();
-      NODEWRAP_WARN("Advance controller elapsed time: %lf ms\n", (double)advanceElapsedTimeNSecs*1e-6);
-      int64_t publishElapsedTimeNSecs = std::chrono::duration_cast<std::chrono::nanoseconds>(end - intermediate).count();
-      NODEWRAP_WARN("Publish elapsed time: %lf ms\n", (double)publishElapsedTimeNSecs*1e-6);
+    NODEWRAP_ERROR("Computation took more than 10 times the maximum allowed computation time (%lf ms)!", timeStep_*1e3);
 
-      std::lock_guard<std::mutex> lock(mutexModelAndControllerManager_);
-      controllerManager_.emergencyStop();
+    controllerManager_.emergencyStop();
   }
   //---
-
 
   return true;
 }
@@ -358,18 +332,19 @@ void LocomotionController::updateControllerAndPublish(const quadruped_msgs::Robo
   std::chrono::time_point<std::chrono::steady_clock> start, end;
   start = std::chrono::steady_clock::now();
   //---
+  
   std::lock_guard<std::mutex> lockUpdateControllerAndPublish(mutexUpdateControllerAndPublish_);
 
   NODEWRAP_DEBUG("Update locomotion controller.");
 
   {
-    std::lock_guard<std::mutex> lock(mutexModelAndControllerManager_);
+    std::lock_guard<std::mutex> lockModel(mutexModel_);
     model_.setRobotState(robotState);
-    controllerManager_.updateController();
   }
+  
+  controllerManager_.updateController();
+  
   publish();
-
-
 
   //-- Measure computation time.
   end = std::chrono::steady_clock::now();
@@ -380,9 +355,9 @@ void LocomotionController::updateControllerAndPublish(const quadruped_msgs::Robo
     NODEWRAP_WARN("Computation of locomotion controller is not real-time! Elapsed time: %lf ms\n", (double)elapsedTimeNSecs*1e-6);
   }
   if (elapsedTimeNSecs > timeStep*10) {
-      NODEWRAP_ERROR("Computation took more than 10 times the maximum allowed computation time (%lf ms)!", timeStep_*1e-3);
-      std::lock_guard<std::mutex> lock(mutexModelAndControllerManager_);
-      controllerManager_.emergencyStop();
+    NODEWRAP_ERROR("Computation took more than 10 times the maximum allowed computation time (%lf ms)!", timeStep_*1e3);
+    
+    controllerManager_.emergencyStop();
   }
 
   //---
@@ -391,15 +366,18 @@ void LocomotionController::updateControllerAndPublish(const quadruped_msgs::Robo
 
 void LocomotionController::joystickCallback(const sensor_msgs::Joy::ConstPtr& msg) {
   std::lock_guard<std::mutex> lock(mutexJoystick_);
-  std::lock_guard<std::mutex> lockControllerManager(mutexModelAndControllerManager_);
 
   ros::Duration age = (ros::Time::now()-msg->header.stamp);
   if (age >= ros::Duration(4.0)) {
-    controllerManager_.emergencyStop();
     NODEWRAP_WARN("Joystick message is %lf seconds old! Called emergency stop!", age.toSec());
+    
+    controllerManager_.emergencyStop();
   }
   else {
-    model_.setJoystickCommands(msg);
+    {
+      std::lock_guard<std::mutex> lockModel(mutexModel_);
+      model_.setJoystickCommands(msg);
+    }
 
 
 /*    // START + LF buttons
@@ -418,7 +396,8 @@ void LocomotionController::joystickCallback(const sensor_msgs::Joy::ConstPtr& ms
     if (msg->buttons[4] == 1 && msg->axes[6] == 1 ) {
       locomotion_controller_msgs::SwitchController::Request  req;
       locomotion_controller_msgs::SwitchController::Response res;
-      req.name = "LocoDemo";
+//       req.name = "LocoDemo";
+      req.name = "loco_demo_ros";
       if(!controllerManager_.switchController(req,res)) {
       }
       ROS_INFO("Switched task by joystick to LocoDemo (status: %d)",res.status);
@@ -428,7 +407,8 @@ void LocomotionController::joystickCallback(const sensor_msgs::Joy::ConstPtr& ms
     if (msg->buttons[4] == 1 && msg->axes[6] == -1 ) {
       locomotion_controller_msgs::SwitchController::Request  req;
       locomotion_controller_msgs::SwitchController::Response res;
-      req.name = "Crawling";
+//       req.name = "Crawling";
+      req.name = "loco_crawling_ros";
       if(!controllerManager_.switchController(req,res)) {
       }
       ROS_INFO("Switched task by joystick to LocoCrawling (status: %d)",res.status);
@@ -440,6 +420,7 @@ void LocomotionController::joystickCallback(const sensor_msgs::Joy::ConstPtr& ms
     // RB button
     if (msg->buttons[5] == 1 ) {
       NODEWRAP_WARN("Emergency stop by joystick!");
+      
       controllerManager_.emergencyStop();
     }
 
@@ -472,11 +453,8 @@ bool LocomotionController::emergencyStop(locomotion_controller_msgs::EmergencySt
   bool result = true;
 
   //--- Stop the controller.
-  {
-    std::lock_guard<std::mutex> lock(mutexModelAndControllerManager_);
-    if(!controllerManager_.emergencyStop()) {
-      result = false;
-    }
+  if(!controllerManager_.emergencyStop()) {
+    result = false;
   }
   //---
 
@@ -500,15 +478,17 @@ bool LocomotionController::emergencyStop(locomotion_controller_msgs::EmergencySt
 }
 
 void LocomotionController::commandVelocityCallback(const geometry_msgs::TwistStamped::ConstPtr& msg) {
-  std::lock_guard<std::mutex> lock(mutexModelAndControllerManager_);
-
   // Ignore old messages for safety
   ros::Duration age = (ros::Time::now()-msg->header.stamp);
+  
   if (age >= ros::Duration(2.0)) {
     ROS_WARN("Ignoring commanded velocity which is %lf seconds old. Commanded velocity was set to zero.", age.toSec());
+
+    std::lock_guard<std::mutex> lockModel(mutexModel_);
     model_.setCommandVelocity(geometry_msgs::Twist());
   }
   else {
+    std::lock_guard<std::mutex> lockModel(mutexModel_);
     model_.setCommandVelocity(msg->twist);
   }
 
@@ -516,12 +496,12 @@ void LocomotionController::commandVelocityCallback(const geometry_msgs::TwistSta
 
 void LocomotionController::mocapCallback(const geometry_msgs::TransformStamped::ConstPtr& msg)
 {
-  std::lock_guard<std::mutex> lock(mutexModelAndControllerManager_);
+  std::lock_guard<std::mutex> lockModel(mutexModel_);
   model_.setMocapData(msg);
 }
 
 void LocomotionController::seActuatorReadingsCallback(const series_elastic_actuator_msgs::SeActuatorReadings::ConstPtr& msg) {
-  std::lock_guard<std::mutex> lock(mutexModelAndControllerManager_);
+  std::lock_guard<std::mutex> lockModel(mutexModel_);
   model_.setSeActuatorReadings(msg);
 }
 
