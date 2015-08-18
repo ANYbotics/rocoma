@@ -76,6 +76,14 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
    manager->addController(controllerJump);
 #endif
 
+#ifdef USE_TASK_LOCOTRACKER
+   auto controllerTracker = new ControllerRos<loco_tracker::LocoTracker>(state, command);
+   controllerTracker->setParameterPath(ros::package::getPath("loco_tracker"));
+   controllerTracker->setControllerManager(manager);
+   controllerTracker->setIsRealRobotFromManager(manager->isRealRobot());
+   manager->addController(controllerTracker);
+#endif
+
 #ifdef USE_TASK_LOCOCRAWLING_ROS
    auto controllerCrawlingRos = new ControllerRos<loco_crawling_ros::LocoCrawlingRos>(state, command);
    controllerCrawlingRos->setParameterPath(ros::package::getPath("loco_crawling"));
