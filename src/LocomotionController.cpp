@@ -37,6 +37,8 @@
 
 #include "locomotion_controller/LocomotionController.hpp"
 
+#include "locomotion_controller_msgs/SwitchController.h"
+
 // Messages
 #include <locomotion_controller_msgs/ResetStateEstimator.h>
 
@@ -48,12 +50,14 @@
 #include <signal_logger/LoggerNone.hpp>
 #include <signal_logger_std/LoggerStd.hpp>
 #include <signal_logger_ros/LoggerRos.hpp>
-#include <signal_logger/LoggerNone.hpp>
 
+#include <std_srvs/Empty.h>
 
 #include <chrono>
 #include <cstdint>
 #include <string>
+
+#include <robotUtils/timers/ChronoTimer.hpp>
 
 
 NODEWRAP_EXPORT_CLASS(locomotion_controller, locomotion_controller::LocomotionController)
@@ -64,8 +68,9 @@ namespace locomotion_controller {
 LocomotionController::LocomotionController():
     timeStep_(0.0025),
     isRealRobot_(false),
+    samplingFrequency_(1.0),
     model_(),
-    controllerManager_(),
+    controllerManager_(this),
     defaultController_("LocoDemo")
 {
 
@@ -89,9 +94,8 @@ void LocomotionController::init() {
   if (loggingScriptFilename.empty()){
     loggingScriptFilename = ros::package::getPath("locomotion_controller") + std::string{"/config/logging.script"};
   }
-  double samplingTime;
-  getNodeHandle().param<double>("logger/sampling_time", samplingTime, 60.0);
-  NODEWRAP_INFO("Initialize logger with sampling time: %lfs and script: %s.", samplingTime, loggingScriptFilename.c_str());
+  getNodeHandle().param<double>("logger/sampling_time", samplingFrequency_, 60.0);
+  NODEWRAP_INFO("Initialize logger with sampling time: %lfs and script: %s.", samplingFrequency_, loggingScriptFilename.c_str());
 
   std::string loggerClass;
   getNodeHandle().param<std::string>("logger/class", loggerClass, "std");
@@ -99,7 +103,7 @@ void LocomotionController::init() {
     // initialize ros logger
     signal_logger::logger.reset(new signal_logger_ros::LoggerRos(getNodeHandle()));
     signal_logger_ros::LoggerRos* loggerRos = static_cast<signal_logger_ros::LoggerRos*>(signal_logger::logger.get());
-    loggerRos->setPublishFrequency(samplingTime);
+    loggerRos->setPublishFrequency(samplingFrequency_);
   } else if (loggerClass.compare("std") == 0) {
     // initialize std logger as fallback logger
     signal_logger::logger.reset(new signal_logger_std::LoggerStd());
@@ -109,22 +113,21 @@ void LocomotionController::init() {
     signal_logger::logger.reset(new signal_logger::LoggerNone());
   }
 
-  signal_logger::logger->initLogger((int)(1.0/timeStep_), (int)(1.0/timeStep_), samplingTime, loggingScriptFilename);
-  NODEWRAP_INFO("Initialize logger with sampling time: %lfs, sampling frequency: %d and script: %s.", samplingTime, (int)(1.0/timeStep_), loggingScriptFilename.c_str());
+  signal_logger::logger->initLogger((int)(1.0/timeStep_), (int)(1.0/timeStep_), samplingFrequency_, loggingScriptFilename);
+  NODEWRAP_INFO("Initialize logger with sampling time: %lfs, sampling frequency: %d and script: %s.", samplingFrequency_, (int)(1.0/timeStep_), loggingScriptFilename.c_str());
   //---
 
   //--- Configure controllers
   {
-    std::lock_guard<std::mutex> lockControllerManager(mutexModelAndControllerManager_);
+    std::lock_guard<std::mutex> lockModel(mutexModel_);
 
     // Initialize robot and terrain models
     model_.initializeForController(timeStep_,isRealRobot_);
     model_.getRobotModel()->params().printParams();
     model_.addVariablesToLog();
 
-
     controllerManager_.setIsRealRobot(isRealRobot_);
-    controllerManager_.setupControllers(timeStep_, model_.getState(), model_.getCommand(), getNodeHandle());
+    controllerManager_.setupControllers(timeStep_, model_.getState(), model_.getCommand(), getNodeHandle(), this);
   }
   //---
 
@@ -132,11 +135,38 @@ void LocomotionController::init() {
   initializeServices();
   initializePublishers();
   initializeSubscribers();
+
+  /*
+   * Start workers
+   */
+  nodewrap::WorkerOptions workerOptions;
+  workerOptions.callback = boost::bind(&LocomotionController::updateControllerWorker, this, _1);
+  workerOptions.frequency = 400;
+  workerOptions.autostart = true;
+  workerOptions.synchronous = false;
+  workerOptions.privateCallbackQueue = true;
+  workerOptions.priority = 99;
+  controllerWorker_ = addWorker("controller", workerOptions);
+
 }
+
 
 void LocomotionController::cleanup() {
 
 }
+
+
+nodewrap::Worker LocomotionController::addWrappedWorker(
+    const std::string& name, const nodewrap::WorkerOptions& defaultOptions)
+{
+  return this->addWorker(name, defaultOptions);
+}
+
+
+double LocomotionController::getSamplingFrequency() const {
+  return samplingFrequency_;
+}
+
 
 void LocomotionController::initializeMessages() {
   //--- Initialize joint commands.
@@ -155,12 +185,27 @@ void LocomotionController::initializeServices() {
   emergencyStopService_ = advertiseService("emergency_stop", "/emergency_stop", &LocomotionController::emergencyStop);
   resetStateEstimatorClient_ = serviceClient<locomotion_controller_msgs::ResetStateEstimator>("reset_state_estimator", "/reset_state_estimator");
   //resetStateEstimatorClient_.waitForExistence();
-
 }
+
 
 void LocomotionController::initializePublishers() {
-  jointCommandsPublisher_ = advertise<series_elastic_actuator_msgs::SeActuatorCommands>("command_seactuators","/command_seactuators", 100);
+
+  /*****************************
+   * Initialize joint commands *
+   *****************************/
+  jointCommandsNumSubscribers_ = 0;
+  ros::AdvertiseOptions jointCommandsOptions;
+  jointCommandsOptions.init<series_elastic_actuator_msgs::SeActuatorCommands>("/command_seactuators",
+                                                                              100,
+                                                                              boost::bind(&LocomotionController::jointCommandsSubscriberConnect,this,_1),
+                                                                              boost::bind(&LocomotionController::jointCommandsSubscriberDisconnect,this,_1));
+
+  jointCommandsPublisher_ = advertise("command_seactuators", jointCommandsOptions);
+  ROS_INFO_STREAM("commands topic name: " << jointCommandsPublisher_.getTopic());
+  /*****************************/
+
 }
+
 
 void LocomotionController::initializeSubscribers() {
   joystickSubscriber_ = subscribe("joy", "/joy", 100, &LocomotionController::joystickCallback, ros::TransportHints().tcpNoDelay());
@@ -176,43 +221,130 @@ void LocomotionController::initializeSubscribers() {
 }
 
 
+void LocomotionController::jointCommandsSubscriberConnect(const ros::SingleSubscriberPublisher& pub) {
+  jointCommandsNumSubscribers_++;
+  ROS_INFO_STREAM("increasing joint commands to: " << jointCommandsNumSubscribers_);
+}
+void LocomotionController::jointCommandsSubscriberDisconnect(const ros::SingleSubscriberPublisher& pub) {
+  jointCommandsNumSubscribers_--;
+  ROS_INFO_STREAM("decreasing joint commands to: " << jointCommandsNumSubscribers_);
+}
+
 
 void LocomotionController::publish()  {
+  if (jointCommandsNumSubscribers_ > 0u) {
+    series_elastic_actuator_msgs::SeActuatorCommandsPtr jointCommands;
 
-  if(jointCommandsPublisher_.getNumSubscribers() > 0u) {
-    std::lock_guard<std::mutex> lock(mutexJointCommands_);
     {
-      std::lock_guard<std::mutex> lockControllerManager(mutexModelAndControllerManager_);
-      model_.getSeActuatorCommands(jointCommands_);
+      std::lock_guard<std::mutex> lock(mutexJointCommands_);
+      jointCommands.reset(new series_elastic_actuator_msgs::SeActuatorCommands(*jointCommands_));
     }
 
-    series_elastic_actuator_msgs::SeActuatorCommandsConstPtr jointCommands(new series_elastic_actuator_msgs::SeActuatorCommands (*jointCommands_));
-    jointCommandsPublisher_.publish(jointCommands);
-    //ros::spinOnce(); // todo: required?
+    {
+      std::lock_guard<std::mutex> lockModel(mutexModel_);
+      model_.getSeActuatorCommands(jointCommands);
+    }
+
+    jointCommandsPublisher_.publish(boost::const_pointer_cast<const series_elastic_actuator_msgs::SeActuatorCommands>(jointCommands));
   }
 
 }
+
+
 void LocomotionController::robotStateCallback(const quadruped_msgs::RobotState::ConstPtr& msg) {
-  updateControllerAndPublish(msg);
+  {
+    std::unique_lock<std::mutex> lock(mutexRobotState_);
+    robotState_ = msg;
+  }
+  
+  rcvdRobotState_.notify_all();
 }
+
+
+bool LocomotionController::updateControllerWorker(const nodewrap::WorkerEvent& event) {
+  std::chrono::time_point<std::chrono::steady_clock> start, end;
+  
+  {
+    bool robotStateOk = false;
+    
+    std::unique_lock<std::mutex> lockRobotState(mutexRobotState_);
+
+    // This indicates that we have never received a robot state, thus we just return
+    if ( !robotState_ )
+      return true;
+    
+    if ( robotState_->header.stamp <= robotStateStamp_ ) {
+      std::chrono::nanoseconds robotStateTimeoutNSecs((int64_t(10*timeStep_*1e9)));
+      
+      if (rcvdRobotState_.wait_for(lockRobotState, robotStateTimeoutNSecs) == std::cv_status::no_timeout) {
+        robotStateOk = true;
+      }
+    }
+    else
+      robotStateOk = true;
+
+    if (robotStateOk) {
+      {
+        std::lock_guard<std::mutex> lockModel(mutexModel_);
+        model_.setRobotState(robotState_);
+      }
+      
+      robotStateStamp_ = robotState_->header.stamp;
+    }
+    else {
+      NODEWRAP_ERROR("Robot state update was not received within 10 times the maximum allowed computation time (%lf ms)!", 10*timeStep_*1e3);
+
+      controllerManager_.emergencyStop();
+    }
+  }
+  
+
+  //-- Start measuring computation time.
+  start = std::chrono::steady_clock::now();
+  
+  controllerManager_.updateController();
+  
+  publish();
+  //---
+
+  //-- Measure computation time.
+  end = std::chrono::steady_clock::now();
+  int64_t elapsedTimeNSecs = std::chrono::duration_cast<std::chrono::nanoseconds>(end -
+      start).count();
+  int64_t timeStep = (int64_t)(timeStep_*1e9);
+
+  if (elapsedTimeNSecs > timeStep) {
+    NODEWRAP_WARN("Computation of locomotion controller is not real-time! Elapsed time: %lf ms\n", (double)elapsedTimeNSecs*1e-6);
+  }
+  if (elapsedTimeNSecs > timeStep*10) {
+    NODEWRAP_ERROR("Computation took more than 10 times the maximum allowed computation time (%lf ms)!", timeStep_*1e3);
+
+    controllerManager_.emergencyStop();
+  }
+  //---
+
+  return true;
+}
+
 
 void LocomotionController::updateControllerAndPublish(const quadruped_msgs::RobotState::ConstPtr& robotState) {
   //-- Start measuring computation time.
   std::chrono::time_point<std::chrono::steady_clock> start, end;
   start = std::chrono::steady_clock::now();
   //---
+  
   std::lock_guard<std::mutex> lockUpdateControllerAndPublish(mutexUpdateControllerAndPublish_);
 
   NODEWRAP_DEBUG("Update locomotion controller.");
 
   {
-    std::lock_guard<std::mutex> lock(mutexModelAndControllerManager_);
+    std::lock_guard<std::mutex> lockModel(mutexModel_);
     model_.setRobotState(robotState);
-    controllerManager_.updateController();
   }
+  
+  controllerManager_.updateController();
+  
   publish();
-
-
 
   //-- Measure computation time.
   end = std::chrono::steady_clock::now();
@@ -223,9 +355,9 @@ void LocomotionController::updateControllerAndPublish(const quadruped_msgs::Robo
     NODEWRAP_WARN("Computation of locomotion controller is not real-time! Elapsed time: %lf ms\n", (double)elapsedTimeNSecs*1e-6);
   }
   if (elapsedTimeNSecs > timeStep*10) {
-      NODEWRAP_ERROR("Computation took more than 10 times the maximum allowed computation time (%lf ms)!", timeStep_*1e-3);
-      std::lock_guard<std::mutex> lock(mutexModelAndControllerManager_);
-      controllerManager_.emergencyStop();
+    NODEWRAP_ERROR("Computation took more than 10 times the maximum allowed computation time (%lf ms)!", timeStep_*1e3);
+    
+    controllerManager_.emergencyStop();
   }
 
   //---
@@ -234,15 +366,18 @@ void LocomotionController::updateControllerAndPublish(const quadruped_msgs::Robo
 
 void LocomotionController::joystickCallback(const sensor_msgs::Joy::ConstPtr& msg) {
   std::lock_guard<std::mutex> lock(mutexJoystick_);
-  std::lock_guard<std::mutex> lockControllerManager(mutexModelAndControllerManager_);
 
   ros::Duration age = (ros::Time::now()-msg->header.stamp);
   if (age >= ros::Duration(4.0)) {
-    controllerManager_.emergencyStop();
     NODEWRAP_WARN("Joystick message is %lf seconds old! Called emergency stop!", age.toSec());
+    
+    controllerManager_.emergencyStop();
   }
   else {
-    model_.setJoystickCommands(msg);
+    {
+      std::lock_guard<std::mutex> lockModel(mutexModel_);
+      model_.setJoystickCommands(msg);
+    }
 
 
 /*    // START + LF buttons
@@ -261,7 +396,8 @@ void LocomotionController::joystickCallback(const sensor_msgs::Joy::ConstPtr& ms
     if (msg->buttons[4] == 1 && msg->axes[6] == 1 ) {
       locomotion_controller_msgs::SwitchController::Request  req;
       locomotion_controller_msgs::SwitchController::Response res;
-      req.name = "LocoDemo";
+//       req.name = "LocoDemo";
+      req.name = "loco_demo_ros";
       if(!controllerManager_.switchController(req,res)) {
       }
       ROS_INFO("Switched task by joystick to LocoDemo (status: %d)",res.status);
@@ -271,7 +407,8 @@ void LocomotionController::joystickCallback(const sensor_msgs::Joy::ConstPtr& ms
     if (msg->buttons[4] == 1 && msg->axes[6] == -1 ) {
       locomotion_controller_msgs::SwitchController::Request  req;
       locomotion_controller_msgs::SwitchController::Response res;
-      req.name = "Crawling";
+//       req.name = "Crawling";
+      req.name = "loco_crawling_ros";
       if(!controllerManager_.switchController(req,res)) {
       }
       ROS_INFO("Switched task by joystick to LocoCrawling (status: %d)",res.status);
@@ -283,6 +420,7 @@ void LocomotionController::joystickCallback(const sensor_msgs::Joy::ConstPtr& ms
     // RB button
     if (msg->buttons[5] == 1 ) {
       NODEWRAP_WARN("Emergency stop by joystick!");
+      
       controllerManager_.emergencyStop();
     }
 
@@ -315,11 +453,8 @@ bool LocomotionController::emergencyStop(locomotion_controller_msgs::EmergencySt
   bool result = true;
 
   //--- Stop the controller.
-  {
-    std::lock_guard<std::mutex> lock(mutexModelAndControllerManager_);
-    if(!controllerManager_.emergencyStop()) {
-      result = false;
-    }
+  if(!controllerManager_.emergencyStop()) {
+    result = false;
   }
   //---
 
@@ -343,15 +478,17 @@ bool LocomotionController::emergencyStop(locomotion_controller_msgs::EmergencySt
 }
 
 void LocomotionController::commandVelocityCallback(const geometry_msgs::TwistStamped::ConstPtr& msg) {
-  std::lock_guard<std::mutex> lock(mutexModelAndControllerManager_);
-
   // Ignore old messages for safety
   ros::Duration age = (ros::Time::now()-msg->header.stamp);
+  
   if (age >= ros::Duration(2.0)) {
     ROS_WARN("Ignoring commanded velocity which is %lf seconds old. Commanded velocity was set to zero.", age.toSec());
+
+    std::lock_guard<std::mutex> lockModel(mutexModel_);
     model_.setCommandVelocity(geometry_msgs::Twist());
   }
   else {
+    std::lock_guard<std::mutex> lockModel(mutexModel_);
     model_.setCommandVelocity(msg->twist);
   }
 
@@ -359,12 +496,12 @@ void LocomotionController::commandVelocityCallback(const geometry_msgs::TwistSta
 
 void LocomotionController::mocapCallback(const geometry_msgs::TransformStamped::ConstPtr& msg)
 {
-  std::lock_guard<std::mutex> lock(mutexModelAndControllerManager_);
+  std::lock_guard<std::mutex> lockModel(mutexModel_);
   model_.setMocapData(msg);
 }
 
 void LocomotionController::seActuatorReadingsCallback(const series_elastic_actuator_msgs::SeActuatorReadings::ConstPtr& msg) {
-  std::lock_guard<std::mutex> lock(mutexModelAndControllerManager_);
+  std::lock_guard<std::mutex> lockModel(mutexModel_);
   model_.setSeActuatorReadings(msg);
 }
 
