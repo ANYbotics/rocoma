@@ -108,7 +108,7 @@ class ControllerManager
   bool isRealRobot_;
 
   locomotion_controller::LocomotionController* locomotionController_;
-  std::mutex activeControllerMutex_;
+  std::recursive_mutex activeControllerMutex_;
 
   //--- Notify an emergency stop
   void publishEmergencyState(bool emergencyState);

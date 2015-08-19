@@ -98,7 +98,7 @@ void ControllerManager::addController(ControllerPtr controller)  {
 
 void ControllerManager::updateController() {
   {
-    std::lock_guard<std::mutex> lock(activeControllerMutex_);
+    std::lock_guard<std::recursive_mutex> lock(activeControllerMutex_);
     activeController_->advanceController(timeStep_);
   }
 }
@@ -114,7 +114,7 @@ bool ControllerManager::switchControllerAfterEmergencyStop() {
 }
 
 void ControllerManager::switchToEmergencyTask() {
-  std::lock_guard<std::mutex> lock(activeControllerMutex_);
+  std::lock_guard<std::recursive_mutex> lock(activeControllerMutex_);
   if (activeController_->getName() != "Freeze") {
     for (auto& controller : controllers_) {
       if (controller.getName() == "Freeze") {
@@ -164,7 +164,7 @@ bool ControllerManager::switchController(locomotion_controller_msgs::SwitchContr
 
       if (initController->isInitialized()) {
        {
-          std::lock_guard<std::mutex> lock(activeControllerMutex_);
+          std::lock_guard<std::recursive_mutex> lock(activeControllerMutex_);
           activeController_ = initController;
        }
 
