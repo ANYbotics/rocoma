@@ -62,9 +62,9 @@ class LocomotionController;
 
 void add_locomotion_controllers(
     locomotion_controller::ControllerManager* manager,
-    robot_model::State& state, robot_model::Command& command,
-    ros::NodeHandle& nodeHandle,
-    locomotion_controller::LocomotionController* locomotionController);
+    quadruped_model::State& state,
+    quadruped_model::Command& command,
+    ros::NodeHandle& nodeHandle);
 
 class ControllerManager
 {
@@ -72,14 +72,14 @@ class ControllerManager
   typedef roco::controllers::LocomotionControllerInterface Controller;
   typedef roco::controllers::LocomotionControllerInterface* ControllerPtr;
  public:
-  ControllerManager(locomotion_controller::LocomotionController* locomotionController);
+  explicit ControllerManager(locomotion_controller::LocomotionController* locomotionController);
   virtual ~ControllerManager();
 
   void updateController();
-  void setupControllers(
-      double dt, robot_model::State& state, robot_model::Command& command,
-      ros::NodeHandle& nodeHandle,
-      locomotion_controller::LocomotionController* locomotionController);
+  void setupControllers(double dt,
+                        quadruped_model::State& state,
+                        quadruped_model::Command& command,
+                        ros::NodeHandle& nodeHandle);
   void addController(ControllerPtr controller);
   bool switchController(locomotion_controller_msgs::SwitchController::Request  &req,
                         locomotion_controller_msgs::SwitchController::Response &res);

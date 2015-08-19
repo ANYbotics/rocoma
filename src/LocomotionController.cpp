@@ -74,7 +74,7 @@ LocomotionController::LocomotionController():
     isRealRobot_(false),
     samplingFrequency_(1.0),
     model_(),
-    controllerManager_(),
+    controllerManager_(this),
     defaultController_("LocoDemo"),
     quadrupedName_("starleth")
 {
@@ -141,7 +141,7 @@ void LocomotionController::init() {
     model_.addVariablesToLog();
 
     controllerManager_.setIsRealRobot(isRealRobot_);
-    controllerManager_.setupControllers(timeStep_, model_.getState(), model_.getCommand(), getNodeHandle(), this);
+    controllerManager_.setupControllers(timeStep_, model_.getState(), model_.getCommand(), getNodeHandle());
   }
   //---
 
