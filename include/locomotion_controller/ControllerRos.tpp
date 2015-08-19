@@ -282,6 +282,7 @@ bool ControllerRos<Controller_>::initializeController(double dt)
 
   this->isRunning_ = true;
   signal_logger::logger->startLogger();
+  startWorkers();
   ROCO_INFO_STREAM(
       "Initialized controller " << this->getName() << " successfully!");
   return true;
@@ -329,6 +330,7 @@ bool ControllerRos<Controller_>::resetController(double dt)
 
   this->isRunning_ = true;
   signal_logger::logger->startLogger();
+  startWorkers();
   ROCO_INFO_STREAM("Reset controller " << this->getName() << " successfully!");
   return true;
 }
