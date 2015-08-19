@@ -53,6 +53,8 @@
 #include "quadruped_model/common/Command.hpp"
 
 #include "locomotion_controller/ControllerManager.hpp"
+#include "locomotion_controller/LocomotionController.hpp"
+#include "locomotion_controller/WorkerWrapper.hpp"
 
 #include <iostream>
 #include <exception>      // std::exception
@@ -97,6 +99,16 @@ class ControllerRos:  public roco::controllers::ControllerAdapterInterface,
   virtual Command& getCommand();
 
   virtual void emergencyStop();
+
+  virtual void cancelWorkers();
+  virtual void startWorkers();
+
+  virtual void swapOut();
+
+  virtual roco::WorkerHandle addWorker(const roco::WorkerOptions& options);
+  virtual bool startWorker(const roco::WorkerHandle& workerHandle);
+  virtual bool cancelWorker(const roco::WorkerHandle& workerHandle);
+
  protected:
   bool updateState(double dt, bool checkState=true);
   bool updateCommand(double dt, bool forceSendingControlModes);
@@ -112,6 +124,14 @@ class ControllerRos:  public roco::controllers::ControllerAdapterInterface,
   Command& command_;
   ControllerManager* controllerManager_;
   std::string emergencyStopControllerName_;
+
+  nodewrap::Worker signalLoggerWorker_;
+
+  std::map<std::string, WorkerWrapper> workers_;
+
+  // Worker callbacks
+  virtual bool signalLoggerWorker(const nodewrap::WorkerEvent& event);
+
 };
 
 

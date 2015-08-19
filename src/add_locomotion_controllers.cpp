@@ -39,13 +39,14 @@
 
 namespace locomotion_controller {
 
-void add_locomotion_controllers(locomotion_controller::ControllerManager* manager,
-                                quadruped_model::State& state,
-                                quadruped_model::Command& command,
-                                ros::NodeHandle& nodeHandle) {
+void add_locomotion_controllers(
+    locomotion_controller::ControllerManager* manager,
+    robot_model::State& state, robot_model::Command& command,
+    ros::NodeHandle& nodeHandle,
+    locomotion_controller::LocomotionController* locomotionController) {
 
   std::string quadrupedName;
-  nodeHandle.param<std::string>("quadruped/name", quadrupedName, "starleth");
+  nodeHandle.param<std::string>("quadruped/name", quadrupedName, "starleth")
 
 #ifdef USE_TASK_LOCODEMO
   auto controllerLocoDemo = new ControllerRos<loco_demo::LocoDemo>(state, command);

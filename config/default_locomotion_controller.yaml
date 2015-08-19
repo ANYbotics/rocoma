@@ -3,10 +3,10 @@ controller:
   is_real_robot: false
 
 logger:
-  sampling_time: 60
+  sampling_time: 30
   script: ""
   class: "ros"
 
 quadruped:
-  name: anymal
+  name: starleth
   setup: minimal

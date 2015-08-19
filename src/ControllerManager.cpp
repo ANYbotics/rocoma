@@ -32,26 +32,35 @@
  */
 #include "locomotion_controller/ControllerManager.hpp"
 #include "locomotion_controller/ControllerRos.hpp"
+#include <locomotion_controller/LocomotionController.hpp>
 
 #include "signal_logger_ros/LoggerRos.hpp"
 
 namespace locomotion_controller {
 
-ControllerManager::ControllerManager() :
+ControllerManager::ControllerManager(locomotion_controller::LocomotionController* locomotionController) :
     timeStep_(0.0),
     isInitializingTask_(false),
     controllers_(),
     activeController_(nullptr),
-    isRealRobot_(false)
+    isRealRobot_(false),
+    locomotionController_(locomotionController)
 {
 
 }
+
 
 ControllerManager::~ControllerManager()
 {
+
 }
 
-void ControllerManager::setupControllers(double dt, quadruped_model::State& state, quadruped_model::Command& command, ros::NodeHandle& nodeHandle)  {
+
+void ControllerManager::setupControllers(
+    double dt, robot_model::State& state, robot_model::Command& command,
+    ros::NodeHandle& nodeHandle,
+    locomotion_controller::LocomotionController* locomotionController)
+{
   timeStep_ = dt;
 
   /* Create controller freeze, which is active until estimator converged*/
@@ -65,7 +74,7 @@ void ControllerManager::setupControllers(double dt, quadruped_model::State& stat
     ROS_FATAL("Could not initialized NoTask!");
   }
 
-  add_locomotion_controllers(this, state, command, nodeHandle);
+  add_locomotion_controllers(this, state, command, nodeHandle, locomotionController);
 
   emergencyStopStatePublisher_.shutdown();
   emergencyStopStatePublisher_ = nodeHandle.advertise<any_msgs::State>("notify_emergency_stop", 100);
@@ -88,7 +97,10 @@ void ControllerManager::addController(ControllerPtr controller)  {
 
 
 void ControllerManager::updateController() {
-  activeController_->advanceController(timeStep_);
+  {
+    std::lock_guard<std::recursive_mutex> lock(activeControllerMutex_);
+    activeController_->advanceController(timeStep_);
+  }
 }
 
 bool ControllerManager::emergencyStop() {
@@ -102,7 +114,7 @@ bool ControllerManager::switchControllerAfterEmergencyStop() {
 }
 
 void ControllerManager::switchToEmergencyTask() {
-
+  std::lock_guard<std::recursive_mutex> lock(activeControllerMutex_);
   if (activeController_->getName() != "Freeze") {
     for (auto& controller : controllers_) {
       if (controller.getName() == "Freeze") {
@@ -113,6 +125,7 @@ void ControllerManager::switchToEmergencyTask() {
     }
     throw std::runtime_error("Controller 'freeze' not found!");
   }
+
 }
 
 
@@ -143,32 +156,31 @@ bool ControllerManager::switchController(locomotion_controller_msgs::SwitchContr
 
   for (auto& controller : controllers_) {
     if (req.name == controller.getName()) {
+
       ControllerPtr initController = &controller;
-
-//      isInitializingTask_ = true;
-
-
-      // reset the ros logger
-      if (signal_logger::logger.get()->getLoggerType()
-          == signal_logger::LoggerBase::LoggerType::TypeRos) {
-        signal_logger_ros::LoggerRos* loggerRos =
-            dynamic_cast<signal_logger_ros::LoggerRos*>(signal_logger::logger
-                .get());
-        loggerRos->clearCollectedVariables();
-      }
+      ControllerPtr oldActiveController = activeController_;
 
       initController->initializeController(timeStep_);
+
       if (initController->isInitialized()) {
-        res.status = res.STATUS_SWITCHED;
-        ROS_INFO("Switched to controller %s", initController->getName().c_str());
-        activeController_ = initController;
+       {
+          std::lock_guard<std::recursive_mutex> lock(activeControllerMutex_);
+          activeController_ = initController;
+       }
+
+       oldActiveController->swapOut();
+
+       res.status = res.STATUS_SWITCHED;
+                ROS_INFO("Switched to controller %s",
+                         initController->getName().c_str());
       }
       else {
         // switch to freeze controller
         switchToEmergencyTask();
         res.status = res.STATUS_ERROR;
-        ROS_INFO("Could not switched to controller %s", initController->getName().c_str());
+        ROS_INFO("Could not switch to controller %s", initController->getName().c_str());
       }
+
       return true;
     }
   }
@@ -176,6 +188,8 @@ bool ControllerManager::switchController(locomotion_controller_msgs::SwitchContr
   ROS_INFO("Controller %s not found!", req.name.c_str());
   return true;
 }
+
+
 
 bool ControllerManager::getAvailableControllers(locomotion_controller_msgs::GetAvailableControllers::Request &req,
                                                 locomotion_controller_msgs::GetAvailableControllers::Response &res)
@@ -188,6 +202,10 @@ bool ControllerManager::getAvailableControllers(locomotion_controller_msgs::GetA
   return true;
 }
 
+
+locomotion_controller::LocomotionController* ControllerManager::getLocomotionController() {
+  return locomotionController_;
+}
 
 
 bool ControllerManager::getActiveController(locomotion_controller_msgs::GetActiveController::Request &req,
