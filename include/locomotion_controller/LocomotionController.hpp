@@ -112,6 +112,7 @@ class LocomotionController : public nodewrap::NodeImpl
   void initializeSubscribers();
 
   void updateControllerAndPublish(const quadruped_msgs::RobotState::ConstPtr& robotState);
+  const std::string& getQuadrupedName() const;
 
   /*
    * Worker callbacks
@@ -123,6 +124,7 @@ class LocomotionController : public nodewrap::NodeImpl
   bool isRealRobot_;
   double samplingFrequency_;
   std::string defaultController_;
+  std::string quadrupedName_;
 
   model::Model model_;
   ControllerManager controllerManager_;

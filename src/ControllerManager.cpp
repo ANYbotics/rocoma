@@ -57,9 +57,8 @@ ControllerManager::~ControllerManager()
 
 
 void ControllerManager::setupControllers(
-    double dt, robot_model::State& state, robot_model::Command& command,
-    ros::NodeHandle& nodeHandle,
-    locomotion_controller::LocomotionController* locomotionController)
+    double dt, quadruped_model::State& state, quadruped_model::Command& command,
+    ros::NodeHandle& nodeHandle)
 {
   timeStep_ = dt;
 
@@ -74,7 +73,7 @@ void ControllerManager::setupControllers(
     ROS_FATAL("Could not initialized NoTask!");
   }
 
-  add_locomotion_controllers(this, state, command, nodeHandle, locomotionController);
+  add_locomotion_controllers(this, state, command, nodeHandle);
 
   emergencyStopStatePublisher_.shutdown();
   emergencyStopStatePublisher_ = nodeHandle.advertise<any_msgs::State>("notify_emergency_stop", 100);

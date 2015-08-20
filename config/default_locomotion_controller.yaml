@@ -6,3 +6,7 @@ logger:
   sampling_time: 30
   script: ""
   class: "ros"
+
+quadruped:
+  name: starleth
+  setup: minimal

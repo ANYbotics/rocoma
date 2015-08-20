@@ -43,8 +43,12 @@
 #include <locomotion_controller_msgs/ResetStateEstimator.h>
 
 
-#include <robot_model/starleth/starleth.hpp>
-#include <starleth_description/starleth_se_actuator_commands.hpp>
+#include <quadruped_model/robots/quadrupeds.hpp>
+#include <quadruped_model/robots/starleth.hpp>
+#include <quadruped_model/robots/anymal.hpp>
+
+#include <quadruped_assembly/quadrupeds.hpp>
+//#include <starleth_description/starleth_se_actuator_commands.hpp>
 
 #include <signal_logger/logger.hpp>
 #include <signal_logger/LoggerNone.hpp>
@@ -71,7 +75,8 @@ LocomotionController::LocomotionController():
     samplingFrequency_(1.0),
     model_(),
     controllerManager_(this),
-    defaultController_("LocoDemo")
+    defaultController_("LocoDemo"),
+    quadrupedName_("starleth")
 {
 
 
@@ -86,6 +91,7 @@ void LocomotionController::init() {
   getNodeHandle().param<double>("controller/time_step", timeStep_, 0.0025);
   getNodeHandle().param<bool>("controller/is_real_robot", isRealRobot_, false);
   getNodeHandle().param<std::string>("controller/default", defaultController_, "LocoDemo");
+  getNodeHandle().param<std::string>("quadruped/name", quadrupedName_, "starleth");
   //---
 
   //--- Configure logger.
@@ -122,12 +128,20 @@ void LocomotionController::init() {
     std::lock_guard<std::mutex> lockModel(mutexModel_);
 
     // Initialize robot and terrain models
-    model_.initializeForController(timeStep_,isRealRobot_);
-    model_.getRobotModel()->params().printParams();
+    const std::string& urdfPath = ros::package::getPath("quadruped_model") + "/resources/";
+    const std::string& urdfFileName = quadrupedName_ + "_minimal.urdf";
+    const std::string& urdfModelFile = urdfPath + urdfFileName;
+
+    quadruped_model::Quadrupeds quadrupedEnum;
+    if (quadrupedName_ == "starleth") quadrupedEnum = quadruped_model::Quadrupeds::StarlETH;
+    if (quadrupedName_ == "anymal") quadrupedEnum = quadruped_model::Quadrupeds::Anymal;
+
+    model_.initializeForController(timeStep_,isRealRobot_, urdfModelFile, quadrupedEnum);
+//    model_.getRobotModel()->params().printParams();
     model_.addVariablesToLog();
 
     controllerManager_.setIsRealRobot(isRealRobot_);
-    controllerManager_.setupControllers(timeStep_, model_.getState(), model_.getCommand(), getNodeHandle(), this);
+    controllerManager_.setupControllers(timeStep_, model_.getState(), model_.getCommand(), getNodeHandle());
   }
   //---
 
@@ -156,6 +170,11 @@ void LocomotionController::cleanup() {
 }
 
 
+const std::string& LocomotionController::getQuadrupedName() const {
+  return quadrupedName_;
+}
+
+
 nodewrap::Worker LocomotionController::addWrappedWorker(
     const std::string& name, const nodewrap::WorkerOptions& defaultOptions)
 {
@@ -173,7 +192,8 @@ void LocomotionController::initializeMessages() {
   {
     std::lock_guard<std::mutex> lock(mutexJointCommands_);
     jointCommands_.reset(new series_elastic_actuator_msgs::SeActuatorCommands);
-    starleth_description::initializeSeActuatorCommandsForStarlETH(*jointCommands_);
+//    starleth_description::initializeSeActuatorCommandsForStarlETH(*jointCommands_);
+    quadruped_description::initializeSeActuatorCommands(*jointCommands_);
   }
   //---
 }
