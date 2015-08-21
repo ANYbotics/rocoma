@@ -68,6 +68,7 @@ ControllerRos<Controller_>::ControllerRos(State& state, Command& command)
 template<typename Controller_>
 ControllerRos<Controller_>::~ControllerRos()
 {
+  ROCO_WARN("CLEANING");
   if (!cleanupController()) {
     ROCO_WARN("Could not cleanup controller!");
   }
@@ -180,6 +181,23 @@ bool ControllerRos<Controller_>::createController(double dt)
       emergencyStop();
       return true;
     }
+
+    //--- start signal logging in a worker thread
+    nodewrap::WorkerOptions signalLoggerWorkerOptions;
+    signalLoggerWorkerOptions.autostart = false;
+
+    double samplingTime = controllerManager_->getLocomotionController()
+        ->getSamplingFrequency();
+
+    signalLoggerWorkerOptions.frequency = samplingTime;
+    signalLoggerWorkerOptions.callback = boost::bind(
+        &ControllerRos<Controller_>::signalLoggerWorker, this, _1);
+
+    const std::string& signalLoggerWorkerName = this->getName()
+        + "_signal_logger_worker";
+    signalLoggerWorker_ = controllerManager_->getLocomotionController()
+        ->addWrappedWorker(signalLoggerWorkerName, signalLoggerWorkerOptions);
+
     this->isCreated_ = true;
   } catch (std::exception& e) {
     ROCO_WARN_STREAM("Exception caught: " << e.what());
@@ -189,6 +207,39 @@ bool ControllerRos<Controller_>::createController(double dt)
   }
   return true;
 }
+
+
+template<typename Controller_>
+roco::WorkerHandle ControllerRos<Controller_>::addWorker(const roco::WorkerOptions&  options) {
+  workers_.emplace(options.name_, WorkerWrapper());
+  auto& wrapper = workers_[options.name_];
+  wrapper.options_ = options;
+
+  nodewrap::WorkerOptions workerOptions;
+  workerOptions.autostart = options.autostart_;
+  workerOptions.frequency = options.frequency_;
+  workerOptions.priority = options.priority_;
+  workerOptions.synchronous = options.synchronous_;
+  workerOptions.callback = boost::bind(&WorkerWrapper::workerCallback, wrapper, _1);
+
+  wrapper.worker_ = controllerManager_->getLocomotionController()->addWrappedWorker(options.name_, workerOptions);
+
+  roco::WorkerHandle workerHandle;
+  workerHandle.name_ = options.name_;
+
+  return workerHandle;
+}
+
+template<typename Controller_>
+bool ControllerRos<Controller_>::startWorker(const roco::WorkerHandle& workerHandle) {
+  workers_[workerHandle.name_].worker_.start();
+}
+
+template<typename Controller_>
+bool ControllerRos<Controller_>::cancelWorker(const roco::WorkerHandle& workerHandle) {
+  workers_[workerHandle.name_].worker_.cancel();
+}
+
 
 template<typename Controller_>
 bool ControllerRos<Controller_>::initializeController(double dt)
@@ -218,7 +269,9 @@ bool ControllerRos<Controller_>::initializeController(double dt)
       return false;
     }
     updateCommand(dt, true);
+
     this->isInitialized_ = true;
+
   } catch (std::exception& e) {
     ROCO_WARN_STREAM("Exception caught:\n" << e.what());
     this->isInitialized_ = false;
@@ -229,10 +282,24 @@ bool ControllerRos<Controller_>::initializeController(double dt)
 
   this->isRunning_ = true;
   signal_logger::logger->startLogger();
+  startWorkers();
   ROCO_INFO_STREAM(
       "Initialized controller " << this->getName() << " successfully!");
   return true;
 }
+
+template<typename Controller_>
+void ControllerRos<Controller_>::startWorkers() {
+  ROCO_INFO_STREAM("[" << this->getName() << "] Starting workers.");
+  signalLoggerWorker_.start();
+}
+
+template<typename Controller_>
+void ControllerRos<Controller_>::cancelWorkers() {
+  ROCO_INFO_STREAM("[" << this->getName() << "] Canceling workers.");
+  signalLoggerWorker_.cancel(true);
+}
+
 
 template<typename Controller_>
 bool ControllerRos<Controller_>::resetController(double dt)
@@ -263,9 +330,18 @@ bool ControllerRos<Controller_>::resetController(double dt)
 
   this->isRunning_ = true;
   signal_logger::logger->startLogger();
+  startWorkers();
   ROCO_INFO_STREAM("Reset controller " << this->getName() << " successfully!");
   return true;
 }
+
+
+template<typename Controller_>
+bool ControllerRos<Controller_>::signalLoggerWorker(const nodewrap::WorkerEvent& event) {
+  signal_logger::logger->collectLoggerData();
+  return true;
+}
+
 
 template<typename Controller_>
 bool ControllerRos<Controller_>::advanceController(double dt)
@@ -284,7 +360,7 @@ bool ControllerRos<Controller_>::advanceController(double dt)
       return true;
     }
     updateCommand(dt, false);
-    signal_logger::logger->collectLoggerData();
+
   } catch (std::exception& e) {
     ROCO_WARN_STREAM("Exception caught: " << e.what());
     emergencyStop();
@@ -328,6 +404,9 @@ bool ControllerRos<Controller_>::cleanupController()
       ROCO_WARN_STREAM("Could not clean up the controller!");
       return false;
     }
+
+    cancelWorkers();
+
   } catch (std::exception& e) {
     ROCO_WARN_STREAM("Exception caught: " << e.what());
     return false;
@@ -378,21 +457,38 @@ void ControllerRos<Controller_>::sendEmergencyCommand()
 template<typename Controller_>
 bool ControllerRos<Controller_>::stopController()
 {
+  cancelWorkers();
+
   this->isRunning_ = false;
+  this->stop();
   this->emergencyStop();
+
   return true;
 }
+
+
+template<typename Controller_>
+void ControllerRos<Controller_>::swapOut() {
+ROS_INFO("Calling swap out for controller %s",this->getName().c_str());
+  cancelWorkers();
+  this->isRunning_ = false;
+  this->stop();
+}
+
+
 template<typename Controller_>
 void ControllerRos<Controller_>::emergencyStop()
 {
   ROCO_INFO("ControllerRos::emergencyStop() called!");
   sendEmergencyCommand();
+
   if (this->getName() != emergencyStopControllerName_) {
     signal_logger::logger->stopLogger();
     signal_logger::logger->saveLoggerData();
     controllerManager_->switchControllerAfterEmergencyStop();
   }
 
+  cancelWorkers();
   controllerManager_->notifyEmergencyState();
 
 }
