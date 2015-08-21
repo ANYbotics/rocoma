@@ -44,17 +44,27 @@
 
 #include "roco_freeze/RocoFreeze.hpp"
 #include <roco/controllers/LocomotionControllerInterface.hpp>
-#include <robot_model/State.hpp>
-#include <robot_model/Command.hpp>
+#include <quadruped_model/common/State.hpp>
+#include <quadruped_model/common/Command.hpp>
 
 #include <any_msgs/State.h>
 
 #include <boost/ptr_container/ptr_vector.hpp>
 
+#include <mutex>
+
+#include <roscpp_nodewrap/worker/Worker.h>
+
 namespace locomotion_controller {
 
 class ControllerManager;
-void add_locomotion_controllers(locomotion_controller::ControllerManager* manager, robot_model::State& state, robot_model::Command& command, ros::NodeHandle& nodeHandle);
+class LocomotionController;
+
+void add_locomotion_controllers(
+    locomotion_controller::ControllerManager* manager,
+    quadruped_model::State& state,
+    quadruped_model::Command& command,
+    ros::NodeHandle& nodeHandle);
 
 class ControllerManager
 {
@@ -62,11 +72,14 @@ class ControllerManager
   typedef roco::controllers::LocomotionControllerInterface Controller;
   typedef roco::controllers::LocomotionControllerInterface* ControllerPtr;
  public:
-  ControllerManager();
+  explicit ControllerManager(locomotion_controller::LocomotionController* locomotionController);
   virtual ~ControllerManager();
 
   void updateController();
-  void setupControllers(double dt, robot_model::State& state, robot_model::Command& command, ros::NodeHandle& nodeHandle);
+  void setupControllers(double dt,
+                        quadruped_model::State& state,
+                        quadruped_model::Command& command,
+                        ros::NodeHandle& nodeHandle);
   void addController(ControllerPtr controller);
   bool switchController(locomotion_controller_msgs::SwitchController::Request  &req,
                         locomotion_controller_msgs::SwitchController::Response &res);
@@ -82,22 +95,27 @@ class ControllerManager
   bool isRealRobot() const;
   void setIsRealRobot(bool isRealRobot);
 
+  locomotion_controller::LocomotionController* getLocomotionController();
   void notifyEmergencyState();
 
  protected:
   void switchToEmergencyTask();
- protected:
+
   double timeStep_;
   bool isInitializingTask_;
   boost::ptr_vector<Controller> controllers_;
   ControllerPtr activeController_;
   bool isRealRobot_;
 
+  locomotion_controller::LocomotionController* locomotionController_;
+  std::recursive_mutex activeControllerMutex_;
+
   //--- Notify an emergency stop
   void publishEmergencyState(bool emergencyState);
   ros::Publisher emergencyStopStatePublisher_;
   any_msgs::State emergencyStopStateMsg_;
   //---
+
 };
 
 } /* namespace locomotion_controller */

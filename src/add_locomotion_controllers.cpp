@@ -27,7 +27,7 @@
 */
 /*!
  * @file    locomotion_controllers.cpp
- * @author  Christian Gehring
+ * @author  Christian Gehring, Dario Bellicoso
  * @date    Oct, 2014
  */
 #include <ros/package.h>
@@ -35,17 +35,21 @@
 #include <locomotion_controller/ControllerManager.hpp>
 #include <locomotion_controller/ControllerRos.hpp>
 
-#include <ros/package.h>
-
 #include <roco_assembly/controllers.hpp>
 
 namespace locomotion_controller {
 
-void add_locomotion_controllers(locomotion_controller::ControllerManager* manager, robot_model::State& state, robot_model::Command& command, ros::NodeHandle& nodeHandle) {
+void add_locomotion_controllers(locomotion_controller::ControllerManager* manager,
+                                quadruped_model::State& state,
+                                quadruped_model::Command& command,
+                                ros::NodeHandle& nodeHandle) {
+
+  std::string quadrupedName;
+  nodeHandle.param<std::string>("quadruped/name", quadrupedName, "starleth");
 
 #ifdef USE_TASK_LOCODEMO
   auto controllerLocoDemo = new ControllerRos<loco_demo::LocoDemo>(state, command);
-  controllerLocoDemo->setParameterPath(ros::package::getPath("loco_demo"));
+  controllerLocoDemo->setParameterPath(ros::package::getPath("loco_demo_parameters") + "/" + quadrupedName);
   controllerLocoDemo->setControllerManager(manager);
   controllerLocoDemo->setIsRealRobotFromManager(manager->isRealRobot());
   manager->addController(controllerLocoDemo);
@@ -53,7 +57,7 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
 
 #ifdef USE_TASK_LOCODEMO_ROS
   auto controllerLocoDemoRos = new ControllerRos<loco_demo_ros::LocoDemoRos>(state, command);
-  controllerLocoDemoRos->setParameterPath(ros::package::getPath("loco_demo"));
+  controllerLocoDemoRos->setParameterPath(ros::package::getPath("loco_demo_parameters") + "/" + quadrupedName);
   controllerLocoDemoRos->setControllerManager(manager);
   controllerLocoDemoRos->setIsRealRobotFromManager(manager->isRealRobot());
   controllerLocoDemoRos->setNodeHandle(nodeHandle);
@@ -62,7 +66,8 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
 
 #ifdef USE_TASK_LOCOCRAWLING
    auto controllerCrawling = new ControllerRos<loco_crawling::Crawling>(state, command);
-   controllerCrawling->setParameterPath(ros::package::getPath("loco_crawling"));
+   controllerCrawling->setParameterPath(ros::package::getPath("loco_crawling_parameters"));
+   controllerCrawling->setQuadrupedName(quadrupedName);
    controllerCrawling->setControllerManager(manager);
    controllerCrawling->setIsRealRobotFromManager(manager->isRealRobot());
    manager->addController(controllerCrawling);
@@ -86,7 +91,8 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
 
 #ifdef USE_TASK_LOCOCRAWLING_ROS
    auto controllerCrawlingRos = new ControllerRos<loco_crawling_ros::LocoCrawlingRos>(state, command);
-   controllerCrawlingRos->setParameterPath(ros::package::getPath("loco_crawling"));
+   controllerCrawlingRos->setParameterPath(ros::package::getPath("loco_crawling_parameters"));
+   controllerCrawlingRos->setQuadrupedName(quadrupedName);
    controllerCrawlingRos->setControllerManager(manager);
    controllerCrawlingRos->setIsRealRobotFromManager(manager->isRealRobot());
    controllerCrawlingRos->setNodeHandle(nodeHandle);
@@ -165,6 +171,13 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
    controllerRocoSeaTestFrictionId->setControllerManager(manager);
    controllerRocoSeaTestFrictionId->setIsRealRobotFromManager(manager->isRealRobot());
     manager->addController(controllerRocoSeaTestFrictionId);
+#endif
+
+#ifdef USE_TASK_ROCOSEATEST_ANYMAL
+   auto controllerRocoSeaTestAnymal = new ControllerRos<roco_sea_test_anymal::RocoSeaTestAnymal>(state, command);
+   controllerRocoSeaTestAnymal->setControllerManager(manager);
+   controllerRocoSeaTestAnymal->setIsRealRobotFromManager(manager->isRealRobot());
+   manager->addController(controllerRocoSeaTestAnymal);
 #endif
 
 #ifdef USE_TASK_LOCOBOUND

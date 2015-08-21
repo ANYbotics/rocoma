@@ -57,6 +57,10 @@
 
 #include <memory>
 #include <mutex>
+#include <condition_variable>
+
+
+#include <roscpp_nodewrap/worker/Worker.h>
 
 
 namespace locomotion_controller {
@@ -78,6 +82,19 @@ class LocomotionController : public nodewrap::NodeImpl
   void init();
   void cleanup();
 
+  template<class T>
+  nodewrap::Worker addWrappedWorker(const std::string& name,
+                                    const ros::Rate& defaultRate,
+                                    bool (T::*fp)(const nodewrap::WorkerEvent&))
+  {
+    return this->addWorker<T>(name, defaultRate, fp);
+  }
+
+  nodewrap::Worker addWrappedWorker(const std::string& name,
+                                    const nodewrap::WorkerOptions& defaultOptions);
+
+  double getSamplingFrequency() const;
+
 
  protected:
   void publish();
@@ -95,11 +112,19 @@ class LocomotionController : public nodewrap::NodeImpl
   void initializeSubscribers();
 
   void updateControllerAndPublish(const quadruped_msgs::RobotState::ConstPtr& robotState);
+  const std::string& getQuadrupedName() const;
+
+  /*
+   * Worker callbacks
+   */
+  bool updateControllerWorker(const nodewrap::WorkerEvent& event);
 
  private:
   double timeStep_;
   bool isRealRobot_;
+  double samplingFrequency_;
   std::string defaultController_;
+  std::string quadrupedName_;
 
   model::Model model_;
   ControllerManager controllerManager_;
@@ -121,12 +146,26 @@ class LocomotionController : public nodewrap::NodeImpl
 
   series_elastic_actuator_msgs::SeActuatorCommandsPtr jointCommands_;
 
+  quadruped_msgs::RobotStateConstPtr robotState_;
 
-
+//   std::mutex mutexControllerManager_;
   std::mutex mutexJointCommands_;
   std::mutex mutexJoystick_;
-  std::mutex mutexModelAndControllerManager_;
+  std::mutex mutexModel_;
   std::mutex mutexUpdateControllerAndPublish_;
+  std::mutex mutexRobotState_;
+
+  /*
+   * Nodewrap worker
+   */
+  nodewrap::Worker controllerWorker_;
+  std::condition_variable rcvdRobotState_;
+  ros::Time robotStateStamp_;
+
+  std::shared_ptr<ros::CallbackQueue> jointCommandsCallbackQueue_;
+  size_t jointCommandsNumSubscribers_;
+  void jointCommandsSubscriberConnect(const ros::SingleSubscriberPublisher& pub);
+  void jointCommandsSubscriberDisconnect(const ros::SingleSubscriberPublisher& pub);
 
 };
 

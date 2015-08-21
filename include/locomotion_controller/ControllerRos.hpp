@@ -34,7 +34,7 @@
  */
 /*!
 * @file     ControllerRos.hpp
-* @author   Christian Gehring
+* @author   Christian Gehring, Dario Bellicoso
 * @date     Dec, 2014
 * @brief
 */
@@ -47,9 +47,14 @@
 #include <roco/controllers/ControllerAdapterInterface.hpp>
 #include <roco/controllers/LocomotionController.hpp>
 #include <signal_logger/logger.hpp>
-#include <robot_model/robot_model.hpp>
+
+#include "quadruped_model/common/topology.hpp"
+#include "quadruped_model/common/containers.hpp"
+#include "quadruped_model/common/Command.hpp"
 
 #include "locomotion_controller/ControllerManager.hpp"
+#include "locomotion_controller/LocomotionController.hpp"
+#include "locomotion_controller/WorkerWrapper.hpp"
 
 #include <iostream>
 #include <exception>      // std::exception
@@ -57,7 +62,9 @@
 namespace locomotion_controller {
 
 template<typename Controller_>
-class ControllerRos:  public roco::controllers::ControllerAdapterInterface, public Controller_, virtual public roco::controllers::LocomotionController
+class ControllerRos:  public roco::controllers::ControllerAdapterInterface,
+                      public Controller_,
+                      virtual public roco::controllers::LocomotionController
 {
  public:
   typedef Controller_ Controller;
@@ -92,6 +99,16 @@ class ControllerRos:  public roco::controllers::ControllerAdapterInterface, publ
   virtual Command& getCommand();
 
   virtual void emergencyStop();
+
+  virtual void cancelWorkers();
+  virtual void startWorkers();
+
+  virtual void swapOut();
+
+  virtual roco::WorkerHandle addWorker(const roco::WorkerOptions& options);
+  virtual bool startWorker(const roco::WorkerHandle& workerHandle);
+  virtual bool cancelWorker(const roco::WorkerHandle& workerHandle);
+
  protected:
   bool updateState(double dt, bool checkState=true);
   bool updateCommand(double dt, bool forceSendingControlModes);
@@ -107,6 +124,14 @@ class ControllerRos:  public roco::controllers::ControllerAdapterInterface, publ
   Command& command_;
   ControllerManager* controllerManager_;
   std::string emergencyStopControllerName_;
+
+  nodewrap::Worker signalLoggerWorker_;
+
+  std::map<std::string, WorkerWrapper> workers_;
+
+  // Worker callbacks
+  virtual bool signalLoggerWorker(const nodewrap::WorkerEvent& event);
+
 };
 
 

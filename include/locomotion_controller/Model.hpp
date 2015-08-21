@@ -31,10 +31,8 @@
  * @date    Oct, 2014
  */
 
-#ifndef LOCOMOTION_CONTROLLER_MODEL_HPP_
-#define LOCOMOTION_CONTROLLER_MODEL_HPP_
+#pragma once
 
-#include "robot_model/RobotModel.hpp"
 #include "robotUtils/terrains/TerrainBase.hpp"
 
 #include <ros/ros.h>
@@ -52,9 +50,9 @@
 #include <series_elastic_actuator_msgs/SeActuatorCommand.h>
 #include <series_elastic_actuator_msgs/SeActuatorState.h>
 
-#include <robot_model/State.hpp>
-#include <robot_model/Command.hpp>
-
+#include <quadruped_model/QuadrupedModel.hpp>
+#include <quadruped_model/common/State.hpp>
+#include <quadruped_model/common/Command.hpp>
 
 #include <kindr/rotations/RotationEigen.hpp>
 #include <kindr/rotations/RotationDiffEigen.hpp>
@@ -67,6 +65,7 @@ class Model
  public:
   static constexpr int numberOfJoints_ = 12;
   typedef kindr::rotations::eigen_impl::RotationQuaternionPD RotationQuaternion;
+  typedef kindr::rotations::eigen_impl::RotationMatrixPD     RotationMatrix;
   typedef kindr::rotations::eigen_impl::EulerAnglesZyxPD EulerAnglesZyx;
   typedef kindr::rotations::eigen_impl::LocalAngularVelocityPD LocalAngularVelocity;
   typedef kindr::rotations::eigen_impl::AngleAxisPD AngleAxis;
@@ -81,12 +80,18 @@ class Model
  public:
   Model();
   virtual ~Model();
-  void initializeForController(double dt,bool isRealRobot);
-  void initializeForStateEstimator(double dt, bool isRealRobot);
+  void initializeForController(double dt,
+                               bool isRealRobot,
+                               const std::string& pathToUrdfFile,
+                               const quadruped_model::Quadrupeds& quadruped);
+  void initializeForStateEstimator(double dt,
+                                   bool isRealRobot,
+                                   const std::string& pathToUrdfFile,
+                                   const quadruped_model::Quadrupeds& quadruped);
   void reinitialize(double dt);
   void addVariablesToLog();
 
-  void setRobotModelParameters();
+//  void setRobotModelParameters();
   void setRobotState(const quadruped_msgs::RobotState::ConstPtr& robotState);
   void setRobotState(const sensor_msgs::ImuPtr& imu,
                      const sensor_msgs::JointStatePtr& jointState,
@@ -110,22 +115,21 @@ class Model
   void setSeActuatorReadings(const series_elastic_actuator_msgs::SeActuatorReadings::ConstPtr& readings);
   void setSeActuatorState(const int iJoint, const series_elastic_actuator_msgs::SeActuatorState& state);
   void setSeActuatorCommanded(const int iJoint, const series_elastic_actuator_msgs::SeActuatorCommand& commanded);
-  robot_model::RobotModel* getRobotModel();
+  quadruped_model::QuadrupedModel* getQuadrupedModel();
   robotTerrain::TerrainBase* getTerrainModel();
-  robot_model::State& getState();
-  robot_model::Command& getCommand();
+  quadruped_model::State& getState();
+  quadruped_model::Command& getCommand();
 
-  const robot_model::State& getState() const;
-  const robot_model::Command& getCommand() const;
+  const quadruped_model::State& getState() const;
+  const quadruped_model::Command& getCommand() const;
 
  private:
   ros::Time updateStamp_;
-  std::shared_ptr<robot_model::RobotModel> robotModel_;
+  std::shared_ptr<quadruped_model::QuadrupedModel> quadrupedModel_;
   std::shared_ptr<robotTerrain::TerrainBase> terrain_;
-  robot_model::State state_;
-  robot_model::Command command_;
+  quadruped_model::State state_;
+  quadruped_model::Command command_;
 };
 
 } /* namespace model */
 
-#endif /* MODEL_HPP_ */

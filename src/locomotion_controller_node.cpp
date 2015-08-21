@@ -55,6 +55,11 @@ int main(int argc, char **argv)
 
   ros::init(argc, argv, "locomotion_controller");
   nodewrap::Node<locomotion_controller::LocomotionController> node;
-  ros::spin();
+
+  ros::AsyncSpinner spinner(4);
+  spinner.start();
+  ros::waitForShutdown();
+
+//  ros::spin();
   return 0;
 }
