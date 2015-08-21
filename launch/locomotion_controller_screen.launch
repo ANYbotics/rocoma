@@ -3,7 +3,7 @@
 <launch>
   
   <!-- The locomotion controller can either be run as node or nodelet -->
-  <arg name="execution_mode" default="nodelet"/>
+  <arg name="execution_mode" default="node"/>
   <!-- Quadruped name -->
   <arg name="quadruped_name" default="anymal"/>
   <!-- Quadruped setup -->
