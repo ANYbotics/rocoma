@@ -186,6 +186,14 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
    manager->addController(controllerLocoExample);
 #endif
 
+#ifdef USE_TASK_LOCOGUIDEDTEACHING
+   auto controllerGuidedTeaching = new ControllerRos<loco_guided_teaching::LocoGuidedTeaching>(state, command);
+   controllerGuidedTeaching->setControllerPath(ros::package::getPath("loco_guided_teaching"));
+   controllerGuidedTeaching->setControllerManager(manager);
+   controllerGuidedTeaching->setIsRealRobotFromManager(manager->isRealRobot());
+   manager->addController(controllerGuidedTeaching);
+#endif
+
 }
 
 }
