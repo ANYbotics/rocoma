@@ -106,8 +106,10 @@ class ControllerRos:  public roco::controllers::ControllerAdapterInterface,
   virtual void swapOut();
 
   virtual roco::WorkerHandle addWorker(const roco::WorkerOptions& options);
+  virtual roco::WorkerHandle addWorker(roco::Worker& worker);
   virtual bool startWorker(const roco::WorkerHandle& workerHandle);
   virtual bool cancelWorker(const roco::WorkerHandle& workerHandle);
+
 
  protected:
   bool updateState(double dt, bool checkState=true);
