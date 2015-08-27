@@ -194,6 +194,24 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
    manager->addController(controllerGuidedTeaching);
 #endif
 
+#ifdef USE_TASK_LOCOMOPT
+  auto controllerLocoMopt = new ControllerRos<loco_mopt::LocoMopt>(state, command);
+  controllerLocoMopt->setParameterPath(ros::package::getPath("loco_mopt_parameters") + "/parameters/" + quadrupedName);
+  controllerLocoMopt->setControllerManager(manager);
+  controllerLocoMopt->setIsRealRobotFromManager(manager->isRealRobot());
+  manager->addController(controllerLocoMopt);
+#endif
+
+#ifdef USE_TASK_LOCOMOPT_ROS
+   auto controllerLocoMoptRos = new ControllerRos<loco_mopt_ros::LocoMoptRos>(state, command);
+   controllerLocoMoptRos->setParameterPath(ros::package::getPath("loco_mopt_parameters"));
+   controllerLocoMoptRos->setParameterPath(ros::package::getPath("loco_mopt_parameters") + "/parameters/" + quadrupedName);
+   controllerLocoMoptRos->setControllerManager(manager);
+   controllerLocoMoptRos->setIsRealRobotFromManager(manager->isRealRobot());
+   controllerLocoMoptRos->setNodeHandle(nodeHandle);
+   manager->addController(controllerLocoMoptRos);
+#endif
+
 }
 
 }
