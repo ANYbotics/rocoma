@@ -248,7 +248,7 @@ roco::WorkerHandle ControllerRos<Controller_>::addWorker(roco::Worker& worker) {
   wrapper.worker_ = controllerManager_->getLocomotionController()->addWrappedWorker(options.name_, workerOptions);
 
   worker.workerStartCallback_ = boost::bind(&ControllerRos<Controller_>::startWorker, this, _1);
-  worker.workerCancelCallback_ = boost::bind(&ControllerRos<Controller_>::cancelWorker, this, _1);
+  worker.workerCancelCallback_ = boost::bind(&ControllerRos<Controller_>::cancelWorker, this, _1, _2 );
 
   worker.handle_.name_ = options.name_;
   return worker.handle_;
@@ -265,8 +265,9 @@ bool ControllerRos<Controller_>::startWorker(const roco::WorkerHandle& workerHan
 }
 
 template<typename Controller_>
-bool ControllerRos<Controller_>::cancelWorker(const roco::WorkerHandle& workerHandle) {
-  workers_[workerHandle.name_].worker_.cancel();
+bool ControllerRos<Controller_>::cancelWorker(const roco::WorkerHandle& workerHandle, bool block) {
+  ROCO_INFO_STREAM("ControllerRos::cancelWorker: cancel  " << workerHandle.name_);
+  workers_[workerHandle.name_].worker_.cancel(block);
   return true;
 }
 
