@@ -76,7 +76,8 @@ LocomotionController::LocomotionController():
     model_(),
     controllerManager_(this),
     defaultController_("LocoDemo"),
-    quadrupedName_("starleth")
+    quadrupedName_("starleth"),
+    jointCommandsNumSubscribers_(0)
 {
 
 
