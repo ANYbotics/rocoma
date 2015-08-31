@@ -223,4 +223,10 @@ void ControllerManager::setIsRealRobot(bool isRealRobot) {
 	isRealRobot_ = isRealRobot;
 }
 
+void ControllerManager::cleanup() {
+  for (auto& controller : controllers_) {
+      controller.cleanupController();
+  }
+}
+
 } /* namespace locomotion_controller */

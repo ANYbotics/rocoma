@@ -167,7 +167,10 @@ void LocomotionController::init() {
 
 
 void LocomotionController::cleanup() {
+ controllerWorker_.cancel(true);
 
+ NODEWRAP_INFO("Cleaning up locomotion controller.");
+ controllerManager_.cleanup();
 }
 
 

@@ -63,17 +63,15 @@ ControllerRos<Controller_>::ControllerRos(State& state, Command& command)
   }
 
 }
-;
 
 template<typename Controller_>
 ControllerRos<Controller_>::~ControllerRos()
 {
-  ROCO_WARN("CLEANING");
   if (!cleanupController()) {
     ROCO_WARN("Could not cleanup controller!");
   }
 }
-;
+
 
 template<typename Controller_>
 const roco::time::Time& ControllerRos<Controller_>::getTime() const
@@ -428,6 +426,8 @@ bool ControllerRos<Controller_>::changeController()
 template<typename Controller_>
 bool ControllerRos<Controller_>::cleanupController()
 {
+  ROCO_INFO_STREAM("Cleaning controller " << this->getName() << " up.");
+
   if (!this->isCreated()) {
     ROCO_WARN_STREAM("Controller is not created!");
     return false;
@@ -493,7 +493,14 @@ bool ControllerRos<Controller_>::stopController()
   cancelWorkers();
 
   this->isRunning_ = false;
-  this->stop();
+  try {
+     if(!this->stop()) {
+       ROCO_WARN("Could not stop controller %s!", this->getName().c_str());
+     }
+   }
+   catch (std::exception& e) {
+     ROCO_WARN_STREAM("Could not stop controller " << this->getName() << "! Exception caught: " << e.what());
+   }
   this->emergencyStop();
 
   return true;
@@ -505,7 +512,14 @@ void ControllerRos<Controller_>::swapOut() {
 ROS_INFO("Calling swap out for controller %s",this->getName().c_str());
   cancelWorkers();
   this->isRunning_ = false;
-  this->stop();
+  try {
+    if(!this->stop()) {
+      ROCO_WARN("Could not stop controller %s while swapping out!", this->getName().c_str());
+    }
+  }
+  catch (std::exception& e) {
+    ROCO_WARN_STREAM("Could not stop controller " << this->getName() << " while swapping out! Exception caught: " << e.what());
+  }
 }
 
 
@@ -518,9 +532,21 @@ void ControllerRos<Controller_>::emergencyStop()
   if (this->getName() != emergencyStopControllerName_) {
     signal_logger::logger->stopLogger();
     signal_logger::logger->saveLoggerData();
+
+    // todo: check if stop is needed here
+//    if (this->isRunning_){
+//      try {
+//        if(!this->stop()) {
+//          ROCO_WARN("Could not stop controller %s after emergency stop!", this->getName().c_str());
+//        }
+//      }
+//      catch (std::exception& e) {
+//        ROCO_WARN_STREAM("Could not stop controller " << this->getName() << " after emergency stop! Exception caught: " << e.what());
+//      }
+//    }
+
     controllerManager_->switchControllerAfterEmergencyStop();
   }
-
   cancelWorkers();
   controllerManager_->notifyEmergencyState();
 
