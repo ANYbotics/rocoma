@@ -70,6 +70,7 @@ NODEWRAP_EXPORT_CLASS(locomotion_controller, locomotion_controller::LocomotionCo
 namespace locomotion_controller {
 
 LocomotionController::LocomotionController():
+    useWorker_(true),
     timeStep_(0.0025),
     isRealRobot_(false),
     samplingFrequency_(1.0),
@@ -157,7 +158,7 @@ void LocomotionController::init() {
   nodewrap::WorkerOptions workerOptions;
   workerOptions.callback = boost::bind(&LocomotionController::updateControllerWorker, this, _1);
   workerOptions.frequency = 400;
-  workerOptions.autostart = true;
+  workerOptions.autostart = useWorker_;
   workerOptions.synchronous = false;
   workerOptions.privateCallbackQueue = true;
   workerOptions.priority = 99;
@@ -282,6 +283,10 @@ void LocomotionController::robotStateCallback(const quadruped_msgs::RobotState::
   }
   
   rcvdRobotState_.notify_all();
+
+  if (!useWorker_) {
+    updateControllerAndPublish(msg);
+  }
 }
 
 
@@ -378,11 +383,11 @@ void LocomotionController::updateControllerAndPublish(const quadruped_msgs::Robo
   if (elapsedTimeNSecs > timeStep) {
     NODEWRAP_WARN("Computation of locomotion controller is not real-time! Elapsed time: %lf ms\n", (double)elapsedTimeNSecs*1e-6);
   }
-  if (elapsedTimeNSecs > timeStep*10) {
-    NODEWRAP_ERROR("Computation took more than 10 times the maximum allowed computation time (%lf ms)!", timeStep_*1e3);
-    
-    controllerManager_.emergencyStop();
-  }
+//  if (elapsedTimeNSecs > timeStep*10) {
+//    NODEWRAP_ERROR("Computation took more than 10 times the maximum allowed computation time (%lf ms)!", timeStep_*1e3);
+//
+//    controllerManager_.emergencyStop();
+//  }
 
   //---
 }
