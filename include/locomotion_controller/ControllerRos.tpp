@@ -387,14 +387,14 @@ bool ControllerRos<Controller_>::advanceController(double dt)
     updateState(dt);
     if (!this->advance(dt)) {
       ROCO_WARN_STREAM("Controller::advance() returned false!");
-      emergencyStop();
+      stopController();
       return true;
     }
     updateCommand(dt, false);
 
   } catch (std::exception& e) {
     ROCO_WARN_STREAM("Exception caught: " << e.what());
-    emergencyStop();
+    stopController();
     return true;
   }
 

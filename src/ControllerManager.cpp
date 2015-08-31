@@ -224,6 +224,7 @@ void ControllerManager::setIsRealRobot(bool isRealRobot) {
 }
 
 void ControllerManager::cleanup() {
+  emergencyStop();
   for (auto& controller : controllers_) {
       controller.cleanupController();
   }
