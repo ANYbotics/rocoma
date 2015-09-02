@@ -70,7 +70,7 @@ NODEWRAP_EXPORT_CLASS(locomotion_controller, locomotion_controller::LocomotionCo
 namespace locomotion_controller {
 
 LocomotionController::LocomotionController():
-    useWorker_(true),
+    useWorker_(false),
     timeStep_(0.0025),
     isRealRobot_(false),
     samplingFrequency_(1.0),
