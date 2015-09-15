@@ -4,7 +4,7 @@
   
   <!-- Arguments -->
   <arg name="launch_prefix"   default=""/>
-  <arg name="quadruped_name"  default="anymal"/>
+  <arg name="quadruped_name"  default="starleth"/>
   <arg name="quadruped_setup" default="minimal"/>
      
   <!-- Locomotion controller -->

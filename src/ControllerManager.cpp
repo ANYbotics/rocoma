@@ -80,16 +80,15 @@ void ControllerManager::setupControllers(
 }
 
 void ControllerManager::addController(ControllerPtr controller)  {
+  ROS_INFO("[ControllerManager] Adding controller %s ...", controller->getName().c_str());
   controllers_.push_back(controller);
-//  controller = &controllers_.back();
-
-
 
   if (!controller->createController(timeStep_)) {
+    ROS_ERROR("[ControllerManager] Could not create controller %s!", controller->getName().c_str());
     std::string error = "Could not add controller " +  controller->getName() + "!";
     throw std::runtime_error(error);
   }
-  ROS_INFO("Added controller %s.", controller->getName().c_str());
+  ROS_INFO("[ControllerManager] ... finished adding controller %s.", controller->getName().c_str());
 }
 
 
@@ -222,6 +221,13 @@ bool ControllerManager::isRealRobot() const {
 }
 void ControllerManager::setIsRealRobot(bool isRealRobot) {
 	isRealRobot_ = isRealRobot;
+}
+
+void ControllerManager::cleanup() {
+  emergencyStop();
+  for (auto& controller : controllers_) {
+      controller.cleanupController();
+  }
 }
 
 } /* namespace locomotion_controller */

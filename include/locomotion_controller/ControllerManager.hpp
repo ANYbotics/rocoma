@@ -97,7 +97,7 @@ class ControllerManager
 
   locomotion_controller::LocomotionController* getLocomotionController();
   void notifyEmergencyState();
-
+  void cleanup();
  protected:
   void switchToEmergencyTask();
 

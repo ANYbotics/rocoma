@@ -63,17 +63,15 @@ ControllerRos<Controller_>::ControllerRos(State& state, Command& command)
   }
 
 }
-;
 
 template<typename Controller_>
 ControllerRos<Controller_>::~ControllerRos()
 {
-  ROCO_WARN("CLEANING");
   if (!cleanupController()) {
     ROCO_WARN("Could not cleanup controller!");
   }
 }
-;
+
 
 template<typename Controller_>
 const roco::time::Time& ControllerRos<Controller_>::getTime() const
@@ -231,14 +229,47 @@ roco::WorkerHandle ControllerRos<Controller_>::addWorker(const roco::WorkerOptio
 }
 
 template<typename Controller_>
+roco::WorkerHandle ControllerRos<Controller_>::addWorker(roco::Worker& worker) {
+
+  auto& options  = worker.options_;
+  workers_.emplace(options.name_, WorkerWrapper());
+  auto& wrapper = workers_[options.name_];
+
+  wrapper.options_ = options;
+
+  nodewrap::WorkerOptions workerOptions;
+  workerOptions.autostart =  options.autostart_;
+  workerOptions.frequency =  options.frequency_;
+  workerOptions.priority =  options.priority_;
+  workerOptions.synchronous =  options.synchronous_;
+  workerOptions.callback = boost::bind(&WorkerWrapper::workerCallback, wrapper, _1);
+  wrapper.worker_ = controllerManager_->getLocomotionController()->addWrappedWorker(options.name_, workerOptions);
+
+  worker.workerStartCallback_ = boost::bind(&ControllerRos<Controller_>::startWorker, this, _1);
+  worker.workerCancelCallback_ = boost::bind(&ControllerRos<Controller_>::cancelWorker, this, _1, _2 );
+
+  worker.handle_.name_ = options.name_;
+  return worker.handle_;
+}
+
+
+
+template<typename Controller_>
 bool ControllerRos<Controller_>::startWorker(const roco::WorkerHandle& workerHandle) {
+//  ROCO_INFO_STREAM("ControllerRos::startWorker: start " << workerHandle.name_);
   workers_[workerHandle.name_].worker_.start();
+//  ROCO_INFO_STREAM("ControllerRos::startWorker started " << workerHandle.name_);
+  return true;
 }
 
 template<typename Controller_>
-bool ControllerRos<Controller_>::cancelWorker(const roco::WorkerHandle& workerHandle) {
-  workers_[workerHandle.name_].worker_.cancel();
+bool ControllerRos<Controller_>::cancelWorker(const roco::WorkerHandle& workerHandle, bool block) {
+  ROCO_INFO_STREAM("ControllerRos::cancelWorker: cancel  " << workerHandle.name_);
+  workers_[workerHandle.name_].worker_.cancel(block);
+  return true;
 }
+
+
 
 
 template<typename Controller_>
@@ -356,14 +387,14 @@ bool ControllerRos<Controller_>::advanceController(double dt)
     updateState(dt);
     if (!this->advance(dt)) {
       ROCO_WARN_STREAM("Controller::advance() returned false!");
-      emergencyStop();
+      stopController();
       return true;
     }
     updateCommand(dt, false);
 
   } catch (std::exception& e) {
     ROCO_WARN_STREAM("Exception caught: " << e.what());
-    emergencyStop();
+    stopController();
     return true;
   }
 
@@ -395,6 +426,8 @@ bool ControllerRos<Controller_>::changeController()
 template<typename Controller_>
 bool ControllerRos<Controller_>::cleanupController()
 {
+  ROCO_INFO_STREAM("Cleaning controller " << this->getName() << " up.");
+
   if (!this->isCreated()) {
     ROCO_WARN_STREAM("Controller is not created!");
     return false;
@@ -460,7 +493,14 @@ bool ControllerRos<Controller_>::stopController()
   cancelWorkers();
 
   this->isRunning_ = false;
-  this->stop();
+  try {
+     if(!this->stop()) {
+       ROCO_WARN("Could not stop controller %s!", this->getName().c_str());
+     }
+   }
+   catch (std::exception& e) {
+     ROCO_WARN_STREAM("Could not stop controller " << this->getName() << "! Exception caught: " << e.what());
+   }
   this->emergencyStop();
 
   return true;
@@ -472,7 +512,14 @@ void ControllerRos<Controller_>::swapOut() {
 ROS_INFO("Calling swap out for controller %s",this->getName().c_str());
   cancelWorkers();
   this->isRunning_ = false;
-  this->stop();
+  try {
+    if(!this->stop()) {
+      ROCO_WARN("Could not stop controller %s while swapping out!", this->getName().c_str());
+    }
+  }
+  catch (std::exception& e) {
+    ROCO_WARN_STREAM("Could not stop controller " << this->getName() << " while swapping out! Exception caught: " << e.what());
+  }
 }
 
 
@@ -485,9 +532,21 @@ void ControllerRos<Controller_>::emergencyStop()
   if (this->getName() != emergencyStopControllerName_) {
     signal_logger::logger->stopLogger();
     signal_logger::logger->saveLoggerData();
+
+    // todo: check if stop is needed here
+//    if (this->isRunning_){
+//      try {
+//        if(!this->stop()) {
+//          ROCO_WARN("Could not stop controller %s after emergency stop!", this->getName().c_str());
+//        }
+//      }
+//      catch (std::exception& e) {
+//        ROCO_WARN_STREAM("Could not stop controller " << this->getName() << " after emergency stop! Exception caught: " << e.what());
+//      }
+//    }
+
     controllerManager_->switchControllerAfterEmergencyStop();
   }
-
   cancelWorkers();
   controllerManager_->notifyEmergencyState();
 
