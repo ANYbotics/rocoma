@@ -70,7 +70,7 @@ NODEWRAP_EXPORT_CLASS(locomotion_controller, locomotion_controller::LocomotionCo
 namespace locomotion_controller {
 
 LocomotionController::LocomotionController():
-    useWorker_(false),
+    useWorker_(true),
     timeStep_(0.0025),
     isRealRobot_(false),
     samplingFrequency_(1.0),
@@ -92,8 +92,10 @@ void LocomotionController::init() {
   //--- Read parameters.
   getNodeHandle().param<double>("controller/time_step", timeStep_, 0.0025);
   getNodeHandle().param<bool>("controller/is_real_robot", isRealRobot_, false);
+  getNodeHandle().param<bool>("controller/use_worker", useWorker_, true);
   getNodeHandle().param<std::string>("controller/default", defaultController_, "LocoDemo");
   getNodeHandle().param<std::string>("quadruped/name", quadrupedName_, "starleth");
+
   //---
 
   //--- Configure logger.
