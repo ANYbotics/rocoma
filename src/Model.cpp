@@ -167,50 +167,7 @@ void Model::addVariablesToLog() {
 
 void Model::setRobotState(const quadruped_msgs::RobotState::ConstPtr& robotState) {
 
-  namespace rot = kindr::rotations::eigen_impl;
-
-  static quadruped_model::VectorQb Qb = quadruped_model::VectorQb::Zero();
-  static quadruped_model::VectorQb dQb = quadruped_model::VectorQb::Zero();
-  static quadruped_model::VectorQb ddQb = quadruped_model::VectorQb::Zero();
-  static quadruped_model::VectorAct jointTorques;
-  static quadruped_model::VectorQj jointPositions;
-  static quadruped_model::VectorQj jointVelocities;
-
-  Qb(0) = robotState->pose.position.x;
-  Qb(1) = robotState->pose.position.y;
-  Qb(2) = robotState->pose.position.z;
-
-  RotationQuaternion orientationWorldToBase(robotState->pose.orientation.w,
-                                            robotState->pose.orientation.x,
-                                            robotState->pose.orientation.y,
-                                            robotState->pose.orientation.z);
-
-  Qb.segment<3>(3) = rot::EulerAnglesXyzPD(orientationWorldToBase).vector();
-
-
-  Eigen::Vector3d B_v_B;
-  B_v_B(0) = robotState->twist.linear.x;
-  B_v_B(1) = robotState->twist.linear.y;
-  B_v_B(2) = robotState->twist.linear.z;
-
-  const Eigen::Vector3d I_v_B = orientationWorldToBase.inverseRotate(B_v_B);
-  dQb.segment<3>(0) = I_v_B;
-
-  LocalAngularVelocity localAngularVelocityKindr(robotState->twist.angular.x,
-                                                 robotState->twist.angular.y,
-                                                 robotState->twist.angular.z);
-  const Eigen::Vector3d drpy = rot::EulerAnglesXyzDiffPD(
-      rot::EulerAnglesXyzPD(orientationWorldToBase), localAngularVelocityKindr)
-      .toImplementation();
-
-  dQb.tail(3) = drpy;
-
-  Eigen::Vector3d globalAngularVelocity = orientationWorldToBase.inverseRotate(
-      localAngularVelocityKindr.toImplementation());
-
   /* set contacts */
-
-
   static quadruped_model::Force force;
   static quadruped_model::Vector normal;
   bool isClosed;
@@ -240,34 +197,51 @@ void Model::setRobotState(const quadruped_msgs::RobotState::ConstPtr& robotState
 
   }
 
+
+  static quadruped_model::VectorAct jointTorques;
+  static quadruped_model::VectorQj jointPositions;
+  static quadruped_model::VectorQj jointVelocities;
+
   for (int i = 0; i < jointPositions.size(); i++) {
     jointTorques(i) = robotState->joints.effort[i];
     jointPositions(i) = robotState->joints.position[i];
     jointVelocities(i) = robotState->joints.velocity[i];
   }
 
-  quadrupedModel_->setTorsoGeneralizedPositionsEulerXyz(Qb);
-  quadrupedModel_->setTorsoGeneralizedVelocitiesEulerXyz(dQb);
-  quadrupedModel_->setTorsoLocalAngularVelocity(localAngularVelocityKindr);
-//  quadrupedModel_->setMainBodyGlobalAngularVelocity(globalAngularVelocity);
+  RotationQuaternion orientationWorldToBase(robotState->pose.orientation.w,
+                                              robotState->pose.orientation.x,
+                                              robotState->pose.orientation.y,
+                                              robotState->pose.orientation.z);
 
-  quadrupedModel_->setJointPositions(jointPositions);
-  quadrupedModel_->setJointVelocities(jointVelocities);
+  quadruped_model::LinearVelocity B_v_B(robotState->twist.linear.x,
+                                        robotState->twist.linear.y,
+                                        robotState->twist.linear.z);
+  const quadruped_model::LinearVelocity I_v_B = orientationWorldToBase.inverseRotate(B_v_B);
+
+
+  quadruped_model::LocalAngularVelocity localAngularVelocityKindr(robotState->twist.angular.x,
+                                                                   robotState->twist.angular.y,
+                                                                   robotState->twist.angular.z);
+
+
+  //-- Generalized positions
+  quadrupedModel_->setStatePositionWorldToBaseInWorldFrame(quadruped_model::Position(robotState->pose.position.x,
+                                                                                     robotState->pose.position.y,
+                                                                                     robotState->pose.position.z),
+                                                                                     false);
+  quadrupedModel_->setStateOrientationWorldToBaseQuaternion(orientationWorldToBase, false);
+  quadrupedModel_->setStateJointPositions(jointPositions, false);
+  //--
+
+  //-- Generalized velocities
+  quadrupedModel_->setStateLinearVelocityInWorldFrame(I_v_B, false);
+  quadrupedModel_->setStateAngularVelocityInBaseFrame(localAngularVelocityKindr, false);
+  quadrupedModel_->setStateJointVelocities(jointVelocities);
+  //--
+
   quadrupedModel_->setJointTorques(jointTorques);
 
-  // todo: acceleration is missing!
-  //  robotModel_.sensors().getSimMainBodyPose()->setddQb(ddQb);
-
   quadrupedModel_->updateKinematics(true, true, false);
-
-//  quadrupedModel_->getSensors().getSimMainBodyPose()->setLinearVelocityBaseInWorldFrame(I_v_B);
-//  quadrupedModel_->getSensors().getSimMainBodyPose()->setLinearVelocityBaseInBaseFrame(B_v_B);
-//  quadrupedModel_->getSensors().getSimMainBodyPose()->setAngularVelocityBaseInWorldFrame(globalAngularVelocity);
-//  quadrupedModel_->getSensors().getSimMainBodyPose()->setAngularVelocityBaseInBaseFrame(localAngularVelocityKindr.toImplementation());
-
-  //   todo: acceleration is missing!
-//  quadrupedModel_->getSensors().getSimMainBodyPose()->setLinearAccelerationBaseInWorldFrame(I_a_B);
-
 
 
   state_.copyStateFromQuadrupedModel();
