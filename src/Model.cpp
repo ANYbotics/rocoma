@@ -45,6 +45,8 @@
 
 #include <quadruped_assembly/quadrupeds.hpp>
 
+#include <roco/log/log_messages.hpp>
+
 namespace model {
 
 Model::Model():
@@ -89,7 +91,9 @@ void Model::initializeForController(double dt, bool isRealRobot, const std::stri
   quadrupedModel_.reset(new quadruped_model::QuadrupedModel(dt));
 
   /* initialize model from URDF file */
-  quadrupedModel_->initModelFromUrdfFile(pathToUrdfFile);
+  if(!quadrupedModel_->initModelFromUrdfFile(pathToUrdfFile)) {
+    ROCO_ERROR("Could not load URDF file!");
+  }
 
   state_.setQuadrupedModelPtr(this->getQuadrupedModel());
   state_.setTerrainPtr(this->getTerrainModel());
@@ -99,6 +103,7 @@ void Model::initializeForController(double dt, bool isRealRobot, const std::stri
   switch (quadruped) {
     case(quadruped_model::Quadrupeds::StarlETH): {
       quadruped_model::quadrupeds::starleth::initializeCommand(command_);
+      quadruped_model::quadrupeds::starleth::initializeLegConfigurations(*quadrupedModel_);
     } break;
     case(quadruped_model::Quadrupeds::Anymal): {
       quadruped_model::quadrupeds::anymal::initializeCommand(command_);
@@ -110,11 +115,6 @@ void Model::initializeForController(double dt, bool isRealRobot, const std::stri
 
   quadrupedModel_->setIsRealRobot(isRealRobot);
 
-  /* activate sensor noise */
-  quadrupedModel_->getSensors().setIsAddingSensorNoise(false);
-
-  /* initialize robot model */
-  quadrupedModel_->init();
 
   terrain_.reset(new robotTerrain::TerrainPlane());
 }
@@ -209,14 +209,12 @@ void Model::setRobotState(const quadruped_msgs::RobotState::ConstPtr& robotState
       localAngularVelocityKindr.toImplementation());
 
   /* set contacts */
-  static Eigen::Vector4i contactFlags;
-  static Eigen::Vector3d force;
-  static Eigen::Vector3d normal;
+
+
+  static quadruped_model::Force force;
+  static quadruped_model::Vector normal;
   bool isClosed;
   for (int iFoot = 0; iFoot < 4; iFoot++) {
-    contactFlags(iFoot) =  (robotState->contacts[iFoot].state == robotState->contacts[iFoot].STATE_CLOSED ||
-                            robotState->contacts[iFoot].state == robotState->contacts[iFoot].STATE_SLIPPING ) ? 1 : 0;
-
     normal.x() = robotState->contacts[iFoot].normal.x;
     normal.y() = robotState->contacts[iFoot].normal.y;
     normal.z() = robotState->contacts[iFoot].normal.z;
@@ -225,8 +223,21 @@ void Model::setRobotState(const quadruped_msgs::RobotState::ConstPtr& robotState
     force.y() = robotState->contacts[iFoot].wrench.force.y;
     force.z() = robotState->contacts[iFoot].wrench.force.z;
 
-    quadrupedModel_->getSensors().setContactForceCSw(iFoot, force);
-    quadrupedModel_->getSensors().setContactNormalCSw(iFoot, normal);
+    quadrupedModel_->getContactContainer()[iFoot].setForce(force, quadruped_model::CoordinateFrame::WORLD);
+    quadrupedModel_->getContactContainer()[iFoot].setNormal(normal, quadruped_model::CoordinateFrame::WORLD);
+    if (robotState->contacts[iFoot].state == robotState->contacts[iFoot].STATE_CLOSED) {
+        quadrupedModel_->getContactContainer()[iFoot].setState(quadruped_model::ContactState::CLOSED);
+    }
+    else if (robotState->contacts[iFoot].state == robotState->contacts[iFoot].STATE_SLIPPING) {
+        quadrupedModel_->getContactContainer()[iFoot].setState(quadruped_model::ContactState::SLIPPING);
+    }
+    else if (robotState->contacts[iFoot].state == robotState->contacts[iFoot].STATE_OPEN) {
+        quadrupedModel_->getContactContainer()[iFoot].setState(quadruped_model::ContactState::OPEN);
+    }
+    else {
+        throw std::range_error("Contact state is not supported!");
+    }
+
   }
 
   for (int i = 0; i < jointPositions.size(); i++) {
@@ -235,10 +246,10 @@ void Model::setRobotState(const quadruped_msgs::RobotState::ConstPtr& robotState
     jointVelocities(i) = robotState->joints.velocity[i];
   }
 
-  quadrupedModel_->setMainBodyGeneralizedPositions(Qb);
-  quadrupedModel_->setMainBodyGeneralizedVelocities(dQb);
-  quadrupedModel_->setMainBodyLocalAngularVelocity(localAngularVelocityKindr.toImplementation());
-  quadrupedModel_->setMainBodyGlobalAngularVelocity(globalAngularVelocity);
+  quadrupedModel_->setTorsoGeneralizedPositionsEulerXyz(Qb);
+  quadrupedModel_->setTorsoGeneralizedVelocitiesEulerXyz(dQb);
+  quadrupedModel_->setTorsoLocalAngularVelocity(localAngularVelocityKindr);
+//  quadrupedModel_->setMainBodyGlobalAngularVelocity(globalAngularVelocity);
 
   quadrupedModel_->setJointPositions(jointPositions);
   quadrupedModel_->setJointVelocities(jointVelocities);
@@ -249,17 +260,15 @@ void Model::setRobotState(const quadruped_msgs::RobotState::ConstPtr& robotState
 
   quadrupedModel_->updateKinematics(true, true, false);
 
-  quadrupedModel_->getSensors().getSimMainBodyPose()->setLinearVelocityBaseInWorldFrame(I_v_B);
-  quadrupedModel_->getSensors().getSimMainBodyPose()->setLinearVelocityBaseInBaseFrame(B_v_B);
-  quadrupedModel_->getSensors().getSimMainBodyPose()->setAngularVelocityBaseInWorldFrame(globalAngularVelocity);
-  quadrupedModel_->getSensors().getSimMainBodyPose()->setAngularVelocityBaseInBaseFrame(localAngularVelocityKindr.toImplementation());
+//  quadrupedModel_->getSensors().getSimMainBodyPose()->setLinearVelocityBaseInWorldFrame(I_v_B);
+//  quadrupedModel_->getSensors().getSimMainBodyPose()->setLinearVelocityBaseInBaseFrame(B_v_B);
+//  quadrupedModel_->getSensors().getSimMainBodyPose()->setAngularVelocityBaseInWorldFrame(globalAngularVelocity);
+//  quadrupedModel_->getSensors().getSimMainBodyPose()->setAngularVelocityBaseInBaseFrame(localAngularVelocityKindr.toImplementation());
 
   //   todo: acceleration is missing!
 //  quadrupedModel_->getSensors().getSimMainBodyPose()->setLinearAccelerationBaseInWorldFrame(I_a_B);
 
-  quadrupedModel_->getSensors().updateSimulatedIMU();
-  quadrupedModel_->getSensors().setContactFlags(contactFlags);
-  quadrupedModel_->update();
+
 
   state_.copyStateFromQuadrupedModel();
   state_.setStatus((quadruped_model::State::StateStatus)robotState->state);
@@ -282,38 +291,57 @@ void Model::setRobotState(const sensor_msgs::ImuPtr& imu,
   static quadruped_model::VectorQj jointPositions;
   static quadruped_model::VectorQj jointVelocities;
 
-  Eigen::Vector3d force;
-  Eigen::Vector3d normal = Eigen::Vector3d::UnitZ();
+  quadruped_model::Force force;
+  quadruped_model::Vector normal = quadruped_model::Vector::UnitZ();
 
 
   force.x() = contactForceLf->wrench.force.x;
   force.y() = contactForceLf->wrench.force.y;
   force.z() = contactForceLf->wrench.force.z;
-  quadrupedModel_->getSensors().setContactForceCSw(0, force);
-  quadrupedModel_->getSensors().setContactNormalCSw(0, normal);
-
+  quadrupedModel_->getContactContainer()[quadruped_model::ContactEnum::LF_FOOT].setForce(force);
+  quadrupedModel_->getContactContainer()[quadruped_model::ContactEnum::LF_FOOT].setNormal(normal);
+  if (contactFlags(0) == 1.0) {
+    quadrupedModel_->getContactContainer()[quadruped_model::ContactEnum::LF_FOOT].setState(quadruped_model::ContactState::CLOSED);
+  }
+  else {
+    quadrupedModel_->getContactContainer()[quadruped_model::ContactEnum::LF_FOOT].setState(quadruped_model::ContactState::OPEN);
+  }
 
   force.x() = contactForceRf->wrench.force.x;
   force.y() = contactForceRf->wrench.force.y;
   force.z() = contactForceRf->wrench.force.z;
-  quadrupedModel_->getSensors().setContactForceCSw(1, force);
-  quadrupedModel_->getSensors().setContactNormalCSw(1, normal);
-
+  quadrupedModel_->getContactContainer()[quadruped_model::ContactEnum::RF_FOOT].setForce(force);
+  quadrupedModel_->getContactContainer()[quadruped_model::ContactEnum::RF_FOOT].setNormal(normal);
+  if (contactFlags(0) == 1.0) {
+    quadrupedModel_->getContactContainer()[quadruped_model::ContactEnum::RF_FOOT].setState(quadruped_model::ContactState::CLOSED);
+  }
+  else {
+    quadrupedModel_->getContactContainer()[quadruped_model::ContactEnum::RF_FOOT].setState(quadruped_model::ContactState::OPEN);
+  }
 
   force.x() = contactForceLh->wrench.force.x;
   force.y() = contactForceLh->wrench.force.y;
   force.z() = contactForceLh->wrench.force.z;
-  quadrupedModel_->getSensors().setContactForceCSw(2, force);
-  quadrupedModel_->getSensors().setContactNormalCSw(2, normal);
-
+  quadrupedModel_->getContactContainer()[quadruped_model::ContactEnum::LH_FOOT].setForce(force);
+  quadrupedModel_->getContactContainer()[quadruped_model::ContactEnum::LH_FOOT].setNormal(normal);
+  if (contactFlags(0) == 1.0) {
+    quadrupedModel_->getContactContainer()[quadruped_model::ContactEnum::LH_FOOT].setState(quadruped_model::ContactState::CLOSED);
+  }
+  else {
+    quadrupedModel_->getContactContainer()[quadruped_model::ContactEnum::LH_FOOT].setState(quadruped_model::ContactState::OPEN);
+  }
 
   force.x() = contactForceRh->wrench.force.x;
   force.y() = contactForceRh->wrench.force.y;
   force.z() = contactForceRh->wrench.force.z;
-  quadrupedModel_->getSensors().setContactForceCSw(3, force);
-  quadrupedModel_->getSensors().setContactNormalCSw(3, normal);
-
-  quadrupedModel_->getSensors().setContactFlags(contactFlags);
+  quadrupedModel_->getContactContainer()[quadruped_model::ContactEnum::RH_FOOT].setForce(force);
+  quadrupedModel_->getContactContainer()[quadruped_model::ContactEnum::RH_FOOT].setNormal(normal);
+  if (contactFlags(0) == 1.0) {
+    quadrupedModel_->getContactContainer()[quadruped_model::ContactEnum::RH_FOOT].setState(quadruped_model::ContactState::CLOSED);
+  }
+  else {
+    quadrupedModel_->getContactContainer()[quadruped_model::ContactEnum::RH_FOOT].setState(quadruped_model::ContactState::OPEN);
+  }
 
   for (int i = 0; i < jointPositions.size(); i++) {
     jointTorques(i) =  jointState->effort[i];
@@ -325,19 +353,19 @@ void Model::setRobotState(const sensor_msgs::ImuPtr& imu,
   accData.x() = imu->linear_acceleration.x;
   accData.y() = imu->linear_acceleration.y;
   accData.z() = imu->linear_acceleration.z;
-  quadrupedModel_->getSensors().getIMU()->setAccelerometerData(accData);
+  //quadrupedModel_->getSensors().getIMU()->setAccelerometerData(accData);
   Eigen::Vector3d gyrData;
   gyrData.x() = imu->angular_velocity.x;
   gyrData.y() = imu->angular_velocity.y;
   gyrData.z() = imu->angular_velocity.z;
-  quadrupedModel_->getSensors().getIMU()->setGyrometerData(gyrData);
+  //quadrupedModel_->getSensors().getIMU()->setGyrometerData(gyrData);
 
   /* update robot model */
-  quadrupedModel_->getSensors().setJointTorques(jointTorques);
-  quadrupedModel_->getSensors().setJointPos(jointPositions);
-  quadrupedModel_->getSensors().setJointVel(jointVelocities);
+//  quadrupedModel_->getSensors().setJointTorques(jointTorques);
+//  quadrupedModel_->getSensors().setJointPos(jointPositions);
+//  quadrupedModel_->getSensors().setJointVel(jointVelocities);
 
-  quadrupedModel_->update();
+//  quadrupedModel_->update();
   updateStamp_ = ros::Time::now();
   state_.copyStateFromQuadrupedModel();
 }
@@ -474,24 +502,28 @@ void Model::getTwist(geometry_msgs::TwistWithCovarianceStampedPtr& pose) {
 
 void Model::setJoystickCommands(const sensor_msgs::Joy::ConstPtr& msg) {
   for (int i=0; i<msg->axes.size();i++) {
-    quadrupedModel_->getSensors().getJoystick()->setAxis(i+1, msg->axes[i]);
+    state_.getJoystickPtr()->setAxis(i+1, msg->axes[i]);
   }
   for (int i=0; i<msg->buttons.size();i++) {
-    quadrupedModel_->getSensors().getJoystick()->setButton(i+1, msg->buttons[i]);
+    state_.getJoystickPtr()->setButton(i+1, msg->buttons[i]);
   }
 }
 
 
 void Model::setCommandVelocity(const geometry_msgs::Twist& twist) {
-	 quadrupedModel_->getSensors().getDesRobotVelocity()->setDesSagittalVelocity(twist.linear.x);
-	 quadrupedModel_->getSensors().getDesRobotVelocity()->setDesCoronalVelocity(twist.linear.y);
-	 quadrupedModel_->getSensors().getDesRobotVelocity()->setDesTurningRate(twist.angular.z);
+//	 quadrupedModel_->getSensors().getDesRobotVelocity()->setDesSagittalVelocity(twist.linear.x);
+//	 quadrupedModel_->getSensors().getDesRobotVelocity()->setDesCoronalVelocity(twist.linear.y);
+//	 quadrupedModel_->getSensors().getDesRobotVelocity()->setDesTurningRate(twist.angular.z);
+
+  state_.getDesiredRobotVelocityPtr()->setDesSagittalVelocity(twist.linear.x);
+  state_.getDesiredRobotVelocityPtr()->setDesCoronalVelocity(twist.linear.y);
+  state_.getDesiredRobotVelocityPtr()->setDesTurningRate(twist.angular.z);
 }
 
 void Model::setMocapData(const geometry_msgs::TransformStamped::ConstPtr& msg) {
-  quadrupedModel_->getSensors().getMocap()->setTimeStamp(msg->header.stamp.toSec());
-  quadrupedModel_->getSensors().getMocap()->setTranslation(Eigen::Vector3d(msg->transform.translation.x, msg->transform.translation.y, msg->transform.translation.z));
-  quadrupedModel_->getSensors().getMocap()->setRotation(Eigen::Quaterniond(msg->transform.rotation.w, msg->transform.rotation.x, msg->transform.rotation.y, msg->transform.rotation.z));
+//  quadrupedModel_->getSensors().getMocap()->setTimeStamp(msg->header.stamp.toSec());
+//  quadrupedModel_->getSensors().getMocap()->setTranslation(Eigen::Vector3d(msg->transform.translation.x, msg->transform.translation.y, msg->transform.translation.z));
+//  quadrupedModel_->getSensors().getMocap()->setRotation(Eigen::Quaterniond(msg->transform.rotation.w, msg->transform.rotation.x, msg->transform.rotation.y, msg->transform.rotation.z));
 }
 
 void Model::setSeActuatorReadings(const series_elastic_actuator_msgs::SeActuatorReadings::ConstPtr& msg) {
@@ -502,13 +534,13 @@ void Model::setSeActuatorReadings(const series_elastic_actuator_msgs::SeActuator
 }
 
 void Model::setSeActuatorState(const int iJoint, const series_elastic_actuator_msgs::SeActuatorState& state) {
-  quadrupedModel_->getSensors().getMotorPos()(iJoint) = state.actuatorPosition;
-  quadrupedModel_->getSensors().getMotorVel()(iJoint) = state.actuatorVelocity;
-  quadrupedModel_->getSensors().getMotorCurrents()(iJoint) = state.current;
+//  quadrupedModel_->getSensors().getMotorPos()(iJoint) = state.actuatorPosition;
+//  quadrupedModel_->getSensors().getMotorVel()(iJoint) = state.actuatorVelocity;
+//  quadrupedModel_->getSensors().getMotorCurrents()(iJoint) = state.current;
 }
 
 void Model::setSeActuatorCommanded(const int iJoint, const series_elastic_actuator_msgs::SeActuatorCommand& commanded) {
-  quadrupedModel_->getSensors().getDesiredMotorVel()(iJoint) = commanded.actuatorVelocity;
+//  quadrupedModel_->getSensors().getDesiredMotorVel()(iJoint) = commanded.actuatorVelocity;
 }
 
 
