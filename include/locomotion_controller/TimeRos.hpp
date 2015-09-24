@@ -42,7 +42,7 @@
 #pragma once
 
 #include <roco/time/Time.hpp>
-#include <ros/Time.hpp>
+#include <ros/ros.h>
 
 class TimeRos: public roco::time::Time, public ros::Time {
 

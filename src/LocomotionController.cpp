@@ -70,13 +70,15 @@ NODEWRAP_EXPORT_CLASS(locomotion_controller, locomotion_controller::LocomotionCo
 namespace locomotion_controller {
 
 LocomotionController::LocomotionController():
+    useWorker_(true),
     timeStep_(0.0025),
     isRealRobot_(false),
     samplingFrequency_(1.0),
     model_(),
     controllerManager_(this),
     defaultController_("LocoDemo"),
-    quadrupedName_("starleth")
+    quadrupedName_("starleth"),
+    jointCommandsNumSubscribers_(0)
 {
 
 
@@ -90,8 +92,10 @@ void LocomotionController::init() {
   //--- Read parameters.
   getNodeHandle().param<double>("controller/time_step", timeStep_, 0.0025);
   getNodeHandle().param<bool>("controller/is_real_robot", isRealRobot_, false);
+  getNodeHandle().param<bool>("controller/use_worker", useWorker_, true);
   getNodeHandle().param<std::string>("controller/default", defaultController_, "LocoDemo");
   getNodeHandle().param<std::string>("quadruped/name", quadrupedName_, "starleth");
+
   //---
 
   //--- Configure logger.
@@ -156,7 +160,7 @@ void LocomotionController::init() {
   nodewrap::WorkerOptions workerOptions;
   workerOptions.callback = boost::bind(&LocomotionController::updateControllerWorker, this, _1);
   workerOptions.frequency = 400;
-  workerOptions.autostart = true;
+  workerOptions.autostart = useWorker_;
   workerOptions.synchronous = false;
   workerOptions.privateCallbackQueue = true;
   workerOptions.priority = 99;
@@ -166,7 +170,10 @@ void LocomotionController::init() {
 
 
 void LocomotionController::cleanup() {
+ controllerWorker_.cancel(true);
 
+ NODEWRAP_INFO("Cleaning up locomotion controller.");
+ controllerManager_.cleanup();
 }
 
 
@@ -278,6 +285,10 @@ void LocomotionController::robotStateCallback(const quadruped_msgs::RobotState::
   }
   
   rcvdRobotState_.notify_all();
+
+  if (!useWorker_) {
+    updateControllerAndPublish(msg);
+  }
 }
 
 
@@ -314,7 +325,7 @@ bool LocomotionController::updateControllerWorker(const nodewrap::WorkerEvent& e
     else {
       NODEWRAP_ERROR("Robot state update was not received within 10 times the maximum allowed computation time (%lf ms)!", 10*timeStep_*1e3);
 
-      controllerManager_.emergencyStop();
+//      controllerManager_.emergencyStop();
     }
   }
   
@@ -339,7 +350,7 @@ bool LocomotionController::updateControllerWorker(const nodewrap::WorkerEvent& e
   if (elapsedTimeNSecs > timeStep*10) {
     NODEWRAP_ERROR("Computation took more than 10 times the maximum allowed computation time (%lf ms)!", timeStep_*1e3);
 
-    controllerManager_.emergencyStop();
+//    controllerManager_.emergencyStop();
   }
   //---
 
@@ -374,11 +385,11 @@ void LocomotionController::updateControllerAndPublish(const quadruped_msgs::Robo
   if (elapsedTimeNSecs > timeStep) {
     NODEWRAP_WARN("Computation of locomotion controller is not real-time! Elapsed time: %lf ms\n", (double)elapsedTimeNSecs*1e-6);
   }
-  if (elapsedTimeNSecs > timeStep*10) {
-    NODEWRAP_ERROR("Computation took more than 10 times the maximum allowed computation time (%lf ms)!", timeStep_*1e3);
-    
-    controllerManager_.emergencyStop();
-  }
+//  if (elapsedTimeNSecs > timeStep*10) {
+//    NODEWRAP_ERROR("Computation took more than 10 times the maximum allowed computation time (%lf ms)!", timeStep_*1e3);
+//
+//    controllerManager_.emergencyStop();
+//  }
 
   //---
 }

@@ -28,6 +28,7 @@
   
   <depend>roco_freeze</depend>
   <depend>kindr</depend>
+  <depend>rbdl</depend>
   <depend>series_elastic_actuator_ros</depend>
   <depend>any_msgs</depend>
 
