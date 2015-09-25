@@ -26,9 +26,10 @@
   <rosparam command="load" ns="locomotion_controller" file="$(find locomotion_controller)/config/services.yaml"/>
 
   <!-- Load parameters from arguments -->
-  <param name="locomotion_controller/quadruped/name"  type="str" value="$(arg quadruped_name)"/>
-  <param name="locomotion_controller/quadruped/setup" type="str" value="$(arg quadruped_setup)"/>
-  <param name="locomotion_controller/logger/class"    type="str" value="$(arg logger_class)"/>
+  <param name="locomotion_controller/quadruped/name"   type="str" value="$(arg quadruped_name)"/>
+  <param name="locomotion_controller/quadruped/setup"  type="str" value="$(arg quadruped_setup)"/>
+  <param name="locomotion_controller/logger/class"     type="str" value="$(arg logger_class)"/>
+  <param name="locomotion_controller/description_name" type="str" value="$(arg description_name)"/>
 
   <!-- Load simulation specific parameters -->
   <group if="$(arg simulation)">
