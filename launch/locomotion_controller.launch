@@ -16,6 +16,8 @@
   <arg name="output" default="screen"/>
   <!-- Console launch prefix -->
   <arg name="launch_prefix" default=""/>
+  <!-- Name of the robot description parameter -->
+  <arg name="description_name" default="quadruped_description"/>
   
   <!-- Load configuration files -->
   <rosparam command="load" ns="locomotion_controller" file="$(find locomotion_controller)/config/parameters.yaml"/>
