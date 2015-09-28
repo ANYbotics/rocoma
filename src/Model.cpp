@@ -165,30 +165,30 @@ void Model::addVariablesToLog() {
 
 }
 
-void Model::setRobotState(const quadruped_msgs::RobotState::ConstPtr& robotState) {
+void Model::setQuadrupedState(const quadruped_msgs::QuadrupedState::ConstPtr& quadrupedState) {
 
   /* set contacts */
   static quadruped_model::Force force;
   static quadruped_model::Vector normal;
   bool isClosed;
   for (int iFoot = 0; iFoot < 4; iFoot++) {
-    normal.x() = robotState->contacts[iFoot].normal.x;
-    normal.y() = robotState->contacts[iFoot].normal.y;
-    normal.z() = robotState->contacts[iFoot].normal.z;
+    normal.x() = quadrupedState->contacts[iFoot].normal.x;
+    normal.y() = quadrupedState->contacts[iFoot].normal.y;
+    normal.z() = quadrupedState->contacts[iFoot].normal.z;
 
-    force.x() = robotState->contacts[iFoot].wrench.force.x;
-    force.y() = robotState->contacts[iFoot].wrench.force.y;
-    force.z() = robotState->contacts[iFoot].wrench.force.z;
+    force.x() = quadrupedState->contacts[iFoot].wrench.force.x;
+    force.y() = quadrupedState->contacts[iFoot].wrench.force.y;
+    force.z() = quadrupedState->contacts[iFoot].wrench.force.z;
 
     quadrupedModel_->getContactContainer()[iFoot].setForce(force, quadruped_model::CoordinateFrame::WORLD);
     quadrupedModel_->getContactContainer()[iFoot].setNormal(normal, quadruped_model::CoordinateFrame::WORLD);
-    if (robotState->contacts[iFoot].state == robotState->contacts[iFoot].STATE_CLOSED) {
+    if (quadrupedState->contacts[iFoot].state == quadrupedState->contacts[iFoot].STATE_CLOSED) {
         quadrupedModel_->getContactContainer()[iFoot].setState(quadruped_model::ContactState::CLOSED);
     }
-    else if (robotState->contacts[iFoot].state == robotState->contacts[iFoot].STATE_SLIPPING) {
+    else if (quadrupedState->contacts[iFoot].state == quadrupedState->contacts[iFoot].STATE_SLIPPING) {
         quadrupedModel_->getContactContainer()[iFoot].setState(quadruped_model::ContactState::SLIPPING);
     }
-    else if (robotState->contacts[iFoot].state == robotState->contacts[iFoot].STATE_OPEN) {
+    else if (quadrupedState->contacts[iFoot].state == quadrupedState->contacts[iFoot].STATE_OPEN) {
         quadrupedModel_->getContactContainer()[iFoot].setState(quadruped_model::ContactState::OPEN);
     }
     else {
@@ -203,31 +203,31 @@ void Model::setRobotState(const quadruped_msgs::RobotState::ConstPtr& robotState
   static quadruped_model::VectorQj jointVelocities;
 
   for (int i = 0; i < jointPositions.size(); i++) {
-    jointTorques(i) = robotState->joints.effort[i];
-    jointPositions(i) = robotState->joints.position[i];
-    jointVelocities(i) = robotState->joints.velocity[i];
+    jointTorques(i) = quadrupedState->joints.effort[i];
+    jointPositions(i) = quadrupedState->joints.position[i];
+    jointVelocities(i) = quadrupedState->joints.velocity[i];
   }
 
-  RotationQuaternion orientationWorldToBase(robotState->pose.orientation.w,
-                                              robotState->pose.orientation.x,
-                                              robotState->pose.orientation.y,
-                                              robotState->pose.orientation.z);
+  RotationQuaternion orientationWorldToBase(quadrupedState->pose.pose.orientation.w,
+                                              quadrupedState->pose.pose.orientation.x,
+                                              quadrupedState->pose.pose.orientation.y,
+                                              quadrupedState->pose.pose.orientation.z);
 
-  quadruped_model::LinearVelocity B_v_B(robotState->twist.linear.x,
-                                        robotState->twist.linear.y,
-                                        robotState->twist.linear.z);
+  quadruped_model::LinearVelocity B_v_B(quadrupedState->twist.twist.linear.x,
+                                        quadrupedState->twist.twist.linear.y,
+                                        quadrupedState->twist.twist.linear.z);
   const quadruped_model::LinearVelocity I_v_B = orientationWorldToBase.inverseRotate(B_v_B);
 
 
-  quadruped_model::LocalAngularVelocity localAngularVelocityKindr(robotState->twist.angular.x,
-                                                                   robotState->twist.angular.y,
-                                                                   robotState->twist.angular.z);
+  quadruped_model::LocalAngularVelocity localAngularVelocityKindr(quadrupedState->twist.twist.angular.x,
+                                                                   quadrupedState->twist.twist.angular.y,
+                                                                   quadrupedState->twist.twist.angular.z);
 
 
   //-- Generalized positions
-  quadrupedModel_->setStatePositionWorldToBaseInWorldFrame(quadruped_model::Position(robotState->pose.position.x,
-                                                                                     robotState->pose.position.y,
-                                                                                     robotState->pose.position.z),
+  quadrupedModel_->setStatePositionWorldToBaseInWorldFrame(quadruped_model::Position(quadrupedState->pose.pose.position.x,
+                                                                                     quadrupedState->pose.pose.position.y,
+                                                                                     quadrupedState->pose.pose.position.z),
                                                                                      false);
   quadrupedModel_->setStateOrientationWorldToBaseQuaternion(orientationWorldToBase, false);
   quadrupedModel_->setStateJointPositions(jointPositions, false);
@@ -245,11 +245,11 @@ void Model::setRobotState(const quadruped_msgs::RobotState::ConstPtr& robotState
 
 
   state_.copyStateFromQuadrupedModel();
-  state_.setStatus((quadruped_model::State::StateStatus)robotState->state);
+  state_.setStatus((quadruped_model::State::StateStatus)quadrupedState->state);
 }
 
 // used by state_estimator_rm
-void Model::setRobotState(const sensor_msgs::ImuPtr& imu,
+void Model::setQuadrupedState(const sensor_msgs::ImuPtr& imu,
                    const sensor_msgs::JointStatePtr& jointState,
                    const geometry_msgs::WrenchStampedPtr& contactForceLf,
                    const geometry_msgs::WrenchStampedPtr& contactForceRf,
@@ -344,8 +344,8 @@ void Model::setRobotState(const sensor_msgs::ImuPtr& imu,
   state_.copyStateFromQuadrupedModel();
 }
 
-void Model::initializeRobotState(quadruped_msgs::RobotStatePtr& robotState) const {
-  quadruped_description::initializeRobotState(*robotState);
+void Model::initializeQuadrupedState(quadruped_msgs::QuadrupedStatePtr& quadrupedState) const {
+  quadruped_description::initializeQuadrupedState(*quadrupedState);
 }
 
 void Model::initializeJointState(sensor_msgs::JointState& jointState) const {
@@ -353,7 +353,7 @@ void Model::initializeJointState(sensor_msgs::JointState& jointState) const {
 }
 
 // used by state_estimator_rm
-void Model::getRobotState(quadruped_msgs::RobotStatePtr& robotState) {
+void Model::getQuadrupedState(quadruped_msgs::QuadrupedStatePtr& quadrupedState) {
 //  namespace rot = kindr::rotations::eigen_impl;
 //
 //  const RotationQuaternion  orientationWorldToBase(RotationMatrix(quadrupedModel_->getOrientationWorldToBody(quadruped_model::BodyEnum::BASE)));
@@ -363,65 +363,65 @@ void Model::getRobotState(quadruped_msgs::RobotStatePtr& robotState) {
 //  const LinearVelocity linearVelocityBaseInBaseFrame = orientationWorldToBase.rotate(linearVelocityBaseInWorldFrame);
 //  const LocalAngularVelocity angularVelocityBaseInBaseFrame(quadrupedModel_->getMainBodyLocalAngularVelocity());
 //
-//  robotState->header.stamp = updateStamp_;
+//  quadrupedState->header.stamp = updateStamp_;
 //
-//  robotState->pose.position.x = positionWorldToBaseInWorldFrame.x();
-//  robotState->pose.position.y = positionWorldToBaseInWorldFrame.y();
-//  robotState->pose.position.z = positionWorldToBaseInWorldFrame.z();
+//  quadrupedState->pose.position.x = positionWorldToBaseInWorldFrame.x();
+//  quadrupedState->pose.position.y = positionWorldToBaseInWorldFrame.y();
+//  quadrupedState->pose.position.z = positionWorldToBaseInWorldFrame.z();
 //
-//  robotState->pose.orientation.w = orientationWorldToBase.w();
-//  robotState->pose.orientation.x = orientationWorldToBase.x();
-//  robotState->pose.orientation.y = orientationWorldToBase.y();
-//  robotState->pose.orientation.z = orientationWorldToBase.z();
+//  quadrupedState->pose.orientation.w = orientationWorldToBase.w();
+//  quadrupedState->pose.orientation.x = orientationWorldToBase.x();
+//  quadrupedState->pose.orientation.y = orientationWorldToBase.y();
+//  quadrupedState->pose.orientation.z = orientationWorldToBase.z();
 //
-//  robotState->twist.linear.x = linearVelocityBaseInBaseFrame.x();
-//  robotState->twist.linear.y = linearVelocityBaseInBaseFrame.y();
-//  robotState->twist.linear.z = linearVelocityBaseInBaseFrame.z();
+//  quadrupedState->twist.linear.x = linearVelocityBaseInBaseFrame.x();
+//  quadrupedState->twist.linear.y = linearVelocityBaseInBaseFrame.y();
+//  quadrupedState->twist.linear.z = linearVelocityBaseInBaseFrame.z();
 //
-//  robotState->twist.angular.x = angularVelocityBaseInBaseFrame.x();
-//  robotState->twist.angular.y = angularVelocityBaseInBaseFrame.y();
-//  robotState->twist.angular.z = angularVelocityBaseInBaseFrame.z();
+//  quadrupedState->twist.angular.x = angularVelocityBaseInBaseFrame.x();
+//  quadrupedState->twist.angular.y = angularVelocityBaseInBaseFrame.y();
+//  quadrupedState->twist.angular.z = angularVelocityBaseInBaseFrame.z();
 //
-//  robotState->joints.header.stamp = updateStamp_;
+//  quadrupedState->joints.header.stamp = updateStamp_;
 //
 //  JointPositions  jointPositions(quadrupedModel_->getJointPositions());
 //  JointVelocities jointVelocities(quadrupedModel_->getJointVelocities());
 //  JointTorques    jointTorques(quadrupedModel_->getJointTorques());
 //
 //  for (int i=0; i<jointPositions.Dimension; i++) {
-//    robotState->joints.position[i]  = jointPositions(i);
-//    robotState->joints.velocity[i]  = jointVelocities(i);
-//    robotState->joints.effort[i]    = jointTorques(i);
+//    quadrupedState->joints.position[i]  = jointPositions(i);
+//    quadrupedState->joints.velocity[i]  = jointVelocities(i);
+//    quadrupedState->joints.effort[i]    = jointTorques(i);
 //  }
 //
-//  for (int i=0; i<robotState->contacts.size(); i++) {
-//    robotState->contacts[i].header.stamp = updateStamp_;
+//  for (int i=0; i<quadrupedState->contacts.size(); i++) {
+//    quadrupedState->contacts[i].header.stamp = updateStamp_;
 //
 //    const Force force(quadrupedModel_->getSensors().getContactForceCSw(i));
-//    robotState->contacts[i].wrench.force.x = force.x();
-//    robotState->contacts[i].wrench.force.y = force.y();
-//    robotState->contacts[i].wrench.force.z = force.z();
+//    quadrupedState->contacts[i].wrench.force.x = force.x();
+//    quadrupedState->contacts[i].wrench.force.y = force.y();
+//    quadrupedState->contacts[i].wrench.force.z = force.z();
 //
 //    Vector normal(quadrupedModel_->getSensors().getContactNormalCSw(i));
-//    robotState->contacts[i].normal.x = normal.x();
-//    robotState->contacts[i].normal.y = normal.y();
-//    robotState->contacts[i].normal.z = normal.z();
+//    quadrupedState->contacts[i].normal.x = normal.x();
+//    quadrupedState->contacts[i].normal.y = normal.y();
+//    quadrupedState->contacts[i].normal.z = normal.z();
 //
 //    Position position(robotModel_->contacts().getCP(robot_model::CP_LF_World2Foot_CSw+i)->getPos());
-//    robotState->contacts[i].position.x = position.x();
-//    robotState->contacts[i].position.y = position.y();
-//    robotState->contacts[i].position.z = position.z();
+//    quadrupedState->contacts[i].position.x = position.x();
+//    quadrupedState->contacts[i].position.y = position.y();
+//    quadrupedState->contacts[i].position.z = position.z();
 //
 //    if (robotModel_->contacts().getCP(robot_model::CP_LF_World2Foot_CSw+i)->getFlag()) {
 ////      std::cout << "leg " << std::to_string(i) << "vel: " << getLinearVelocityFootInBaseFrame(i).norm() << std::endl;
 //      if (robotModel_->contacts().getCP(robot_model::CP_LF_World2Foot_CSw+i)->getVel().norm() < 0.01) {
-//        robotState->contacts[i].state = robotState->contacts[i].STATE_CLOSED;
+//        quadrupedState->contacts[i].state = quadrupedState->contacts[i].STATE_CLOSED;
 //      }
 //      else {
-//        robotState->contacts[i].state = robotState->contacts[i].STATE_SLIPPING;
+//        quadrupedState->contacts[i].state = quadrupedState->contacts[i].STATE_SLIPPING;
 //      }
 //    } else {
-//      robotState->contacts[i].state = robotState->contacts[i].STATE_OPEN;
+//      quadrupedState->contacts[i].state = quadrupedState->contacts[i].STATE_OPEN;
 //    }
 //  }
 //
