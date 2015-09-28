@@ -37,7 +37,7 @@
 #include <roscpp_nodewrap/NodeImpl.h>
 #include <roscpp_nodewrap/Nodelet.h>
 
-#include <quadruped_msgs/RobotState.h>
+#include <quadruped_msgs/QuadrupedState.h>
 #include <sensor_msgs/Joy.h>
 #include <series_elastic_actuator_msgs/SeActuatorCommands.h>
 #include <series_elastic_actuator_msgs/SeActuatorReadings.h>
@@ -98,7 +98,7 @@ class LocomotionController : public nodewrap::NodeImpl
 
  protected:
   void publish();
-  void robotStateCallback(const quadruped_msgs::RobotState::ConstPtr& msg);
+  void quadrupedStateCallback(const quadruped_msgs::QuadrupedState::ConstPtr& msg);
   void joystickCallback(const sensor_msgs::Joy::ConstPtr& msg);
   bool emergencyStop(locomotion_controller_msgs::EmergencyStop::Request  &req,
                      locomotion_controller_msgs::EmergencyStop::Response &res);
@@ -111,7 +111,7 @@ class LocomotionController : public nodewrap::NodeImpl
   void initializePublishers();
   void initializeSubscribers();
 
-  void updateControllerAndPublish(const quadruped_msgs::RobotState::ConstPtr& robotState);
+  void updateControllerAndPublish(const quadruped_msgs::QuadrupedState::ConstPtr& quadrupedState);
   const std::string& getQuadrupedName() const;
 
   /*
@@ -130,7 +130,7 @@ class LocomotionController : public nodewrap::NodeImpl
   model::Model model_;
   ControllerManager controllerManager_;
 
-  ros::Subscriber robotStateSubscriber_;
+  ros::Subscriber quadrupedStateSubscriber_;
   ros::Subscriber joystickSubscriber_;
   ros::Subscriber commandVelocitySubscriber_;
 
@@ -147,21 +147,21 @@ class LocomotionController : public nodewrap::NodeImpl
 
   series_elastic_actuator_msgs::SeActuatorCommandsPtr jointCommands_;
 
-  quadruped_msgs::RobotStateConstPtr robotState_;
+  quadruped_msgs::QuadrupedStateConstPtr quadrupedState_;
 
 //   std::mutex mutexControllerManager_;
   std::mutex mutexJointCommands_;
   std::mutex mutexJoystick_;
   std::mutex mutexModel_;
   std::mutex mutexUpdateControllerAndPublish_;
-  std::mutex mutexRobotState_;
+  std::mutex mutexQuadrupedState_;
 
   /*
    * Nodewrap worker
    */
   nodewrap::Worker controllerWorker_;
-  std::condition_variable rcvdRobotState_;
-  ros::Time robotStateStamp_;
+  std::condition_variable rcvdQuadrupedState_;
+  ros::Time quadrupedStateStamp_;
 
   std::shared_ptr<ros::CallbackQueue> jointCommandsCallbackQueue_;
   size_t jointCommandsNumSubscribers_;

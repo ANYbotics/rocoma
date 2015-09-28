@@ -1,6 +1,6 @@
 subscribers:
-  robot_state: 
-    topic: /state_estimator/robot_state
+  quadruped_state: 
+    topic: /state_estimator/quadruped_state
     queue_size: 100
     latch: false
   joy:

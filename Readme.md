@@ -113,7 +113,7 @@ Note that this configuration does not run with [screen](http://www.gnu.org/softw
 
 #### Subscribed Topics
 
-* **`robot_state`** ([starleth_msgs/RobotState])
+* **`quadruped_state`** ([starleth_msgs/QuadrupedState])
 
     The robot state.
 
