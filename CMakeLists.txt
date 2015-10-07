@@ -37,6 +37,7 @@ find_package(catkin REQUIRED
   COMPONENTS
     any_msgs
     locomotion_controller_msgs
+    nodelet
     parameter_handler_ros
     quadruped_assembly
     quadruped_model
@@ -92,6 +93,7 @@ catkin_package(
   CATKIN_DEPENDS
     any_msgs
     locomotion_controller_msgs
+    nodelet
     parameter_handler_ros
     quadruped_assembly
     quadruped_model

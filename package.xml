@@ -12,6 +12,7 @@
   
   <depend>any_msgs</depend>
   <depend>locomotion_controller_msgs</depend>
+  <depend>nodelet</depend>
   <depend>parameter_handler_ros</depend>
   <depend>quadruped_assembly</depend>
   <depend>quadruped_model</depend>
@@ -28,6 +29,6 @@
   <depend>signal_logger_std</depend>
 
   <export>
- 	  <nodelet plugin="${prefix}/nodelet_plugins.xml"/>
+    <nodelet plugin="${prefix}/nodelet_plugins.xml"/>
   </export>
 </package>
