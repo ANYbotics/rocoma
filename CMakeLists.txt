@@ -33,7 +33,6 @@ find_package(catkin REQUIRED COMPONENTS roco_assembly quadruped_assembly)
 
 include(${roco_assembly_SOURCE_PREFIX}/cmake/roco_ros.cmake)
 
-# This will overwrite the previous find_package(catkin).
 find_package(catkin 
     REQUIRED COMPONENTS
       roscpp
@@ -52,6 +51,7 @@ find_package(catkin
       series_elastic_actuator_ros
       any_msgs
       quadruped_assembly
+      parameter_handler_ros
 )
 
 ## System dependencies are found with CMake's conventions
@@ -84,15 +84,6 @@ if (USE_STARLETH_DESCRIPTION)
     add_definitions(-DUSE_STARLETH_DESCRIPTION)
 endif(USE_STARLETH_DESCRIPTION)
 
-###################################
-## catkin specific configuration ##
-###################################
-## The catkin_package macro generates cmake config files for your package
-## Declare things to be passed to dependent projects
-## INCLUDE_DIRS: uncomment this if you package contains header files
-## LIBRARIES: libraries you create in this project that dependent projects also need
-## CATKIN_DEPENDS: catkin_packages dependent projects also need
-## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
  INCLUDE_DIRS include 
  LIBRARIES locomotion_controller model
@@ -110,7 +101,8 @@ catkin_package(
      series_elastic_actuator_ros 
      quadruped_msgs any_msgs 
      quadruped_model
-# DEPENDS system_lib
+     parameter_handler_ros
+ DEPENDS
 )
 
 ###########

@@ -55,6 +55,9 @@
 #include <signal_logger_std/LoggerStd.hpp>
 #include <signal_logger_ros/LoggerRos.hpp>
 
+#include <parameter_handler/parameter_handler.hpp>
+#include <parameter_handler_ros/ParameterHandlerRos.hpp>
+
 #include <std_srvs/Empty.h>
 
 #include <chrono>
@@ -125,6 +128,13 @@ void LocomotionController::init() {
 
   signal_logger::logger->initLogger((int)(1.0/timeStep_), (int)(1.0/timeStep_), samplingFrequency_, loggingScriptFilename);
   NODEWRAP_INFO("Initialize logger with sampling time: %lfs, sampling frequency: %d and script: %s.", samplingFrequency_, (int)(1.0/timeStep_), loggingScriptFilename.c_str());
+  //---
+
+  //--- Configure parameter handler
+  parameter_handler::handler.reset(new parameter_handler_ros::ParameterHandlerRos());
+  parameter_handler_ros::ParameterHandlerRos* parameterHandlerRos = static_cast<parameter_handler_ros::ParameterHandlerRos*>(parameter_handler::handler.get());
+  parameterHandlerRos->setNodeHandle(getNodeHandle());
+  parameterHandlerRos->initializeServices();
   //---
 
   //--- Configure controllers

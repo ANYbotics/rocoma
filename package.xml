@@ -31,6 +31,8 @@
   <depend>rbdl</depend>
   <depend>series_elastic_actuator_ros</depend>
   <depend>any_msgs</depend>
+  
+  <depend>parameter_handler_ros</depend>
 
   <export>
  	<nodelet plugin="${prefix}/nodelet_plugins.xml"/>
