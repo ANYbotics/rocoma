@@ -87,12 +87,12 @@ const quadruped_model::Command& Model::getCommand() const {
   return command_;
 }
 
-void Model::initializeForController(double dt, bool isRealRobot, const std::string& pathToUrdfFile, const quadruped_model::Quadrupeds& quadruped) {
+void Model::initializeForController(double dt, bool isRealRobot, const std::string& urdfDescription, const quadruped_model::Quadrupeds& quadruped) {
   quadrupedModel_.reset(new quadruped_model::QuadrupedModel(dt));
 
-  /* initialize model from URDF file */
-  if(!quadrupedModel_->initModelFromUrdfFile(pathToUrdfFile)) {
-    ROCO_ERROR("Could not load URDF file!");
+  /* initialize model from URDF decription */
+  if(!quadrupedModel_->initModelFromUrdfString(urdfDescription)) {
+    ROCO_ERROR("[Model::initializeForController] Could not initialize quadruped model from urdf description!");
   }
 
   state_.setQuadrupedModelPtr(this->getQuadrupedModel());
