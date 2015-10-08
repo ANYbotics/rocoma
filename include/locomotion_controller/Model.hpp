@@ -43,7 +43,7 @@
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/TwistWithCovarianceStamped.h>
 #include <geometry_msgs/TransformStamped.h>
-#include <quadruped_msgs/RobotState.h>
+#include <quadruped_msgs/QuadrupedState.h>
 #include <sensor_msgs/Joy.h>
 #include <series_elastic_actuator_msgs/SeActuatorCommands.h>
 #include <series_elastic_actuator_msgs/SeActuatorReadings.h>
@@ -92,18 +92,18 @@ class Model
   void addVariablesToLog();
 
 //  void setRobotModelParameters();
-  void setRobotState(const quadruped_msgs::RobotState::ConstPtr& robotState);
-  void setRobotState(const sensor_msgs::ImuPtr& imu,
+  void setQuadrupedState(const quadruped_msgs::QuadrupedState::ConstPtr& quadrupedState);
+  void setQuadrupedState(const sensor_msgs::ImuPtr& imu,
                      const sensor_msgs::JointStatePtr& jointState,
                      const geometry_msgs::WrenchStampedPtr& contactForceLf,
                      const geometry_msgs::WrenchStampedPtr& contactForceRf,
                      const geometry_msgs::WrenchStampedPtr& contactForceLh,
                      const geometry_msgs::WrenchStampedPtr& contactForceRh,
                      const Eigen::Vector4i& contactFlags);
-  void initializeRobotState(quadruped_msgs::RobotStatePtr& robotState) const;
+  void initializeQuadrupedState(quadruped_msgs::QuadrupedStatePtr& quadrupedState) const;
   void initializeJointState(sensor_msgs::JointState& jointState) const;
 
-  void getRobotState(quadruped_msgs::RobotStatePtr& robotState);
+  void getQuadrupedState(quadruped_msgs::QuadrupedStatePtr& quadrupedState);
   void getSeActuatorCommands(series_elastic_actuator_msgs::SeActuatorCommandsPtr& actuatorCommands);
   void getPose(geometry_msgs::PoseWithCovarianceStampedPtr& pose);
   void getTwist(geometry_msgs::TwistWithCovarianceStampedPtr& pose);
