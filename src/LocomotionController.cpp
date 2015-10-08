@@ -55,6 +55,9 @@
 #include <signal_logger_std/LoggerStd.hpp>
 #include <signal_logger_ros/LoggerRos.hpp>
 
+#include <parameter_handler/parameter_handler.hpp>
+#include <parameter_handler_ros/ParameterHandlerRos.hpp>
+
 #include <std_srvs/Empty.h>
 
 #include <chrono>
@@ -125,6 +128,13 @@ void LocomotionController::init() {
 
   signal_logger::logger->initLogger((int)(1.0/timeStep_), (int)(1.0/timeStep_), samplingFrequency_, loggingScriptFilename);
   NODEWRAP_INFO("Initialize logger with sampling time: %lfs, sampling frequency: %d and script: %s.", samplingFrequency_, (int)(1.0/timeStep_), loggingScriptFilename.c_str());
+  //---
+
+  //--- Configure parameter handler
+  parameter_handler::handler.reset(new parameter_handler_ros::ParameterHandlerRos());
+  parameter_handler_ros::ParameterHandlerRos* parameterHandlerRos = static_cast<parameter_handler_ros::ParameterHandlerRos*>(parameter_handler::handler.get());
+  parameterHandlerRos->setNodeHandle(getNodeHandle());
+  parameterHandlerRos->initializeServices();
   //---
 
   //--- Configure controllers
@@ -241,7 +251,7 @@ void LocomotionController::initializeSubscribers() {
   //---
 
   // this should be last since it will start the controller loop
-  robotStateSubscriber_ = subscribe("robot_state", "/robot", 100, &LocomotionController::robotStateCallback, ros::TransportHints().tcpNoDelay());
+  quadrupedStateSubscriber_ = subscribe("quadruped_state", "/robot", 100, &LocomotionController::quadrupedStateCallback, ros::TransportHints().tcpNoDelay());
 
 }
 
@@ -276,13 +286,13 @@ void LocomotionController::publish()  {
 }
 
 
-void LocomotionController::robotStateCallback(const quadruped_msgs::RobotState::ConstPtr& msg) {
+void LocomotionController::quadrupedStateCallback(const quadruped_msgs::QuadrupedState::ConstPtr& msg) {
   {
-    std::unique_lock<std::mutex> lock(mutexRobotState_);
-    robotState_ = msg;
+    std::unique_lock<std::mutex> lock(mutexQuadrupedState_);
+    quadrupedState_ = msg;
   }
   
-  rcvdRobotState_.notify_all();
+  rcvdQuadrupedState_.notify_all();
 
   if (!useWorker_) {
     updateControllerAndPublish(msg);
@@ -294,31 +304,31 @@ bool LocomotionController::updateControllerWorker(const nodewrap::WorkerEvent& e
   std::chrono::time_point<std::chrono::steady_clock> start, end;
   
   {
-    bool robotStateOk = false;
+    bool quadrupedStateOk = false;
     
-    std::unique_lock<std::mutex> lockRobotState(mutexRobotState_);
+    std::unique_lock<std::mutex> lockQuadrupedState(mutexQuadrupedState_);
 
     // This indicates that we have never received a robot state, thus we just return
-    if ( !robotState_ )
+    if ( !quadrupedState_ )
       return true;
     
-    if ( robotState_->header.stamp <= robotStateStamp_ ) {
-      std::chrono::nanoseconds robotStateTimeoutNSecs((int64_t(10*timeStep_*1e9)));
+    if ( quadrupedState_->header.stamp <= quadrupedStateStamp_ ) {
+      std::chrono::nanoseconds quadrupedStateTimeoutNSecs((int64_t(10*timeStep_*1e9)));
       
-      if (rcvdRobotState_.wait_for(lockRobotState, robotStateTimeoutNSecs) == std::cv_status::no_timeout) {
-        robotStateOk = true;
+      if (rcvdQuadrupedState_.wait_for(lockQuadrupedState, quadrupedStateTimeoutNSecs) == std::cv_status::no_timeout) {
+        quadrupedStateOk = true;
       }
     }
     else
-      robotStateOk = true;
+      quadrupedStateOk = true;
 
-    if (robotStateOk) {
+    if (quadrupedStateOk) {
       {
         std::lock_guard<std::mutex> lockModel(mutexModel_);
-        model_.setRobotState(robotState_);
+        model_.setQuadrupedState(quadrupedState_);
       }
       
-      robotStateStamp_ = robotState_->header.stamp;
+      quadrupedStateStamp_ = quadrupedState_->header.stamp;
     }
     else {
       NODEWRAP_ERROR("Robot state update was not received within 10 times the maximum allowed computation time (%lf ms)!", 10*timeStep_*1e3);
@@ -356,7 +366,7 @@ bool LocomotionController::updateControllerWorker(const nodewrap::WorkerEvent& e
 }
 
 
-void LocomotionController::updateControllerAndPublish(const quadruped_msgs::RobotState::ConstPtr& robotState) {
+void LocomotionController::updateControllerAndPublish(const quadruped_msgs::QuadrupedState::ConstPtr& quadrupedState) {
   //-- Start measuring computation time.
   std::chrono::time_point<std::chrono::steady_clock> start, end;
   start = std::chrono::steady_clock::now();
@@ -368,7 +378,7 @@ void LocomotionController::updateControllerAndPublish(const quadruped_msgs::Robo
 
   {
     std::lock_guard<std::mutex> lockModel(mutexModel_);
-    model_.setRobotState(robotState);
+    model_.setQuadrupedState(quadrupedState);
   }
   
   controllerManager_.updateController();

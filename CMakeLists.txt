@@ -33,25 +33,25 @@ find_package(catkin REQUIRED COMPONENTS roco_assembly quadruped_assembly)
 
 include(${roco_assembly_SOURCE_PREFIX}/cmake/roco_ros.cmake)
 
-# This will overwrite the previous find_package(catkin).
-find_package(catkin 
-    REQUIRED COMPONENTS
-      roscpp
-      nodelet
-      roscpp_nodewrap
-      locomotion_controller_msgs
-      quadruped_msgs
-      roco
-      robot_utils
-      signal_logger
-      signal_logger_std
-      signal_logger_ros
-      quadruped_model
-      roco_freeze
-      roco_assembly
-      series_elastic_actuator_ros
-      any_msgs
-      quadruped_assembly
+find_package(catkin REQUIRED
+  COMPONENTS
+    any_msgs
+    locomotion_controller_msgs
+    nodelet
+    parameter_handler_ros
+    quadruped_assembly
+    quadruped_model
+    quadruped_msgs
+    robot_utils
+    roco
+    roco_assembly
+    roco_freeze
+    roscpp
+    roscpp_nodewrap
+    series_elastic_actuator_ros
+    signal_logger
+    signal_logger_ros
+    signal_logger_std
 )
 
 ## System dependencies are found with CMake's conventions
@@ -84,33 +84,31 @@ if (USE_STARLETH_DESCRIPTION)
     add_definitions(-DUSE_STARLETH_DESCRIPTION)
 endif(USE_STARLETH_DESCRIPTION)
 
-###################################
-## catkin specific configuration ##
-###################################
-## The catkin_package macro generates cmake config files for your package
-## Declare things to be passed to dependent projects
-## INCLUDE_DIRS: uncomment this if you package contains header files
-## LIBRARIES: libraries you create in this project that dependent projects also need
-## CATKIN_DEPENDS: catkin_packages dependent projects also need
-## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
- INCLUDE_DIRS include 
- LIBRARIES locomotion_controller model
- CATKIN_DEPENDS 
-     roscpp_nodewrap 
-     locomotion_controller_msgs 
-     roco 
-     robot_utils 
-     signal_logger 
-     signal_logger_std 
-     signal_logger_ros 
-     roco_freeze 
-     roco_assembly 
-     quadruped_assembly 
-     series_elastic_actuator_ros 
-     quadruped_msgs any_msgs 
-     quadruped_model
-# DEPENDS system_lib
+  INCLUDE_DIRS
+    include 
+  LIBRARIES
+    locomotion_controller
+    model
+  CATKIN_DEPENDS
+    any_msgs
+    locomotion_controller_msgs
+    nodelet
+    parameter_handler_ros
+    quadruped_assembly
+    quadruped_model
+    quadruped_msgs
+    robot_utils
+    roco
+    roco_assembly
+    roco_freeze
+    roscpp
+    roscpp_nodewrap
+    series_elastic_actuator_ros
+    signal_logger
+    signal_logger_ros
+    signal_logger_std
+  DEPENDS
 )
 
 ###########
@@ -142,18 +140,24 @@ add_library(locomotion_controller
   src/add_locomotion_controllers.cpp
   src/LocomotionController.cpp
 )
-add_dependencies(locomotion_controller ${catkin_EXPORTED_TARGETS})
+add_dependencies(locomotion_controller
+  ${catkin_EXPORTED_TARGETS}
+)
 target_link_libraries(locomotion_controller
-    model
-   ${catkin_LIBRARIES}
+  model
+  ${catkin_LIBRARIES}
 )
 
-add_executable(locomotion_controller_node src/locomotion_controller_node.cpp)
-add_dependencies(locomotion_controller_node ${catkin_EXPORTED_TARGETS})
+add_executable(locomotion_controller_node
+  src/locomotion_controller_node.cpp
+)
+add_dependencies(locomotion_controller_node
+  ${catkin_EXPORTED_TARGETS}
+)
 target_link_libraries(locomotion_controller_node
-   model
-   locomotion_controller
-   ${catkin_LIBRARIES}
+  model
+  locomotion_controller
+  ${catkin_LIBRARIES}
 )
 
 
