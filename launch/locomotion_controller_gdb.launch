@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?> 
 <launch>
-	<arg name="debug" default="" />
-	<node pkg="locomotion_controller" type="locomotion_controller_node" name="locomotion_controller" output="screen" launch-prefix="gdb -ex run --args">
-	  <rosparam file="$(find locomotion_controller)/config/default_locomotion_controller.yaml" command="load" />
-	  <rosparam file="$(find locomotion_controller)/config/default_publishers.yaml" command="load" />
-	  <rosparam file="$(find locomotion_controller)/config/default_subscribers.yaml" command="load" />
-	  <rosparam file="$(find locomotion_controller)/config/default_services.yaml" command="load" />
-	</node>
+  <!-- Arguments -->
+  <arg name="launch_prefix"   default="gdb -ex run --args"/>
+  <arg name="quadruped_name"  default="starleth"/>
+  <arg name="quadruped_setup" default="minimal"/>
+  
+  <include file="$(find locomotion_controller)/launch/locomotion_controller.launch">
+    <arg name="launch_prefix" value="$(arg launch_prefix)"/>
+  	<arg name="quadruped_name" value="$(arg quadruped_name)"/>
+  	<arg name="quadruped_setup" value="$(arg quadruped_setup)"/>
+  </include>
+
 </launch>
