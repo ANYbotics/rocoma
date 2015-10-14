@@ -65,17 +65,6 @@ if(NOT kindr_FOUND)
   pkg_check_modules(kindr kindr REQUIRED)
 endif()
 
-# Attempt to find catkinized rbdl
-find_package(rbdl QUIET)
-if (NOT rbdl_FOUND)
-  # find core pacakge
-  find_package(PkgConfig REQUIRED)
-  pkg_check_modules(RBDL rbdl REQUIRED)
-  # find addons
-  find_package(PkgConfig REQUIRED)
-  pkg_check_modules(RBDL_ADDONS rbdl-addons REQUIRED) 
-endif()
-
 if (USE_ANYMAL_DESCRIPTION)
     add_definitions(-DUSE_ANYMAL_DESCRIPTION)
 endif(USE_ANYMAL_DESCRIPTION)
@@ -121,16 +110,12 @@ include_directories(include)
 include_directories(${EIGEN3_INCLUDE_DIR})
 include_directories(${catkin_INCLUDE_DIRS})
 include_directories(${kindr_INCLUDE_DIRS})
-include_directories(${RBDL_ADDONS_INCLUDE_DIRS})
-include_directories(${RBDL_INCLUDE_DIRS})
 
 # This library includes the robot model and the terrain model.
 add_library(model
   src/Model.cpp
 )
 target_link_libraries(model
-   ${RBDL_ADDONS_LIBRARIES}
-   ${RBDL_LIBRARIES}
    ${catkin_LIBRARIES}
 )
 
