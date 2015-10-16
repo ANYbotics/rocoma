@@ -87,12 +87,12 @@ const quadruped_model::Command& Model::getCommand() const {
   return command_;
 }
 
-void Model::initializeForController(double dt, bool isRealRobot, const std::string& pathToUrdfFile, const quadruped_model::Quadrupeds& quadruped) {
+void Model::initializeForController(double dt, bool isRealRobot, const std::string& urdfDescription, const quadruped_model::Quadrupeds& quadruped) {
   quadrupedModel_.reset(new quadruped_model::QuadrupedModel(dt));
 
-  /* initialize model from URDF file */
-  if(!quadrupedModel_->initModelFromUrdfFile(pathToUrdfFile)) {
-    ROCO_ERROR("Could not load URDF file!");
+  /* initialize model from URDF decription */
+  if(!quadrupedModel_->initModelFromUrdfString(urdfDescription)) {
+    ROCO_ERROR("[Model::initializeForController] Could not initialize quadruped model from urdf description!");
   }
 
   state_.setQuadrupedModelPtr(this->getQuadrupedModel());
@@ -198,20 +198,20 @@ void Model::setQuadrupedState(const quadruped_msgs::QuadrupedState::ConstPtr& qu
   }
 
 
-  static quadruped_model::VectorAct jointTorques;
-  static quadruped_model::VectorQj jointPositions;
-  static quadruped_model::VectorQj jointVelocities;
+  static quadruped_model::JointTorques jointTorques;
+  static quadruped_model::JointPositions jointPositions;
+  static quadruped_model::JointVelocities jointVelocities;
 
-  for (int i = 0; i < jointPositions.size(); i++) {
+  for (int i = 0; i < jointPositions.toImplementation().size(); i++) {
     jointTorques(i) = quadrupedState->joints.effort[i];
     jointPositions(i) = quadrupedState->joints.position[i];
     jointVelocities(i) = quadrupedState->joints.velocity[i];
   }
 
   RotationQuaternion orientationWorldToBase(quadrupedState->pose.pose.orientation.w,
-                                              quadrupedState->pose.pose.orientation.x,
-                                              quadrupedState->pose.pose.orientation.y,
-                                              quadrupedState->pose.pose.orientation.z);
+                                            quadrupedState->pose.pose.orientation.x,
+                                            quadrupedState->pose.pose.orientation.y,
+                                            quadrupedState->pose.pose.orientation.z);
 
   quadruped_model::LinearVelocity B_v_B(quadrupedState->twist.twist.linear.x,
                                         quadrupedState->twist.twist.linear.y,
@@ -220,29 +220,28 @@ void Model::setQuadrupedState(const quadruped_msgs::QuadrupedState::ConstPtr& qu
 
 
   quadruped_model::LocalAngularVelocity localAngularVelocityKindr(quadrupedState->twist.twist.angular.x,
-                                                                   quadrupedState->twist.twist.angular.y,
-                                                                   quadrupedState->twist.twist.angular.z);
+                                                                  quadrupedState->twist.twist.angular.y,
+                                                                  quadrupedState->twist.twist.angular.z);
 
+
+  quadruped_model::QuadrupedState quadrupedModelState;
 
   //-- Generalized positions
-  quadrupedModel_->setStatePositionWorldToBaseInWorldFrame(quadruped_model::Position(quadrupedState->pose.pose.position.x,
-                                                                                     quadrupedState->pose.pose.position.y,
-                                                                                     quadrupedState->pose.pose.position.z),
-                                                                                     false);
-  quadrupedModel_->setStateOrientationWorldToBaseQuaternion(orientationWorldToBase, false);
-  quadrupedModel_->setStateJointPositions(jointPositions, false);
+  quadrupedModelState.setPositionWorldToBaseInWorldFrame(quadruped_model::Position(quadrupedState->pose.pose.position.x,
+                                                                                   quadrupedState->pose.pose.position.y,
+																				   quadrupedState->pose.pose.position.z));
+  quadrupedModelState.setOrientationWorldToBase(orientationWorldToBase);
+  quadrupedModelState.setJointPositions(jointPositions);
   //--
 
   //-- Generalized velocities
-  quadrupedModel_->setStateLinearVelocityInWorldFrame(I_v_B, false);
-  quadrupedModel_->setStateAngularVelocityInBaseFrame(localAngularVelocityKindr, false);
-  quadrupedModel_->setStateJointVelocities(jointVelocities);
+  quadrupedModelState.setLinearVelocityBaseInWorldFrame(I_v_B);
+  quadrupedModelState.setAngularVelocityBaseInBaseFrame(localAngularVelocityKindr);
+  quadrupedModelState.setJointVelocities(jointVelocities);
   //--
 
   quadrupedModel_->setJointTorques(jointTorques);
-
-  quadrupedModel_->updateKinematics(true, true, false);
-
+  quadrupedModel_->setState(quadrupedModelState, true, true, false);
 
   state_.copyStateFromQuadrupedModel();
   state_.setStatus((quadruped_model::State::StateStatus)quadrupedState->state);
