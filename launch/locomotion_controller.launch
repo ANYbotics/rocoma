@@ -2,24 +2,47 @@
   
 <launch>
   
-  <!-- Arguments -->
-  <arg name="launch_prefix"   default=""/>
-  <arg name="quadruped_name"  default="starleth"/>
+  <!-- The locomotion controller can either be run as node or nodelet -->
+  <arg name="execution_mode" default="node"/>
+  <!-- Quadruped name -->
+  <arg name="quadruped_name" default="anymal"/>
+  <!-- Quadruped setup -->
   <arg name="quadruped_setup" default="minimal"/>
-     
-  <!-- Locomotion controller -->
-  <node pkg="locomotion_controller" type="locomotion_controller_node" name="locomotion_controller" output="screen" launch-prefix="$(arg launch_prefix)">
-    
-    <!-- Load configuration files -->
-    <rosparam command="load" file="$(find locomotion_controller)/config/default_locomotion_controller.yaml"/>
-    <rosparam command="load" file="$(find locomotion_controller)/config/default_publishers.yaml"/>
-    <rosparam command="load" file="$(find locomotion_controller)/config/default_subscribers.yaml"/>
-    <rosparam command="load" file="$(find locomotion_controller)/config/default_services.yaml"/>
+  <!-- Set to true for simulation -->
+  <arg name="simulation" default="true"/>
+  <!-- The logger class can either be std or ros -->
+  <arg name="logger_class" default="ros"/>
+  <!-- The output can either be screen, log or an empty string -->
+  <arg name="output" default="screen"/>
+  <!-- Console launch prefix -->
+  <arg name="launch_prefix" default=""/>
+  <!-- Name of the robot description parameter -->
+  <arg name="description_name" default="quadruped_description"/>
   
-    <!-- ROS parameters, overwriting the loaded configuration files -->
-    <param name="quadruped/name"  type="str" value="$(arg quadruped_name)"/>
-    <param name="quadruped/setup" type="str" value="$(arg quadruped_setup)"/>
-    
-  </node>
+  <!-- Load configuration files -->
+  <rosparam command="load" ns="locomotion_controller" file="$(find locomotion_controller)/config/parameters.yaml"/>
+  <rosparam command="load" ns="locomotion_controller" file="$(find locomotion_controller)/config/publishers.yaml"/>
+  <rosparam command="load" ns="locomotion_controller" file="$(find locomotion_controller)/config/subscribers.yaml"/>
+  <rosparam command="load" ns="locomotion_controller" file="$(find locomotion_controller)/config/services.yaml"/>
+
+  <!-- Load parameters from arguments -->
+  <param name="locomotion_controller/quadruped/name"   type="str" value="$(arg quadruped_name)"/>
+  <param name="locomotion_controller/quadruped/setup"  type="str" value="$(arg quadruped_setup)"/>
+  <param name="locomotion_controller/logger/class"     type="str" value="$(arg logger_class)"/>
+  <param name="locomotion_controller/description_name" type="str" value="$(arg description_name)"/>
+
+  <!-- Load simulation specific parameters -->
+  <group if="$(arg simulation)">
+    <param name="locomotion_controller/controller/is_real_robot" value="false"/>
+  </group>
+  <group unless="$(arg simulation)">
+    <param name="locomotion_controller/controller/is_real_robot" value="true"/>
+  </group>
+     
+  <!-- Launch the locomotion controller -->
+  <include file="$(find locomotion_controller)/launch/include/locomotion_controller_$(arg execution_mode).launch">
+    <arg name="output"        value="$(arg output)"/>
+    <arg name="launch_prefix" value="$(arg launch_prefix)"/>
+  </include>
   
 </launch>

@@ -1,8 +1,11 @@
 controller:
   time_step: 0.0025
-  is_real_robot: true
   default: LocoDemo
+
 logger:
-  sampling_time: 60
+  sampling_time: 30
   script: ""
-  class: "std"
+
+quadruped:
+  name: starleth
+  setup: minimal

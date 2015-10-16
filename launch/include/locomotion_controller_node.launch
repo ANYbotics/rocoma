@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+  
+<launch>
+  
+  <!-- The output can either be screen, log or an empty string -->
+  <arg name="output" default="screen"/>
+  <!-- Terminal launch prefix -->
+  <arg name="launch_prefix" default=""/>
+  
+  <!-- Launch the locomotion controller as a node -->
+	<node name="locomotion_controller" pkg="locomotion_controller" type="locomotion_controller_node" output="$(arg output)" launch-prefix="$(arg launch_prefix)"/>
+  
+</launch>

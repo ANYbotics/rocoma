@@ -333,7 +333,7 @@ bool LocomotionController::updateControllerWorker(const nodewrap::WorkerEvent& e
     else {
       NODEWRAP_ERROR("Robot state update was not received within 10 times the maximum allowed computation time (%lf ms)!", 10*timeStep_*1e3);
 
-      controllerManager_.emergencyStop();
+//      controllerManager_.emergencyStop();
     }
   }
   
@@ -358,7 +358,7 @@ bool LocomotionController::updateControllerWorker(const nodewrap::WorkerEvent& e
   if (elapsedTimeNSecs > timeStep*10) {
     NODEWRAP_ERROR("Computation took more than 10 times the maximum allowed computation time (%lf ms)!", timeStep_*1e3);
 
-    controllerManager_.emergencyStop();
+//    controllerManager_.emergencyStop();
   }
   //---
 

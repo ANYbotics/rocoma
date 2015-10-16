@@ -15,7 +15,7 @@
   <!-- The output can either be screen, log or an empty string -->
   <arg name="output" default="screen"/>
   
-  <!-- Launch the locomotion controller with gdb launch prefix -->
+  <!-- Launch the locomotion controller with screen launch prefix -->
   <include file="$(find locomotion_controller)/launch/locomotion_controller.launch">
     <arg name="execution_mode"  value="$(arg execution_mode)"/>
     <arg name="quadruped_name"  value="$(arg quadruped_name)"/>
@@ -23,7 +23,7 @@
     <arg name="simulation"      value="$(arg simulation)"/>
     <arg name="logger_class"    value="$(arg logger_class)"/>
     <arg name="output"          value="$(arg output)"/>
-    <arg name="launch_prefix"   value="gdb -ex run --args"/>
+    <arg name="launch_prefix"   value="screen -dmS locomotion_controller"/>
   </include>
-
+  
 </launch>
