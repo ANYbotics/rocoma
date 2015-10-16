@@ -25,5 +25,5 @@
     <arg name="output"          value="$(arg output)"/>
     <arg name="launch_prefix"   value="gdb -ex run --args"/>
   </include>
-  
+
 </launch>
