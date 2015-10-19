@@ -312,15 +312,39 @@ bool LocomotionController::updateControllerWorker(const nodewrap::WorkerEvent& e
     if ( !quadrupedState_ )
       return true;
     
-    if ( quadrupedState_->header.stamp <= quadrupedStateStamp_ ) {
-      std::chrono::nanoseconds quadrupedStateTimeoutNSecs((int64_t(10*timeStep_*1e9)));
-      
-      if (rcvdQuadrupedState_.wait_for(lockQuadrupedState, quadrupedStateTimeoutNSecs) == std::cv_status::no_timeout) {
-        quadrupedStateOk = true;
+
+
+    if (isRealRobot_) {
+
+      // real robot
+      if ( quadrupedState_->header.stamp <= quadrupedStateStamp_ ) {
+        std::chrono::nanoseconds quadrupedStateTimeoutNSecs((int64_t(10*timeStep_*1e9)));
+
+        if (rcvdQuadrupedState_.wait_for(lockQuadrupedState, quadrupedStateTimeoutNSecs) == std::cv_status::no_timeout) {
+          quadrupedStateOk = true;
+        }
       }
+      else
+        quadrupedStateOk = true;
+
+    } else {
+
+      // simulated robot
+      ros::Time startTime = ros::Time::now();
+      int cycleCounter = 0;
+      while (cycleCounter < 100) {
+        if (quadrupedState_->header.stamp >= quadrupedStateStamp_) {
+          quadrupedStateOk = true;
+          break;
+        }
+        mutexQuadrupedState_.unlock();
+        ros::Time::sleepUntil(startTime + ros::Duration(cycleCounter*timeStep_/10.0));
+        mutexQuadrupedState_.lock();
+        cycleCounter++;
+      }
+
     }
-    else
-      quadrupedStateOk = true;
+
 
     if (quadrupedStateOk) {
       {
