@@ -89,13 +89,20 @@ const quadruped_model::Command& Model::getCommand() const {
 
 void Model::initializeForControllerFromFile(double dt, bool isRealRobot, const std::string& filePath, const quadruped_model::Quadrupeds& quadruped) {
   quadrupedModel_.reset(new quadruped_model::QuadrupedModel(dt));
+  quadrupedModelDesired_.reset(new quadruped_model::QuadrupedModel(dt));
 
   /* initialize model from URDF decription */
   if(!quadrupedModel_->initModelFromUrdfFile(filePath)) {
     ROCO_ERROR("[Model::initializeForController] Could not initialize quadruped model from urdf file!");
   }
 
+  /* initialize model from URDF decription */
+  if(!quadrupedModelDesired_->initModelFromUrdfFile(filePath)) {
+    ROCO_ERROR("[Model::initializeForController] Could not initialize desired quadruped model from urdf file!");
+  }
+
   state_.setQuadrupedModelPtr(this->getQuadrupedModel());
+  state_.setDesiredQuadrupedModelPtr(quadrupedModelDesired_.get());
   state_.setTerrainPtr(this->getTerrainModel());
 
   quadruped_model::quadrupeds::initializeState(state_);
@@ -120,13 +127,20 @@ void Model::initializeForControllerFromFile(double dt, bool isRealRobot, const s
 
 void Model::initializeForController(double dt, bool isRealRobot, const std::string& urdfDescription, const quadruped_model::Quadrupeds& quadruped) {
   quadrupedModel_.reset(new quadruped_model::QuadrupedModel(dt));
+  quadrupedModelDesired_.reset(new quadruped_model::QuadrupedModel(dt));
 
   /* initialize model from URDF decription */
   if(!quadrupedModel_->initModelFromUrdfString(urdfDescription)) {
     ROCO_ERROR("[Model::initializeForController] Could not initialize quadruped model from urdf description!");
   }
 
+  /* initialize the desired model from URDF decription */
+  if(!quadrupedModelDesired_->initModelFromUrdfString(urdfDescription)) {
+    ROCO_ERROR("[Model::initializeForController] Could not initialize desired quadruped model from urdf description!");
+  }
+
   state_.setQuadrupedModelPtr(this->getQuadrupedModel());
+  state_.setDesiredQuadrupedModelPtr(quadrupedModelDesired_.get());
   state_.setTerrainPtr(this->getTerrainModel());
 
   quadruped_model::quadrupeds::initializeState(state_);
