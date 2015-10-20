@@ -73,6 +73,7 @@ NODEWRAP_EXPORT_CLASS(locomotion_controller, locomotion_controller::LocomotionCo
 namespace locomotion_controller {
 
 LocomotionController::LocomotionController():
+    loadQuadrupedModelFromFile_(false),
     useWorker_(true),
     timeStep_(0.0025),
     isRealRobot_(false),
@@ -141,14 +142,24 @@ void LocomotionController::init() {
   {
     std::lock_guard<std::mutex> lockModel(mutexModel_);
 
-    std::string quadrupedUrdfDescription;
-    getNodeHandle().param<std::string>("/quadruped_description", quadrupedUrdfDescription, "");
-
     quadruped_model::Quadrupeds quadrupedEnum;
     if (quadrupedName_ == "starleth") quadrupedEnum = quadruped_model::Quadrupeds::StarlETH;
     if (quadrupedName_ == "anymal") quadrupedEnum = quadruped_model::Quadrupeds::Anymal;
 
-    model_.initializeForController(timeStep_,isRealRobot_, quadrupedUrdfDescription, quadrupedEnum);
+
+    if (loadQuadrupedModelFromFile_) {
+      std::string quadrupedSetup;
+      getNodeHandle().param<std::string>("quadruped/setup", quadrupedSetup, "minimal");
+      std::string urdfModelFile = ros::package::getPath("quadruped_model") + "/resources/" + quadrupedName_ + "_" + quadrupedSetup + ".urdf";
+      model_.initializeForControllerFromFile(timeStep_,isRealRobot_, urdfModelFile, quadrupedEnum);
+    }
+    else {
+      std::string quadrupedUrdfDescription;
+      getNodeHandle().param<std::string>("/quadruped_description", quadrupedUrdfDescription, "");
+      model_.initializeForController(timeStep_,isRealRobot_, quadrupedUrdfDescription, quadrupedEnum);
+    }
+
+
 //    model_.getRobotModel()->params().printParams();
     model_.addVariablesToLog();
 

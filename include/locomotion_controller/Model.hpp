@@ -80,6 +80,7 @@ class Model
  public:
   Model();
   virtual ~Model();
+  void initializeForControllerFromFile(double dt, bool isRealRobot, const std::string& filePath, const quadruped_model::Quadrupeds& quadruped);
   void initializeForController(double dt,
                                bool isRealRobot,
                                const std::string& urdfDescription,
