@@ -127,6 +127,7 @@ class Model
  private:
   ros::Time updateStamp_;
   std::shared_ptr<quadruped_model::QuadrupedModel> quadrupedModel_;
+  std::shared_ptr<quadruped_model::QuadrupedModel> quadrupedModelDesired_;
   std::shared_ptr<robotTerrain::TerrainBase> terrain_;
   quadruped_model::State state_;
   quadruped_model::Command command_;
