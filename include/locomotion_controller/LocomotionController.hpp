@@ -120,6 +120,7 @@ class LocomotionController : public nodewrap::NodeImpl
   bool updateControllerWorker(const nodewrap::WorkerEvent& event);
 
  private:
+  bool loadQuadrupedModelFromFile_;
   bool useWorker_;
   double timeStep_;
   bool isRealRobot_;

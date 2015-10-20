@@ -87,6 +87,37 @@ const quadruped_model::Command& Model::getCommand() const {
   return command_;
 }
 
+void Model::initializeForControllerFromFile(double dt, bool isRealRobot, const std::string& filePath, const quadruped_model::Quadrupeds& quadruped) {
+  quadrupedModel_.reset(new quadruped_model::QuadrupedModel(dt));
+
+  /* initialize model from URDF decription */
+  if(!quadrupedModel_->initModelFromUrdfFile(filePath)) {
+    ROCO_ERROR("[Model::initializeForController] Could not initialize quadruped model from urdf file!");
+  }
+
+  state_.setQuadrupedModelPtr(this->getQuadrupedModel());
+  state_.setTerrainPtr(this->getTerrainModel());
+
+  quadruped_model::quadrupeds::initializeState(state_);
+
+  switch (quadruped) {
+    case(quadruped_model::Quadrupeds::StarlETH): {
+      quadruped_model::quadrupeds::starleth::initializeCommand(command_);
+      quadruped_model::quadrupeds::starleth::initializeLegConfigurations(*quadrupedModel_);
+    } break;
+    case(quadruped_model::Quadrupeds::Anymal): {
+      quadruped_model::quadrupeds::anymal::initializeCommand(command_);
+    } break;
+    default: {
+      throw std::runtime_error("[Model::initializeForController] Invalid quadruped enum.");
+    } break;
+  }
+
+  quadrupedModel_->setIsRealRobot(isRealRobot);
+
+
+}
+
 void Model::initializeForController(double dt, bool isRealRobot, const std::string& urdfDescription, const quadruped_model::Quadrupeds& quadruped) {
   quadrupedModel_.reset(new quadruped_model::QuadrupedModel(dt));
 
