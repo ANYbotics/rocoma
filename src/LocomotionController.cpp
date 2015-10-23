@@ -109,26 +109,28 @@ void LocomotionController::init() {
     loggingScriptFilename = ros::package::getPath("locomotion_controller") + std::string{"/config/logging.script"};
   }
   getNodeHandle().param<double>("logger/sampling_time", samplingFrequency_, 60.0);
-  NODEWRAP_INFO("Initialize logger with sampling time: %lfs and script: %s.", samplingFrequency_, loggingScriptFilename.c_str());
 
   std::string loggerClass;
   getNodeHandle().param<std::string>("logger/class", loggerClass, "std");
   if (loggerClass.compare("ros") == 0) {
+    NODEWRAP_INFO("[Locomotion Controller]: Logger type: ros");
     // initialize ros logger
     signal_logger::logger.reset(new signal_logger_ros::LoggerRos(getNodeHandle()));
     signal_logger_ros::LoggerRos* loggerRos = static_cast<signal_logger_ros::LoggerRos*>(signal_logger::logger.get());
     loggerRos->setPublishFrequency(samplingFrequency_);
   } else if (loggerClass.compare("std") == 0) {
+    NODEWRAP_INFO("[Locomotion Controller]: Logger type: std");
     // initialize std logger as fallback logger
     signal_logger::logger.reset(new signal_logger_std::LoggerStd());
     signal_logger_std::LoggerStd* loggerStd = static_cast<signal_logger_std::LoggerStd*>(signal_logger::logger.get());
     loggerStd->setVerboseLevel(signal_logger_std::LoggerStd::VL_DEBUG);
   } else {
+    NODEWRAP_INFO("[Locomotion Controller]: Logger type: none");
     signal_logger::logger.reset(new signal_logger::LoggerNone());
   }
 
   signal_logger::logger->initLogger((int)(1.0/timeStep_), (int)(1.0/timeStep_), samplingFrequency_, loggingScriptFilename);
-  NODEWRAP_INFO("Initialize logger with sampling time: %lfs, sampling frequency: %d and script: %s.", samplingFrequency_, (int)(1.0/timeStep_), loggingScriptFilename.c_str());
+  NODEWRAP_INFO("[Locomotion Controller]  Initialize logger with sampling time: %lfs, sampling frequency: %d and script: %s.", samplingFrequency_, (int)(1.0/timeStep_), loggingScriptFilename.c_str());
   //---
 
   //--- Configure parameter handler

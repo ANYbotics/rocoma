@@ -3,8 +3,10 @@ controller:
   default: LocoDemo
 
 logger:
-  sampling_time: 30
-  script: ""
+  sampling_time: 60
+  script: "/home/integration/.ros/locomotion_controller_logging.script"
+  class: "std"
+
 
 quadruped:
   name: starleth
