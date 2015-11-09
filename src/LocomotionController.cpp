@@ -390,7 +390,7 @@ bool LocomotionController::updateControllerWorker(const nodewrap::WorkerEvent& e
   int64_t timeStep = (int64_t)(timeStep_*1e9);
 
   if (elapsedTimeNSecs > timeStep) {
-    NODEWRAP_WARN("Computation of locomotion controller is not real-time! Elapsed time: %lf ms\n", (double)elapsedTimeNSecs*1e-6);
+    NODEWRAP_WARN_THROTTLE(3.0, "Computation of locomotion controller is not real-time! Elapsed time: %lf ms\n", (double)elapsedTimeNSecs*1e-6);
   }
   if (elapsedTimeNSecs > timeStep*10) {
     NODEWRAP_ERROR("Computation took more than 10 times the maximum allowed computation time (%lf ms)!", timeStep_*1e3);
