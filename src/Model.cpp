@@ -179,6 +179,7 @@ void Model::addVariablesToLog() {
 //  robotModel_->addVariablesToLog();
 
   command_.addVariablesToLog(true);
+  quadrupedModel_->addVariablesToLog(true);
 
   Eigen::Matrix<std::string, 12,1> names;
 
@@ -200,6 +201,8 @@ void Model::addVariablesToLog() {
        "RH_HAA_load", "RH_HFE_load", "RH_KFE_load";
   signal_logger::logger->addDoubleEigenMatrixToLog(state_.getJointTorques().toImplementation(), names);
 
+
+  signal_logger::logger->addDoubleKindrEulerAnglesZyxToLog(stateOrientationWorldToBaseEulerAnglesZyx_, "qEulerZyx", "/rm/q/");
 
 //  Eigen::Matrix<std::string, 4,1> contactNames;
 //  contactNames << "LF_CONTACT_FLAG", "RF_CONTACT_FLAG", "LH_CONTACT_FLAG", "RH_CONTACT_FLAG";
@@ -257,6 +260,9 @@ void Model::setQuadrupedState(const quadruped_msgs::QuadrupedState::ConstPtr& qu
                                             quadrupedState->pose.pose.orientation.x,
                                             quadrupedState->pose.pose.orientation.y,
                                             quadrupedState->pose.pose.orientation.z);
+
+  // for logging only
+  stateOrientationWorldToBaseEulerAnglesZyx_ = quadruped_model::EulerAnglesZyx(orientationWorldToBase);
 
   quadruped_model::LinearVelocity B_v_B(quadrupedState->twist.twist.linear.x,
                                         quadrupedState->twist.twist.linear.y,
