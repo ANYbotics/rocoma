@@ -131,6 +131,8 @@ class Model
   std::shared_ptr<robotTerrain::TerrainBase> terrain_;
   quadruped_model::State state_;
   quadruped_model::Command command_;
+
+  quadruped_model::EulerAnglesZyx stateOrientationWorldToBaseEulerAnglesZyx_;
 };
 
 } /* namespace model */
