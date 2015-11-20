@@ -262,7 +262,7 @@ void Model::setQuadrupedState(const quadruped_msgs::QuadrupedState::ConstPtr& qu
                                             quadrupedState->pose.pose.orientation.z);
 
   // for logging only
-  stateOrientationWorldToBaseEulerAnglesZyx_ = quadruped_model::EulerAnglesZyx(orientationWorldToBase);
+  stateOrientationWorldToBaseEulerAnglesZyx_ = quadruped_model::EulerAnglesZyx(orientationWorldToBase).getUnique();
 
   quadruped_model::LinearVelocity B_v_B(quadrupedState->twist.twist.linear.x,
                                         quadrupedState->twist.twist.linear.y,
