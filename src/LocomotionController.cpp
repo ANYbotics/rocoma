@@ -324,11 +324,8 @@ bool LocomotionController::updateControllerWorker(const nodewrap::WorkerEvent& e
     // This indicates that we have never received a robot state, thus we just return
     if ( !quadrupedState_ )
       return true;
-    
-
 
     if (isRealRobot_) {
-
       // real robot
       if ( quadrupedState_->header.stamp <= quadrupedStateStamp_ ) {
         std::chrono::nanoseconds quadrupedStateTimeoutNSecs((int64_t(10*timeStep_*1e9)));
@@ -341,7 +338,6 @@ bool LocomotionController::updateControllerWorker(const nodewrap::WorkerEvent& e
         quadrupedStateOk = true;
 
     } else {
-
       // simulated robot
       ros::Time startTime = ros::Time::now();
       int cycleCounter = 0;
@@ -369,8 +365,7 @@ bool LocomotionController::updateControllerWorker(const nodewrap::WorkerEvent& e
     }
     else {
       NODEWRAP_ERROR("Robot state update was not received within 10 times the maximum allowed computation time (%lf ms)!", 10*timeStep_*1e3);
-
-//      controllerManager_.emergencyStop();
+      controllerManager_.emergencyStop();
     }
   }
   
