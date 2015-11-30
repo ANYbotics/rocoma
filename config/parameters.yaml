@@ -4,6 +4,7 @@ controller:
 
 logger:
   sampling_time: 60
+  publish_frequency: 30
   script: "/home/integration/.ros/locomotion_controller_logging.script"
   class: "std"
 

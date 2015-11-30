@@ -124,7 +124,7 @@ class LocomotionController : public nodewrap::NodeImpl
   bool useWorker_;
   double timeStep_;
   bool isRealRobot_;
-  double samplingFrequency_;
+  double samplingTime_;
   std::string defaultController_;
   std::string quadrupedName_;
 

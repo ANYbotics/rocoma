@@ -187,7 +187,7 @@ bool ControllerRos<Controller_>::createController(double dt)
     double samplingTime = controllerManager_->getLocomotionController()
         ->getSamplingFrequency();
 
-    signalLoggerWorkerOptions.frequency = samplingTime;
+    signalLoggerWorkerOptions.frequency = signal_logger::logger->getSamplingFrequency();
     signalLoggerWorkerOptions.callback = boost::bind(
         &ControllerRos<Controller_>::signalLoggerWorker, this, _1);
 

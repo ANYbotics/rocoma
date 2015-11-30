@@ -152,6 +152,7 @@ void Model::initializeForController(double dt, bool isRealRobot, const std::stri
     } break;
     case(quadruped_model::Quadrupeds::Anymal): {
       quadruped_model::quadrupeds::anymal::initializeCommand(command_);
+      //quadruped_model::quadrupeds::anymal::initializeLegConfigurations(*quadrupedModel_);
     } break;
     default: {
       throw std::runtime_error("[Model::initializeForController] Invalid quadruped enum.");
