@@ -220,6 +220,14 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
    manager->addController(controllerLocoMoptRos);
 #endif
 
+
+#ifdef USE_TASK_ROCOSEATEST_SCHEDULE
+   auto controllerRocoSeaTestSchedule = new ControllerRos<roco_sea_test_schedule::RocoSeaTestSchedule>(state, command);
+   controllerRocoSeaTestSchedule->setControllerManager(manager);
+   controllerRocoSeaTestSchedule->setIsRealRobotFromManager(manager->isRealRobot());
+   manager->addController(controllerRocoSeaTestSchedule);
+#endif
+
 }
 
 }

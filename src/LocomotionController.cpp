@@ -332,8 +332,9 @@ bool LocomotionController::updateControllerWorker(const nodewrap::WorkerEvent& e
       // real robot
       if ( quadrupedState_->header.stamp <= quadrupedStateStamp_ ) {
         std::chrono::nanoseconds quadrupedStateTimeoutNSecs((int64_t(10*timeStep_*1e9)));
-
+        //ROS_INFO_STREAM("prev: quadrupedStateStamp: " << quadrupedStateStamp_ << " current:" << quadrupedState_->header.stamp );
         if (rcvdQuadrupedState_.wait_for(lockQuadrupedState, quadrupedStateTimeoutNSecs) == std::cv_status::no_timeout) {
+          //ROS_WARN_STREAM("Locomotion Controller: Timing might be an issue!");
           quadrupedStateOk = true;
         }
       }
