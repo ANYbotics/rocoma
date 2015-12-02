@@ -338,8 +338,6 @@ bool LocomotionController::updateControllerWorker(const nodewrap::WorkerEvent& e
           quadrupedStateOk = true;
         }
       }
-      else
-        quadrupedStateOk = true;
 
     } else {
       // simulated robot
