@@ -93,7 +93,8 @@ class LocomotionController : public nodewrap::NodeImpl
   nodewrap::Worker addWrappedWorker(const std::string& name,
                                     const nodewrap::WorkerOptions& defaultOptions);
 
-  double getSamplingFrequency() const;
+  double getLoggerSamplingWindow() const;
+  double getLoggerSamplingFrequency() const;
 
 
  protected:
@@ -124,7 +125,8 @@ class LocomotionController : public nodewrap::NodeImpl
   bool useWorker_;
   double timeStep_;
   bool isRealRobot_;
-  double samplingTime_;
+  double loggerSamplingWindow_;
+  double loggerSamplingFrequency_;
   std::string defaultController_;
   std::string quadrupedName_;
 

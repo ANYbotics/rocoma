@@ -77,7 +77,8 @@ LocomotionController::LocomotionController():
     useWorker_(true),
     timeStep_(0.0025),
     isRealRobot_(false),
-    samplingTime_(1.0),
+    loggerSamplingWindow_(60.0),
+    loggerSamplingFrequency_(1.0),
     model_(),
     controllerManager_(this),
     defaultController_("LocoDemo"),
@@ -108,32 +109,30 @@ void LocomotionController::init() {
   if (loggingScriptFilename.empty()){
     loggingScriptFilename = ros::package::getPath("locomotion_controller") + std::string{"/config/logging.script"};
   }
-  double publishFrequency;
-  getNodeHandle().param<double>("logger/sampling_time", samplingTime_, 60.0);
-  getNodeHandle().param<double>("logger/publish_frequency", publishFrequency, 1.0);
+  getNodeHandle().param<double>("logger/sampling_time", loggerSamplingWindow_, 60.0);
+  getNodeHandle().param<double>("logger/publish_frequency", loggerSamplingFrequency_, 1.0);
 
   std::string loggerClass;
   getNodeHandle().param<std::string>("logger/class", loggerClass, "std");
 
   if (loggerClass.compare("ros") == 0) {
-    NODEWRAP_INFO("[Locomotion Controller]: Logger type: ros");
+    NODEWRAP_INFO("[LocomotionController::init] Logger type: ros");
     // initialize ros logger
     signal_logger::logger.reset(new signal_logger_ros::LoggerRos(getNodeHandle()));
-    signal_logger_ros::LoggerRos* loggerRos = static_cast<signal_logger_ros::LoggerRos*>(signal_logger::logger.get());
-    loggerRos->setPublishFrequency(publishFrequency);
   } else if (loggerClass.compare("std") == 0) {
-    NODEWRAP_INFO("[Locomotion Controller]: Logger type: std");
+    NODEWRAP_INFO("[LocomotionController::init] Logger type: std");
     // initialize std logger as fallback logger
     signal_logger::logger.reset(new signal_logger_std::LoggerStd());
     signal_logger_std::LoggerStd* loggerStd = static_cast<signal_logger_std::LoggerStd*>(signal_logger::logger.get());
     loggerStd->setVerboseLevel(signal_logger_std::LoggerStd::VL_DEBUG);
   } else {
-    NODEWRAP_INFO("[Locomotion Controller]: Logger type: none");
+    NODEWRAP_INFO("[LocomotionController::init] Logger type: none");
     signal_logger::logger.reset(new signal_logger::LoggerNone());
   }
 
-  signal_logger::logger->initLogger((int)(1.0/timeStep_), (int)(1.0/timeStep_), samplingTime_, loggingScriptFilename);
-  NODEWRAP_INFO("[Locomotion Controller]  Initialize logger with sampling time: %lfs, sampling frequency: %d and script: %s.", samplingTime_, (int)(1.0/timeStep_), loggingScriptFilename.c_str());
+  signal_logger::logger->initLogger((int)(1.0/timeStep_), loggerSamplingFrequency_, loggerSamplingWindow_, loggingScriptFilename);
+  NODEWRAP_INFO("[LocomotionController::init] Initialize logger with sampling time: %d,"
+                                              "sampling frequency: %d and script: %s.", loggerSamplingWindow_, loggerSamplingFrequency_, loggingScriptFilename.c_str());
   //---
 
   //--- Configure parameter handler
@@ -213,10 +212,13 @@ nodewrap::Worker LocomotionController::addWrappedWorker(
 }
 
 
-double LocomotionController::getSamplingFrequency() const {
-  return samplingTime_;
+double LocomotionController::getLoggerSamplingWindow() const {
+  return loggerSamplingWindow_;
 }
 
+double LocomotionController::getLoggerSamplingFrequency() const {
+  return loggerSamplingFrequency_;
+}
 
 void LocomotionController::initializeMessages() {
   //--- Initialize joint commands.
