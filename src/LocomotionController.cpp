@@ -130,9 +130,9 @@ void LocomotionController::init() {
     signal_logger::logger.reset(new signal_logger::LoggerNone());
   }
 
-  signal_logger::logger->initLogger((int)(1.0/timeStep_), loggerSamplingFrequency_, loggerSamplingWindow_, loggingScriptFilename);
-  NODEWRAP_INFO("[LocomotionController::init] Initialize logger with sampling time: %d,"
-                                              "sampling frequency: %d and script: %s.", loggerSamplingWindow_, loggerSamplingFrequency_, loggingScriptFilename.c_str());
+  signal_logger::logger->initLogger(static_cast<int>(1.0/timeStep_), static_cast<int>(loggerSamplingFrequency_), static_cast<int>(loggerSamplingWindow_), loggingScriptFilename);
+  NODEWRAP_INFO("[LocomotionController::init] Initialize logger with sampling window: %4.2fs, "
+                "sampling frequency: %dHz and script: %s.", signal_logger::logger->getSamplingWindow(), signal_logger::logger->getSamplingFrequency(), loggingScriptFilename.c_str());
   //---
 
   //--- Configure parameter handler
