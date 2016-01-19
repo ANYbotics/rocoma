@@ -183,10 +183,6 @@ bool ControllerRos<Controller_>::createController(double dt)
     //--- start signal logging in a worker thread
     nodewrap::WorkerOptions signalLoggerWorkerOptions;
     signalLoggerWorkerOptions.autostart = false;
-
-    double samplingTime = controllerManager_->getLocomotionController()
-        ->getSamplingFrequency();
-
     signalLoggerWorkerOptions.frequency = signal_logger::logger->getSamplingFrequency();
     signalLoggerWorkerOptions.callback = boost::bind(
         &ControllerRos<Controller_>::signalLoggerWorker, this, _1);
