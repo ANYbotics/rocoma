@@ -180,6 +180,13 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
    manager->addController(controllerRocoSeaTestAnymal);
 #endif
 
+#ifdef USE_TASK_ROCOSEATEST_SWING
+   auto controllerRocoSeaTestSwing = new ControllerRos<roco_sea_test_swing::RocoSeaTestSwing>(state, command);
+   controllerRocoSeaTestSwing->setControllerManager(manager);
+   controllerRocoSeaTestSwing->setIsRealRobotFromManager(manager->isRealRobot());
+   manager->addController(controllerRocoSeaTestSwing);
+#endif
+
 #ifdef USE_TASK_LOCOBOUND
    auto controllerLocoBound = new ControllerRos<loco_bound::LocoBound>(state, command);
    controllerLocoBound->setControllerManager(manager);

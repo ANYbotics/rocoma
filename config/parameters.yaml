@@ -6,7 +6,7 @@ logger:
   sampling_time: 120
   publish_frequency: 400
   script: "/home/integration/.ros/locomotion_controller_logging.script"
-  class: "std"
+  class: "ros"
 
 
 quadruped:

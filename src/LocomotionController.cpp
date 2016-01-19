@@ -76,7 +76,7 @@ LocomotionController::LocomotionController():
     loadQuadrupedModelFromFile_(false),
     useWorker_(true),
     timeStep_(0.0025),
-    isRealRobot_(false),
+    isRealRobot_(true),
     samplingTime_(1.0),
     model_(),
     controllerManager_(this),
@@ -95,10 +95,12 @@ LocomotionController::~LocomotionController()
 void LocomotionController::init() {
   //--- Read parameters.
   getNodeHandle().param<double>("controller/time_step", timeStep_, 0.0025);
-  getNodeHandle().param<bool>("controller/is_real_robot", isRealRobot_, false);
+  getNodeHandle().param<bool>("controller/is_real_robot", isRealRobot_, true);
   getNodeHandle().param<bool>("controller/use_worker", useWorker_, true);
   getNodeHandle().param<std::string>("controller/default", defaultController_, "LocoDemo");
   getNodeHandle().param<std::string>("quadruped/name", quadrupedName_, "starleth");
+
+  ROS_INFO_STREAM("Is controlling a real robot: " << isRealRobot_ ? "yes": "no");
 
   //---
 
@@ -156,14 +158,15 @@ void LocomotionController::init() {
       std::string quadrupedSetup;
       getNodeHandle().param<std::string>("quadruped/setup", quadrupedSetup, "minimal");
       std::string urdfModelFile = ros::package::getPath("quadruped_model") + "/resources/" + quadrupedName_ + "_" + quadrupedSetup + ".urdf";
+      NODEWRAP_INFO("[Locomotion Controller] Initializing model for %s with %s setup.", quadrupedName_.c_str(), quadrupedSetup.c_str());
       model_.initializeForControllerFromFile(timeStep_,isRealRobot_, urdfModelFile, quadrupedEnum);
     }
     else {
       std::string quadrupedUrdfDescription;
       getNodeHandle().param<std::string>("/quadruped_description", quadrupedUrdfDescription, "");
+      NODEWRAP_INFO("[Locomotion Controller] Initializing model for %s.", quadrupedName_.c_str());
       model_.initializeForController(timeStep_,isRealRobot_, quadrupedUrdfDescription, quadrupedEnum);
     }
-
 
 //    model_.getRobotModel()->params().printParams();
     model_.addVariablesToLog();
