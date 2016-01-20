@@ -111,8 +111,8 @@ void LocomotionController::init() {
   if (loggingScriptFilename.empty()){
     loggingScriptFilename = ros::package::getPath("locomotion_controller") + std::string{"/config/logging.script"};
   }
-  getNodeHandle().param<double>("logger/sampling_time", loggerSamplingWindow_, 60.0);
-  getNodeHandle().param<double>("logger/publish_frequency", loggerSamplingFrequency_, 1.0);
+  getNodeHandle().param<double>("logger/sampling_window", loggerSamplingWindow_, 60.0);
+  getNodeHandle().param<double>("logger/sampling_frequency", loggerSamplingFrequency_, 1.0);
 
   std::string loggerClass;
   getNodeHandle().param<std::string>("logger/class", loggerClass, "std");

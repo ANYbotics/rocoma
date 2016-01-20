@@ -11,7 +11,7 @@
   <!-- Set to true for simulation -->
   <arg name="simulation" default="true"/>
   <!-- The logger class can either be std or ros -->
-  <arg name="logger_class" default="ros"/>
+  <arg name="logger_class" default="std"/>
   <!-- The output can either be screen, log or an empty string -->
   <arg name="output" default="screen"/>
   <!-- Console launch prefix -->

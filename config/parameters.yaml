@@ -3,10 +3,10 @@ controller:
   default: LocoDemo
 
 logger:
-  sampling_time: 120
-  publish_frequency: 400
+  sampling_window: 120
+  sampling_frequency: 400
   script: "/home/integration/.ros/locomotion_controller_logging.script"
-  class: "ros"
+  class: "std"
 
 
 quadruped:
