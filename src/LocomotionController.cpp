@@ -103,8 +103,8 @@ void LocomotionController::init() {
 
   ROS_INFO_STREAM("Is controlling a real robot: " << isRealRobot_ ? "yes": "no");
 
-  //---
 
+#ifdef LC_ENABLE_LOGGER
   //--- Configure logger.
   std::string loggingScriptFilename;
   getNodeHandle().param<std::string>("logger/script", loggingScriptFilename, "");
@@ -136,6 +136,7 @@ void LocomotionController::init() {
   NODEWRAP_INFO("[LocomotionController::init] Initialize logger with sampling window: %4.2fs, "
                 "sampling frequency: %dHz and script: %s.", signal_logger::logger->getSamplingWindow(), signal_logger::logger->getSamplingFrequency(), loggingScriptFilename.c_str());
   //---
+#endif
 
   //--- Configure parameter handler
   parameter_handler::handler.reset(new parameter_handler_ros::ParameterHandlerRos());
@@ -265,7 +266,7 @@ void LocomotionController::initializePublishers() {
 
 
 void LocomotionController::initializeSubscribers() {
-  joystickSubscriber_ = subscribe("joy", "/joy", 100, &LocomotionController::joystickCallback, ros::TransportHints().tcpNoDelay());
+  joystickSubscriber_ = subscribe("joy", "/joy", 10, &LocomotionController::joystickCallback, ros::TransportHints().tcpNoDelay());
   commandVelocitySubscriber_ = subscribe("command_velocity", "/command_velocity", 100, &LocomotionController::commandVelocityCallback, ros::TransportHints().tcpNoDelay());
   //--- temporary
   mocapSubscriber_ = subscribe("mocap", "mocap", 100, &LocomotionController::mocapCallback, ros::TransportHints().tcpNoDelay());

@@ -63,6 +63,8 @@
 #include <roscpp_nodewrap/worker/Worker.h>
 
 
+#define LC_ENABLE_LOGGER 1
+
 namespace locomotion_controller {
 
 class LocomotionController : public nodewrap::NodeImpl

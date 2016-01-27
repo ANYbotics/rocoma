@@ -22,7 +22,7 @@
   <!-- Load configuration files -->
   <rosparam command="load" ns="locomotion_controller" file="$(find locomotion_controller)/config/parameters.yaml"/>
   <rosparam command="load" ns="locomotion_controller" file="$(find locomotion_controller)/config/publishers.yaml"/>
-  <rosparam command="load" ns="locomotion_controller" file="$(find locomotion_controller)/config/subscribers.yaml"/>
+  <rosparam command="load" ns="locomotion_controller" file="$(find locomotion_controller)/config/$(arg quadruped_name)_subscribers.yaml"/>
   <rosparam command="load" ns="locomotion_controller" file="$(find locomotion_controller)/config/services.yaml"/>
 
   <!-- Load parameters from arguments -->

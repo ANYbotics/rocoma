@@ -1,0 +1,25 @@
+subscribers:
+  quadruped_state: 
+    topic: /state_estimator/quadruped_state
+    queue_size: 10
+    latch: false
+  joy:
+    topic: /joy_throttle
+    queue_size: 10
+    latch: false
+  command_velocity: 
+    topic: /navigation_safety_checker/command_velocity
+    queue_size: 10
+    latch: false
+  actuator_states: 
+    topic: /sensors/actuator_states
+    queue_size: 10
+    latch: false
+  actuator_readings: 
+    topic: /sensors/actuator_readings
+    queue_size: 10
+    latch: false
+  mocap: 
+    topic: /starleth/pose
+    queue_size: 10
+    latch: false

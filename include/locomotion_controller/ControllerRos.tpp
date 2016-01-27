@@ -180,6 +180,7 @@ bool ControllerRos<Controller_>::createController(double dt)
       return true;
     }
 
+#ifdef USE_LOGGER
     //--- start signal logging in a worker thread
     nodewrap::WorkerOptions signalLoggerWorkerOptions;
     signalLoggerWorkerOptions.autostart = false;
@@ -191,7 +192,7 @@ bool ControllerRos<Controller_>::createController(double dt)
         + "_signal_logger_worker";
     signalLoggerWorker_ = controllerManager_->getLocomotionController()
         ->addWrappedWorker(signalLoggerWorkerName, signalLoggerWorkerOptions);
-
+#endif
     this->isCreated_ = true;
   } catch (std::exception& e) {
     ROCO_WARN_STREAM("Exception caught: " << e.what());
@@ -289,7 +290,9 @@ bool ControllerRos<Controller_>::initializeController(double dt)
   try {
     // Update the state.
     updateState(dt, false);
+#ifdef USE_LOGGER
     signal_logger::logger->stopLogger();
+#endif
     if (!this->initialize(dt)) {
       ROCO_WARN_STREAM("Controller could not be initialized!");
       emergencyStop();
@@ -308,7 +311,9 @@ bool ControllerRos<Controller_>::initializeController(double dt)
   //---
 
   this->isRunning_ = true;
+#ifdef USE_LOGGER
   signal_logger::logger->startLogger();
+#endif
   startWorkers();
   ROCO_INFO_STREAM(
       "Initialized controller " << this->getName() << " successfully!");
@@ -318,13 +323,17 @@ bool ControllerRos<Controller_>::initializeController(double dt)
 template<typename Controller_>
 void ControllerRos<Controller_>::startWorkers() {
   ROCO_INFO_STREAM("[" << this->getName() << "] Starting workers.");
+#ifdef USE_LOGGER
   signalLoggerWorker_.start();
+#endif
 }
 
 template<typename Controller_>
 void ControllerRos<Controller_>::cancelWorkers() {
   ROCO_INFO_STREAM("[" << this->getName() << "] Canceling workers.");
+#ifdef USE_LOGGER
   signalLoggerWorker_.cancel(true);
+#endif
 }
 
 
@@ -342,7 +351,9 @@ bool ControllerRos<Controller_>::resetController(double dt)
 
   try {
     updateState(dt, false);
+#ifdef USE_LOGGER
     signal_logger::logger->stopLogger();
+#endif
     if (!this->reset(dt)) {
       ROCO_WARN_STREAM("Could not reset controller!");
       emergencyStop();
@@ -356,7 +367,9 @@ bool ControllerRos<Controller_>::resetController(double dt)
   }
 
   this->isRunning_ = true;
+#ifdef USE_LOGGER
   signal_logger::logger->startLogger();
+#endif
   startWorkers();
   ROCO_INFO_STREAM("Reset controller " << this->getName() << " successfully!");
   return true;
@@ -365,7 +378,9 @@ bool ControllerRos<Controller_>::resetController(double dt)
 
 template<typename Controller_>
 bool ControllerRos<Controller_>::signalLoggerWorker(const nodewrap::WorkerEvent& event) {
+#ifdef USE_LOGGER
   signal_logger::logger->collectLoggerData();
+#endif
   return true;
 }
 
@@ -526,9 +541,12 @@ void ControllerRos<Controller_>::emergencyStop()
   sendEmergencyCommand();
 
   if (this->getName() != emergencyStopControllerName_) {
-    signal_logger::logger->stopLogger();
-    signal_logger::logger->saveLoggerData();
-
+#ifdef USE_LOGGER
+    {
+      signal_logger::logger->stopLogger();
+      signal_logger::logger->saveLoggerData();
+    }
+#endif
     // todo: check if stop is needed here
 //    if (this->isRunning_){
 //      try {
