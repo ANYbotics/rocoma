@@ -180,7 +180,7 @@ bool ControllerRos<Controller_>::createController(double dt)
       return true;
     }
 
-#ifdef USE_LOGGER
+#ifdef LC_ENABLE_LOGGER
     //--- start signal logging in a worker thread
     nodewrap::WorkerOptions signalLoggerWorkerOptions;
     signalLoggerWorkerOptions.autostart = false;
@@ -290,7 +290,7 @@ bool ControllerRos<Controller_>::initializeController(double dt)
   try {
     // Update the state.
     updateState(dt, false);
-#ifdef USE_LOGGER
+#ifdef LC_ENABLE_LOGGER
     signal_logger::logger->stopLogger();
 #endif
     if (!this->initialize(dt)) {
@@ -311,7 +311,7 @@ bool ControllerRos<Controller_>::initializeController(double dt)
   //---
 
   this->isRunning_ = true;
-#ifdef USE_LOGGER
+#ifdef LC_ENABLE_LOGGER
   signal_logger::logger->startLogger();
 #endif
   startWorkers();
@@ -323,7 +323,7 @@ bool ControllerRos<Controller_>::initializeController(double dt)
 template<typename Controller_>
 void ControllerRos<Controller_>::startWorkers() {
   ROCO_INFO_STREAM("[" << this->getName() << "] Starting workers.");
-#ifdef USE_LOGGER
+#ifdef LC_ENABLE_LOGGER
   signalLoggerWorker_.start();
 #endif
 }
@@ -331,7 +331,7 @@ void ControllerRos<Controller_>::startWorkers() {
 template<typename Controller_>
 void ControllerRos<Controller_>::cancelWorkers() {
   ROCO_INFO_STREAM("[" << this->getName() << "] Canceling workers.");
-#ifdef USE_LOGGER
+#ifdef LC_ENABLE_LOGGER
   signalLoggerWorker_.cancel(true);
 #endif
 }
@@ -351,7 +351,7 @@ bool ControllerRos<Controller_>::resetController(double dt)
 
   try {
     updateState(dt, false);
-#ifdef USE_LOGGER
+#ifdef LC_ENABLE_LOGGER
     signal_logger::logger->stopLogger();
 #endif
     if (!this->reset(dt)) {
@@ -367,7 +367,7 @@ bool ControllerRos<Controller_>::resetController(double dt)
   }
 
   this->isRunning_ = true;
-#ifdef USE_LOGGER
+#ifdef LC_ENABLE_LOGGER
   signal_logger::logger->startLogger();
 #endif
   startWorkers();
@@ -378,7 +378,7 @@ bool ControllerRos<Controller_>::resetController(double dt)
 
 template<typename Controller_>
 bool ControllerRos<Controller_>::signalLoggerWorker(const nodewrap::WorkerEvent& event) {
-#ifdef USE_LOGGER
+#ifdef LC_ENABLE_LOGGER
   signal_logger::logger->collectLoggerData();
 #endif
   return true;
@@ -541,7 +541,7 @@ void ControllerRos<Controller_>::emergencyStop()
   sendEmergencyCommand();
 
   if (this->getName() != emergencyStopControllerName_) {
-#ifdef USE_LOGGER
+#ifdef LC_ENABLE_LOGGER
     {
       signal_logger::logger->stopLogger();
       signal_logger::logger->saveLoggerData();
