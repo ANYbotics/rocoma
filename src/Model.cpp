@@ -490,6 +490,16 @@ void Model::getSeActuatorCommands(series_elastic_actuator_msgs::SeActuatorComman
   }
 }
 
+void Model::getSeActuatorCommands(series_elastic_actuator_msgs::SeActuatorCommands& actuatorCommands) {
+  ros::Time stamp = ros::Time::now();
+  int i = 0;
+  for (auto& command : command_.getActuatorCommands()) {
+    actuatorCommands.commands[i].header.stamp = stamp;
+    series_elastic_actuator_ros::ConvertRosMessages::writeToMessage(actuatorCommands.commands[i], command);
+    ++i;
+  }
+}
+
 void Model::getPose(geometry_msgs::PoseWithCovarianceStampedPtr& pose) {
   //fixme
 //  const Position positionWorldToBaseInWorldFrame = Position(quadrupedModel_->getPositionWorldToBody(quadruped_model::BodyEnum::BASE));

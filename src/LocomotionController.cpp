@@ -75,6 +75,7 @@ namespace locomotion_controller {
 LocomotionController::LocomotionController():
     loadQuadrupedModelFromFile_(false),
     useWorker_(true),
+    subscribeToQuadrupedState_(true),
     timeStep_(0.0025),
     isRealRobot_(true),
     loggerSamplingWindow_(60.0),
@@ -98,6 +99,7 @@ void LocomotionController::init() {
   getNodeHandle().param<double>("controller/time_step", timeStep_, 0.0025);
   getNodeHandle().param<bool>("controller/is_real_robot", isRealRobot_, true);
   getNodeHandle().param<bool>("controller/use_worker", useWorker_, true);
+  getNodeHandle().param<bool>("controller/subscribe_state", subscribeToQuadrupedState_, true);
   getNodeHandle().param<std::string>("controller/default", defaultController_, "LocoDemo");
   getNodeHandle().param<std::string>("quadruped/name", quadrupedName_, "starleth");
 
@@ -273,8 +275,10 @@ void LocomotionController::initializeSubscribers() {
   seActuatorReadingsSubscriber_ = subscribe("actuator_readings", "/actuator_readings", 100, &LocomotionController::seActuatorReadingsCallback, ros::TransportHints().tcpNoDelay());
   //---
 
-  // this should be last since it will start the controller loop
-  quadrupedStateSubscriber_ = subscribe("quadruped_state", "/robot", 100, &LocomotionController::quadrupedStateCallback, ros::TransportHints().tcpNoDelay());
+  if (subscribeToQuadrupedState_) {
+    // this should be last since it will start the controller loop
+    quadrupedStateSubscriber_ = subscribe("quadruped_state", "/robot", 100, &LocomotionController::quadrupedStateCallback, ros::TransportHints().tcpNoDelay());
+  }
 
 }
 
@@ -594,6 +598,12 @@ void LocomotionController::mocapCallback(const geometry_msgs::TransformStamped::
 void LocomotionController::seActuatorReadingsCallback(const series_elastic_actuator_msgs::SeActuatorReadings::ConstPtr& msg) {
   std::lock_guard<std::mutex> lockModel(mutexModel_);
   model_.setSeActuatorReadings(msg);
+}
+
+
+void LocomotionController::getActuatorCommands(series_elastic_actuator_msgs::SeActuatorCommands& commands) {
+  std::lock_guard<std::mutex> lockModel(mutexModel_);
+  model_.getSeActuatorCommands(commands);
 }
 
 } /* namespace locomotion_controller */

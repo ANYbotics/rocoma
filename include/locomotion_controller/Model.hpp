@@ -106,6 +106,7 @@ class Model
 
   void getQuadrupedState(quadruped_msgs::QuadrupedStatePtr& quadrupedState);
   void getSeActuatorCommands(series_elastic_actuator_msgs::SeActuatorCommandsPtr& actuatorCommands);
+  void getSeActuatorCommands(series_elastic_actuator_msgs::SeActuatorCommands& actuatorCommands);
   void getPose(geometry_msgs::PoseWithCovarianceStampedPtr& pose);
   void getTwist(geometry_msgs::TwistWithCovarianceStampedPtr& pose);
 

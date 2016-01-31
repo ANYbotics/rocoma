@@ -86,6 +86,9 @@ class LocomotionController : public nodewrap::NodeImpl
   void init();
   void cleanup();
 
+  void updateControllerAndPublish(const quadruped_msgs::QuadrupedState::ConstPtr& quadrupedState);
+  void getActuatorCommands(series_elastic_actuator_msgs::SeActuatorCommands& commands);
+
   template<class T>
   nodewrap::Worker addWrappedWorker(const std::string& name,
                                     const ros::Rate& defaultRate,
@@ -116,7 +119,7 @@ class LocomotionController : public nodewrap::NodeImpl
   void initializePublishers();
   void initializeSubscribers();
 
-  void updateControllerAndPublish(const quadruped_msgs::QuadrupedState::ConstPtr& quadrupedState);
+
   const std::string& getQuadrupedName() const;
 
   /*
@@ -127,6 +130,7 @@ class LocomotionController : public nodewrap::NodeImpl
  private:
   bool loadQuadrupedModelFromFile_;
   bool useWorker_;
+  bool subscribeToQuadrupedState_;
   double timeStep_;
   bool isRealRobot_;
   double loggerSamplingWindow_;
