@@ -187,7 +187,7 @@ void LocomotionController::init() {
    */
   nodewrap::WorkerOptions workerOptions;
   workerOptions.callback = boost::bind(&LocomotionController::updateControllerWorker, this, _1);
-  workerOptions.frequency = 400;
+  workerOptions.frequency = 1.0/timeStep_;
   workerOptions.autostart = useWorker_;
   workerOptions.synchronous = false;
   workerOptions.privateCallbackQueue = true;
@@ -385,7 +385,10 @@ bool LocomotionController::updateControllerWorker(const nodewrap::WorkerEvent& e
   //-- Start measuring computation time.
   start = std::chrono::steady_clock::now();
   
-  controllerManager_.updateController();
+  {
+    std::lock_guard<std::mutex> lockModel(mutexModel_);
+    controllerManager_.updateController();
+  }
   
   publish();
   //---
@@ -394,15 +397,20 @@ bool LocomotionController::updateControllerWorker(const nodewrap::WorkerEvent& e
   end = std::chrono::steady_clock::now();
   int64_t elapsedTimeNSecs = std::chrono::duration_cast<std::chrono::nanoseconds>(end -
       start).count();
-  int64_t timeStep = (int64_t)(timeStep_*1e9);
+  const int64_t timeStepNSecs = (int64_t)(timeStep_*1e9);
+  const int64_t maxComputationTimeNSecs = timeStepNSecs*10.0;
 
-  if (elapsedTimeNSecs > timeStep) {
-    NODEWRAP_WARN_THROTTLE(3.0, "Computation of locomotion controller is not real-time! Elapsed time: %lf ms\n", (double)elapsedTimeNSecs*1e-6);
+  if (elapsedTimeNSecs > timeStepNSecs) {
+    if (isRealRobot_) {
+      NODEWRAP_WARN("Computation of locomotion controller is not real-time! Elapsed time: %lf ms\n", (double)elapsedTimeNSecs*1e-6);
+    }
+    else {
+      NODEWRAP_WARN_THROTTLE(3.0, "Computation of locomotion controller is not real-time! Elapsed time: %lf ms\n", (double)elapsedTimeNSecs*1e-6);
+    }
   }
-  if (elapsedTimeNSecs > timeStep*10) {
-    NODEWRAP_ERROR("Computation took more than 10 times the maximum allowed computation time (%lf ms)!", timeStep_*1e3);
-
-//    controllerManager_.emergencyStop();
+  if (isRealRobot_ && (elapsedTimeNSecs > maxComputationTimeNSecs)) {
+    NODEWRAP_ERROR("Computation took more than 10 times the maximum allowed computation time (%lf ms > %lf ms)!", (double)elapsedTimeNSecs*1e-6, (double)maxComputationTimeNSecs*1e-6);
+    controllerManager_.emergencyStop();
   }
   //---
 
