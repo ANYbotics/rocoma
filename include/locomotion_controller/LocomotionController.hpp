@@ -131,6 +131,7 @@ class LocomotionController : public nodewrap::NodeImpl
   bool loadQuadrupedModelFromFile_;
   bool useWorker_;
   bool subscribeToQuadrupedState_;
+  bool subscribeToActuatorReadings_;
   double timeStep_;
   bool isRealRobot_;
   double loggerSamplingWindow_;

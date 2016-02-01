@@ -76,6 +76,7 @@ LocomotionController::LocomotionController():
     loadQuadrupedModelFromFile_(false),
     useWorker_(true),
     subscribeToQuadrupedState_(true),
+    subscribeToActuatorReadings_(true),
     timeStep_(0.0025),
     isRealRobot_(true),
     loggerSamplingWindow_(60.0),
@@ -100,6 +101,8 @@ void LocomotionController::init() {
   getNodeHandle().param<bool>("controller/is_real_robot", isRealRobot_, true);
   getNodeHandle().param<bool>("controller/use_worker", useWorker_, true);
   getNodeHandle().param<bool>("controller/subscribe_state", subscribeToQuadrupedState_, true);
+  getNodeHandle().param<bool>("controller/subscribe_actuator_readings", subscribeToActuatorReadings_, true);
+
   getNodeHandle().param<std::string>("controller/default", defaultController_, "LocoDemo");
   getNodeHandle().param<std::string>("quadruped/name", quadrupedName_, "starleth");
 
@@ -272,8 +275,11 @@ void LocomotionController::initializeSubscribers() {
   commandVelocitySubscriber_ = subscribe("command_velocity", "/command_velocity", 100, &LocomotionController::commandVelocityCallback, ros::TransportHints().tcpNoDelay());
   //--- temporary
   mocapSubscriber_ = subscribe("mocap", "mocap", 100, &LocomotionController::mocapCallback, ros::TransportHints().tcpNoDelay());
-  seActuatorReadingsSubscriber_ = subscribe("actuator_readings", "/actuator_readings", 100, &LocomotionController::seActuatorReadingsCallback, ros::TransportHints().tcpNoDelay());
   //---
+
+  if (subscribeToActuatorReadings_) {
+    seActuatorReadingsSubscriber_ = subscribe("actuator_readings", "/actuator_readings", 100, &LocomotionController::seActuatorReadingsCallback, ros::TransportHints().tcpNoDelay());
+  }
 
   if (subscribeToQuadrupedState_) {
     // this should be last since it will start the controller loop
