@@ -103,6 +103,7 @@ class LocomotionController : public nodewrap::NodeImpl
   double getLoggerSamplingWindow() const;
   double getLoggerSamplingFrequency() const;
 
+  void seActuatorReadingsCallback(const series_elastic_actuator_msgs::SeActuatorReadings::ConstPtr& msg);
 
  protected:
   void publish();
@@ -112,7 +113,6 @@ class LocomotionController : public nodewrap::NodeImpl
                      locomotion_controller_msgs::EmergencyStop::Response &res);
   void commandVelocityCallback(const geometry_msgs::TwistStamped::ConstPtr& msg);
   void mocapCallback(const geometry_msgs::TransformStamped::ConstPtr& msg);
-  void seActuatorReadingsCallback(const series_elastic_actuator_msgs::SeActuatorReadings::ConstPtr& msg);
 
   void initializeMessages();
   void initializeServices();
