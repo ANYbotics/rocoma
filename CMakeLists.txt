@@ -9,6 +9,7 @@ project(locomotion_controller)
 
 # Activate C++11.
 set(CMAKE_CXX_FLAGS "-std=c++11")
+add_definitions(-DLC_ENABLE_LOGGER)
 
 # Exclude dynamics in robot model.
 if (NOT RM_EXCLUDE_DYNAMICS) 

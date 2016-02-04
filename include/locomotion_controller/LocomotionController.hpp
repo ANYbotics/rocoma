@@ -33,7 +33,7 @@
 
 #pragma once
 
-#define LC_ENABLE_LOGGER 1
+//#define LC_ENABLE_LOGGER 1
 
 #include <ros/ros.h>
 #include <roscpp_nodewrap/NodeImpl.h>
