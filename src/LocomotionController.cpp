@@ -85,7 +85,9 @@ LocomotionController::~LocomotionController()
 void LocomotionController::init() {
   //--- Read parameters.
   getNodeHandle().param<double>("controller/time_step", timeStep_, 0.0025);
-  getNodeHandle().param<bool>("controller/is_real_robot", isRealRobot_, true);
+  bool simulation = false;
+  getNodeHandle().param<bool>("controller/simulation", simulation, false);
+  isRealRobot_ = !simulation;
   getNodeHandle().param<bool>("controller/use_worker", useWorker_, true);
   getNodeHandle().param<bool>("controller/subscribe_state", subscribeToQuadrupedState_, true);
   getNodeHandle().param<bool>("controller/subscribe_actuator_readings", subscribeToActuatorReadings_, true);
@@ -561,17 +563,28 @@ void LocomotionController::update() {
 }
 
 void LocomotionController::updateJoystickReadings() {
-  boost::shared_lock<boost::shared_mutex> lock(mutexJoystickReadings_);
+
 
   /*
    * Ignore too old joystick commands.
    */
-  ros::Duration age = (ros::Time::now()-joystickReadings_->header.stamp);
+  ros::Duration age;
+  {
+    boost::shared_lock<boost::shared_mutex> lock(mutexJoystickReadings_);
+    age = (ros::Time::now()-joystickReadings_->header.stamp);
+  }
+
   if (isRealRobot_ && (age >= ros::Duration(4.0)) ) {
     NODEWRAP_WARN("Joystick message is %lf seconds old! Called emergency stop!", age.toSec());
     controllerManager_.emergencyStop();
+    {
+      boost::unique_lock<boost::shared_mutex> lock(mutexJoystickReadings_);
+      joystickReadings_->header.stamp = ros::Time::now();
+    }
   }
   else {
+    boost::shared_lock<boost::shared_mutex> lock(mutexJoystickReadings_);
+
     //-- update the model
     {
       std::lock_guard<std::mutex> lockModel(mutexModel_);
