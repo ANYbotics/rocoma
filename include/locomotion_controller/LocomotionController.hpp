@@ -38,34 +38,29 @@
 #include <ros/ros.h>
 #include <roscpp_nodewrap/NodeImpl.h>
 #include <roscpp_nodewrap/Nodelet.h>
+#include <roscpp_nodewrap/worker/Worker.h>
 
+// ROS messages / services
 #include <quadruped_msgs/QuadrupedState.h>
 #include <sensor_msgs/Joy.h>
 #include <series_elastic_actuator_msgs/SeActuatorCommands.h>
 #include <series_elastic_actuator_msgs/SeActuatorReadings.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <geometry_msgs/TransformStamped.h>
+#include <locomotion_controller_msgs/SwitchController.h>
+#include <locomotion_controller_msgs/ResetStateEstimator.h>
+#include <std_srvs/Empty.h>
 
 #include "locomotion_controller/Model.hpp"
 #include "locomotion_controller/ControllerManager.hpp"
 
-
 #include <kindr/rotations/RotationEigen.hpp>
-
-
 #include <kindr/rotations/RotationDiffEigen.hpp>
 #include <kindr/phys_quant/PhysicalQuantitiesEigen.hpp>
-
 
 #include <memory>
 #include <mutex>
 #include <condition_variable>
-
-
-#include <roscpp_nodewrap/worker/Worker.h>
-
-
-
 
 namespace locomotion_controller {
 
@@ -92,10 +87,7 @@ class LocomotionController : public nodewrap::NodeImpl
   template<class T>
   nodewrap::Worker addWrappedWorker(const std::string& name,
                                     const ros::Rate& defaultRate,
-                                    bool (T::*fp)(const nodewrap::WorkerEvent&))
-  {
-    return this->addWorker<T>(name, defaultRate, fp);
-  }
+                                    bool (T::*fp)(const nodewrap::WorkerEvent&));
 
   nodewrap::Worker addWrappedWorker(const std::string& name,
                                     const nodewrap::WorkerOptions& defaultOptions);
@@ -106,19 +98,21 @@ class LocomotionController : public nodewrap::NodeImpl
   void seActuatorReadingsCallback(const series_elastic_actuator_msgs::SeActuatorReadings::ConstPtr& msg);
 
  protected:
+  void initializeMessages();
+  void initializeServices();
+  void initializePublishers();
+  void initializeSubscribers();
+
   void publish();
+
   void quadrupedStateCallback(const quadruped_msgs::QuadrupedState::ConstPtr& msg);
   void joystickCallback(const sensor_msgs::Joy::ConstPtr& msg);
   bool emergencyStop(locomotion_controller_msgs::EmergencyStop::Request  &req,
                      locomotion_controller_msgs::EmergencyStop::Response &res);
   void commandVelocityCallback(const geometry_msgs::TwistStamped::ConstPtr& msg);
   void mocapCallback(const geometry_msgs::TransformStamped::ConstPtr& msg);
-
-  void initializeMessages();
-  void initializeServices();
-  void initializePublishers();
-  void initializeSubscribers();
-
+  void actuatorCommandsSubscriberConnect(const ros::SingleSubscriberPublisher& pub);
+  void actuatorCommandsSubscriberDisconnect(const ros::SingleSubscriberPublisher& pub);
 
   const std::string& getQuadrupedName() const;
 
@@ -150,23 +144,23 @@ class LocomotionController : public nodewrap::NodeImpl
   ros::Subscriber mocapSubscriber_;
   ros::Subscriber seActuatorReadingsSubscriber_;
 
-  ros::Publisher jointCommandsPublisher_;
+  ros::Publisher actuatorommandsPublisher_;
   ros::ServiceServer switchControllerService_;
   ros::ServiceServer emergencyStopService_;
   ros::ServiceServer getAvailableControllersService_;
   ros::ServiceServer getActiveControllerService_;
   ros::ServiceClient resetStateEstimatorClient_;
 
-  series_elastic_actuator_msgs::SeActuatorCommandsPtr jointCommands_;
+  series_elastic_actuator_msgs::SeActuatorCommandsPtr actuatorCommands_;
+  std::mutex mutexActuatorCommands_;
 
   quadruped_msgs::QuadrupedStateConstPtr quadrupedState_;
+  std::mutex mutexQuadrupedState_;
 
-//   std::mutex mutexControllerManager_;
-  std::mutex mutexJointCommands_;
   std::mutex mutexJoystick_;
   std::mutex mutexModel_;
   std::mutex mutexUpdateControllerAndPublish_;
-  std::mutex mutexQuadrupedState_;
+
 
   /*
    * Nodewrap worker
@@ -175,10 +169,8 @@ class LocomotionController : public nodewrap::NodeImpl
   std::condition_variable rcvdQuadrupedState_;
   ros::Time quadrupedStateStamp_;
 
-  std::shared_ptr<ros::CallbackQueue> jointCommandsCallbackQueue_;
-  size_t jointCommandsNumSubscribers_;
-  void jointCommandsSubscriberConnect(const ros::SingleSubscriberPublisher& pub);
-  void jointCommandsSubscriberDisconnect(const ros::SingleSubscriberPublisher& pub);
+  size_t actuatorCommandsNumSubscribers_;
+
 
 };
 

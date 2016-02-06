@@ -37,18 +37,10 @@
 
 #include "locomotion_controller/LocomotionController.hpp"
 
-#include "locomotion_controller_msgs/SwitchController.h"
-
-// Messages
-#include <locomotion_controller_msgs/ResetStateEstimator.h>
-
-
 #include <quadruped_model/robots/quadrupeds.hpp>
 #include <quadruped_model/robots/starleth.hpp>
 #include <quadruped_model/robots/anymal.hpp>
-
 #include <quadruped_assembly/quadrupeds.hpp>
-//#include <starleth_description/starleth_se_actuator_commands.hpp>
 
 #include <signal_logger/logger.hpp>
 #include <signal_logger/LoggerNone.hpp>
@@ -58,17 +50,12 @@
 #include <parameter_handler/parameter_handler.hpp>
 #include <parameter_handler_ros/ParameterHandlerRos.hpp>
 
-#include <std_srvs/Empty.h>
 
 #include <chrono>
 #include <cstdint>
 #include <string>
 
-#include <robotUtils/timers/ChronoTimer.hpp>
-
-
 NODEWRAP_EXPORT_CLASS(locomotion_controller, locomotion_controller::LocomotionController)
-
 
 namespace locomotion_controller {
 
@@ -85,7 +72,7 @@ LocomotionController::LocomotionController():
     controllerManager_(this),
     defaultController_("LocoDemo"),
     quadrupedName_("starleth"),
-    jointCommandsNumSubscribers_(0)
+    actuatorCommandsNumSubscribers_(0)
 {
 
 
@@ -106,7 +93,7 @@ void LocomotionController::init() {
   getNodeHandle().param<std::string>("controller/default", defaultController_, "LocoDemo");
   getNodeHandle().param<std::string>("quadruped/name", quadrupedName_, "starleth");
 
-  ROS_INFO_STREAM("Is controlling a real robot: " << isRealRobot_ ? "yes": "no");
+  ROS_INFO_STREAM("Is controlling a real robot: " << (isRealRobot_ ? "yes": "no"));
 
 
 #ifdef LC_ENABLE_LOGGER
@@ -198,7 +185,6 @@ void LocomotionController::init() {
   workerOptions.privateCallbackQueue = true;
   workerOptions.priority = 99;
   controllerWorker_ = addWorker("controller", workerOptions);
-
 }
 
 
@@ -221,6 +207,13 @@ nodewrap::Worker LocomotionController::addWrappedWorker(
   return this->addWorker(name, defaultOptions);
 }
 
+template<class T>
+nodewrap::Worker LocomotionController::addWrappedWorker(const std::string& name,
+                                  const ros::Rate& defaultRate,
+                                  bool (T::*fp)(const nodewrap::WorkerEvent&))
+{
+  return this->addWorker<T>(name, defaultRate, fp);
+}
 
 double LocomotionController::getLoggerSamplingWindow() const {
   return loggerSamplingWindow_;
@@ -233,10 +226,10 @@ double LocomotionController::getLoggerSamplingFrequency() const {
 void LocomotionController::initializeMessages() {
   //--- Initialize joint commands.
   {
-    std::lock_guard<std::mutex> lock(mutexJointCommands_);
-    jointCommands_.reset(new series_elastic_actuator_msgs::SeActuatorCommands);
+    std::lock_guard<std::mutex> lock(mutexActuatorCommands_);
+    actuatorCommands_.reset(new series_elastic_actuator_msgs::SeActuatorCommands);
 //    starleth_description::initializeSeActuatorCommandsForStarlETH(*jointCommands_);
-    quadruped_description::initializeSeActuatorCommands(*jointCommands_);
+    quadruped_description::initializeSeActuatorCommands(*actuatorCommands_);
   }
   //---
 }
@@ -256,15 +249,15 @@ void LocomotionController::initializePublishers() {
   /*****************************
    * Initialize joint commands *
    *****************************/
-  jointCommandsNumSubscribers_ = 0;
+  actuatorCommandsNumSubscribers_ = 0;
   ros::AdvertiseOptions jointCommandsOptions;
   jointCommandsOptions.init<series_elastic_actuator_msgs::SeActuatorCommands>("/command_seactuators",
                                                                               100,
-                                                                              boost::bind(&LocomotionController::jointCommandsSubscriberConnect,this,_1),
-                                                                              boost::bind(&LocomotionController::jointCommandsSubscriberDisconnect,this,_1));
+                                                                              boost::bind(&LocomotionController::actuatorCommandsSubscriberConnect,this,_1),
+                                                                              boost::bind(&LocomotionController::actuatorCommandsSubscriberDisconnect,this,_1));
 
-  jointCommandsPublisher_ = advertise("command_seactuators", jointCommandsOptions);
-  ROS_INFO_STREAM("commands topic name: " << jointCommandsPublisher_.getTopic());
+  actuatorommandsPublisher_ = advertise("command_seactuators", jointCommandsOptions);
+  ROS_INFO_STREAM("commands topic name: " << actuatorommandsPublisher_.getTopic());
   /*****************************/
 
 }
@@ -289,31 +282,31 @@ void LocomotionController::initializeSubscribers() {
 }
 
 
-void LocomotionController::jointCommandsSubscriberConnect(const ros::SingleSubscriberPublisher& pub) {
-  jointCommandsNumSubscribers_++;
-  ROS_INFO_STREAM("increasing joint commands to: " << jointCommandsNumSubscribers_);
+void LocomotionController::actuatorCommandsSubscriberConnect(const ros::SingleSubscriberPublisher& pub) {
+  actuatorCommandsNumSubscribers_++;
+  ROS_INFO_STREAM("[LocomotionController] Increasing number of subscribers to commands to: " << actuatorCommandsNumSubscribers_);
 }
-void LocomotionController::jointCommandsSubscriberDisconnect(const ros::SingleSubscriberPublisher& pub) {
-  jointCommandsNumSubscribers_--;
-  ROS_INFO_STREAM("decreasing joint commands to: " << jointCommandsNumSubscribers_);
+void LocomotionController::actuatorCommandsSubscriberDisconnect(const ros::SingleSubscriberPublisher& pub) {
+  actuatorCommandsNumSubscribers_--;
+  ROS_INFO_STREAM("[LocomotionController] Decreasing number of subscribers to commands to: " << actuatorCommandsNumSubscribers_);
 }
 
 
 void LocomotionController::publish()  {
-  if (jointCommandsNumSubscribers_ > 0u) {
-    series_elastic_actuator_msgs::SeActuatorCommandsPtr jointCommands;
+  if (actuatorCommandsNumSubscribers_ > 0u) {
+    series_elastic_actuator_msgs::SeActuatorCommandsPtr actuatorCommands;
 
     {
-      std::lock_guard<std::mutex> lock(mutexJointCommands_);
-      jointCommands.reset(new series_elastic_actuator_msgs::SeActuatorCommands(*jointCommands_));
+      std::lock_guard<std::mutex> lock(mutexActuatorCommands_);
+      actuatorCommands.reset(new series_elastic_actuator_msgs::SeActuatorCommands(*actuatorCommands_));
     }
 
     {
       std::lock_guard<std::mutex> lockModel(mutexModel_);
-      model_.getSeActuatorCommands(jointCommands);
+      model_.getSeActuatorCommands(actuatorCommands);
     }
 
-    jointCommandsPublisher_.publish(boost::const_pointer_cast<const series_elastic_actuator_msgs::SeActuatorCommands>(jointCommands));
+    actuatorommandsPublisher_.publish(boost::const_pointer_cast<const series_elastic_actuator_msgs::SeActuatorCommands>(actuatorCommands));
   }
 
 }
@@ -464,7 +457,6 @@ void LocomotionController::updateControllerAndPublish(const quadruped_msgs::Quad
   //---
 }
 
-
 void LocomotionController::joystickCallback(const sensor_msgs::Joy::ConstPtr& msg) {
   std::lock_guard<std::mutex> lock(mutexJoystick_);
 
@@ -605,7 +597,6 @@ void LocomotionController::seActuatorReadingsCallback(const series_elastic_actua
   std::lock_guard<std::mutex> lockModel(mutexModel_);
   model_.setSeActuatorReadings(msg);
 }
-
 
 void LocomotionController::getActuatorCommands(series_elastic_actuator_msgs::SeActuatorCommands& commands) {
   std::lock_guard<std::mutex> lockModel(mutexModel_);
