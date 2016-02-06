@@ -110,7 +110,7 @@ class Model
   void getPose(geometry_msgs::PoseWithCovarianceStampedPtr& pose);
   void getTwist(geometry_msgs::TwistWithCovarianceStampedPtr& pose);
 
-  void setJoystickCommands(const sensor_msgs::Joy::ConstPtr& msg);
+  void setJoystickCommands(const sensor_msgs::Joy& joy);
   void setCommandVelocity(const geometry_msgs::Twist& msg);
   void setMocapData(const geometry_msgs::TransformStamped::ConstPtr& msg);
 

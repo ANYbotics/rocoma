@@ -58,9 +58,9 @@
 #include <kindr/rotations/RotationDiffEigen.hpp>
 #include <kindr/phys_quant/PhysicalQuantitiesEigen.hpp>
 
-#include <memory>
-#include <mutex>
-#include <condition_variable>
+
+#include <boost/thread.hpp>
+#include <boost/chrono.hpp>
 
 namespace locomotion_controller {
 
@@ -81,7 +81,7 @@ class LocomotionController : public nodewrap::NodeImpl
   void init();
   void cleanup();
 
-  void updateControllerAndPublish(const quadruped_msgs::QuadrupedState::ConstPtr& quadrupedState);
+  void updateControllerAndPublish();
   void getActuatorCommands(series_elastic_actuator_msgs::SeActuatorCommands& commands);
 
   template<class T>
@@ -95,8 +95,9 @@ class LocomotionController : public nodewrap::NodeImpl
   double getLoggerSamplingWindow() const;
   double getLoggerSamplingFrequency() const;
 
-  void seActuatorReadingsCallback(const series_elastic_actuator_msgs::SeActuatorReadings::ConstPtr& msg);
 
+  void setQuadrupedState(const quadruped_msgs::QuadrupedState& msg);
+  void setActuatorReadings(const series_elastic_actuator_msgs::SeActuatorReadings& msg);
  protected:
   void initializeMessages();
   void initializeServices();
@@ -109,10 +110,11 @@ class LocomotionController : public nodewrap::NodeImpl
   void joystickCallback(const sensor_msgs::Joy::ConstPtr& msg);
   bool emergencyStop(locomotion_controller_msgs::EmergencyStop::Request  &req,
                      locomotion_controller_msgs::EmergencyStop::Response &res);
-  void commandVelocityCallback(const geometry_msgs::TwistStamped::ConstPtr& msg);
+  void velocityCommandsCallback(const geometry_msgs::TwistStamped::ConstPtr& msg);
   void mocapCallback(const geometry_msgs::TransformStamped::ConstPtr& msg);
   void actuatorCommandsSubscriberConnect(const ros::SingleSubscriberPublisher& pub);
   void actuatorCommandsSubscriberDisconnect(const ros::SingleSubscriberPublisher& pub);
+  void seActuatorReadingsCallback(const series_elastic_actuator_msgs::SeActuatorReadings::ConstPtr& msg);
 
   const std::string& getQuadrupedName() const;
 
@@ -120,6 +122,13 @@ class LocomotionController : public nodewrap::NodeImpl
    * Worker callbacks
    */
   bool updateControllerWorker(const nodewrap::WorkerEvent& event);
+
+  void update();
+  void updateQuadrupedState();
+  void updateJoystickReadings();
+  void updateVelocityCommands();
+  void updateActuatorReadings();
+  void updateActuatorCommands();
 
  private:
   bool loadQuadrupedModelFromFile_;
@@ -134,11 +143,13 @@ class LocomotionController : public nodewrap::NodeImpl
   std::string quadrupedName_;
 
   model::Model model_;
+  std::mutex mutexModel_;
+
   ControllerManager controllerManager_;
 
   ros::Subscriber quadrupedStateSubscriber_;
   ros::Subscriber joystickSubscriber_;
-  ros::Subscriber commandVelocitySubscriber_;
+  ros::Subscriber velocityCommandsSubscriber_;
 
   // this is only temporary:
   ros::Subscriber mocapSubscriber_;
@@ -152,21 +163,26 @@ class LocomotionController : public nodewrap::NodeImpl
   ros::ServiceClient resetStateEstimatorClient_;
 
   series_elastic_actuator_msgs::SeActuatorCommandsPtr actuatorCommands_;
-  std::mutex mutexActuatorCommands_;
+  boost::shared_mutex mutexActuatorCommands_;
 
-  quadruped_msgs::QuadrupedStateConstPtr quadrupedState_;
-  std::mutex mutexQuadrupedState_;
+  quadruped_msgs::QuadrupedStatePtr quadrupedState_;
+  boost::shared_mutex mutexQuadrupedState_;
 
-  std::mutex mutexJoystick_;
-  std::mutex mutexModel_;
-  std::mutex mutexUpdateControllerAndPublish_;
+  series_elastic_actuator_msgs::SeActuatorReadingsPtr actuatorReadings_;
+  boost::shared_mutex mutexActuatorReadings_;
+
+  sensor_msgs::JoyPtr joystickReadings_;
+  boost::shared_mutex mutexJoystickReadings_;
+
+  geometry_msgs::TwistStampedPtr velocityCommands_;
+  boost::shared_mutex mutexVelocityCommands_;
 
 
   /*
    * Nodewrap worker
    */
   nodewrap::Worker controllerWorker_;
-  std::condition_variable rcvdQuadrupedState_;
+  boost::condition_variable_any rcvdQuadrupedState_;
   ros::Time quadrupedStateStamp_;
 
   size_t actuatorCommandsNumSubscribers_;

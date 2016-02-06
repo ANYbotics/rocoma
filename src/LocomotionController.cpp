@@ -146,18 +146,23 @@ void LocomotionController::init() {
     if (quadrupedName_ == "anymal") quadrupedEnum = quadruped_model::Quadrupeds::Anymal;
 
 
-    if (loadQuadrupedModelFromFile_) {
-      std::string quadrupedSetup;
-      getNodeHandle().param<std::string>("quadruped/setup", quadrupedSetup, "minimal");
-      std::string urdfModelFile = ros::package::getPath("quadruped_model") + "/resources/" + quadrupedName_ + "_" + quadrupedSetup + ".urdf";
-      NODEWRAP_INFO("[Locomotion Controller] Initializing model for %s with %s setup.", quadrupedName_.c_str(), quadrupedSetup.c_str());
-      model_.initializeForControllerFromFile(timeStep_,isRealRobot_, urdfModelFile, quadrupedEnum);
-    }
-    else {
-      std::string quadrupedUrdfDescription;
-      getNodeHandle().param<std::string>("/quadruped_description", quadrupedUrdfDescription, "");
-      NODEWRAP_INFO("[Locomotion Controller] Initializing model for %s.", quadrupedName_.c_str());
-      model_.initializeForController(timeStep_,isRealRobot_, quadrupedUrdfDescription, quadrupedEnum);
+    try {
+      if (loadQuadrupedModelFromFile_) {
+        std::string quadrupedSetup;
+        getNodeHandle().param<std::string>("quadruped/setup", quadrupedSetup, "minimal");
+        std::string urdfModelFile = ros::package::getPath("quadruped_model") + "/resources/" + quadrupedName_ + "_" + quadrupedSetup + ".urdf";
+        NODEWRAP_INFO("[Locomotion Controller] Initializing model for %s with %s setup.", quadrupedName_.c_str(), quadrupedSetup.c_str());
+        model_.initializeForControllerFromFile(timeStep_,isRealRobot_, urdfModelFile, quadrupedEnum);
+      }
+      else {
+        std::string quadrupedUrdfDescription;
+        getNodeHandle().param<std::string>("/quadruped_description", quadrupedUrdfDescription, "");
+        NODEWRAP_INFO("[Locomotion Controller] Initializing model for %s.", quadrupedName_.c_str());
+        model_.initializeForController(timeStep_,isRealRobot_, quadrupedUrdfDescription, quadrupedEnum);
+      }
+    } catch (std::exception& ex) {
+      ROS_FATAL_STREAM("[Locomotion Controller] Could not initialize the model: " << ex.what());
+      return;
     }
 
 
@@ -224,14 +229,32 @@ double LocomotionController::getLoggerSamplingFrequency() const {
 }
 
 void LocomotionController::initializeMessages() {
-  //--- Initialize joint commands.
+
   {
-    std::lock_guard<std::mutex> lock(mutexActuatorCommands_);
+    boost::unique_lock<boost::shared_mutex> lock(mutexQuadrupedState_);
+    quadrupedState_.reset(new quadruped_msgs::QuadrupedState);
+    quadruped_description::initializeQuadrupedState(*quadrupedState_);
+  }
+
+  {
+    boost::unique_lock<boost::shared_mutex> lock(mutexActuatorCommands_);
     actuatorCommands_.reset(new series_elastic_actuator_msgs::SeActuatorCommands);
-//    starleth_description::initializeSeActuatorCommandsForStarlETH(*jointCommands_);
     quadruped_description::initializeSeActuatorCommands(*actuatorCommands_);
   }
-  //---
+
+  {
+    boost::unique_lock<boost::shared_mutex> lock(mutexJoystickReadings_);
+    joystickReadings_.reset(new sensor_msgs::Joy);
+    joystickReadings_->axes.resize(7, 0.0);
+    joystickReadings_->buttons.resize(15, 0.0);
+  }
+
+  {
+    boost::unique_lock<boost::shared_mutex> lock(mutexVelocityCommands_);
+    velocityCommands_.reset(new geometry_msgs::TwistStamped);
+  }
+
+
 }
 
 void LocomotionController::initializeServices() {
@@ -250,22 +273,21 @@ void LocomotionController::initializePublishers() {
    * Initialize joint commands *
    *****************************/
   actuatorCommandsNumSubscribers_ = 0;
-  ros::AdvertiseOptions jointCommandsOptions;
-  jointCommandsOptions.init<series_elastic_actuator_msgs::SeActuatorCommands>("/command_seactuators",
+  ros::AdvertiseOptions actuatorCommandsOptions;
+  actuatorCommandsOptions.init<series_elastic_actuator_msgs::SeActuatorCommands>("/command_seactuators",
                                                                               100,
                                                                               boost::bind(&LocomotionController::actuatorCommandsSubscriberConnect,this,_1),
                                                                               boost::bind(&LocomotionController::actuatorCommandsSubscriberDisconnect,this,_1));
 
-  actuatorommandsPublisher_ = advertise("command_seactuators", jointCommandsOptions);
-  ROS_INFO_STREAM("commands topic name: " << actuatorommandsPublisher_.getTopic());
+  actuatorommandsPublisher_ = advertise("command_seactuators", actuatorCommandsOptions);
+  ROS_INFO_STREAM("Commands topic name: " << actuatorommandsPublisher_.getTopic());
   /*****************************/
 
 }
 
-
 void LocomotionController::initializeSubscribers() {
   joystickSubscriber_ = subscribe("joy", "/joy", 10, &LocomotionController::joystickCallback, ros::TransportHints().tcpNoDelay());
-  commandVelocitySubscriber_ = subscribe("command_velocity", "/command_velocity", 100, &LocomotionController::commandVelocityCallback, ros::TransportHints().tcpNoDelay());
+  velocityCommandsSubscriber_ = subscribe("command_velocity", "/command_velocity", 100, &LocomotionController::velocityCommandsCallback, ros::TransportHints().tcpNoDelay());
   //--- temporary
   mocapSubscriber_ = subscribe("mocap", "mocap", 100, &LocomotionController::mocapCallback, ros::TransportHints().tcpNoDelay());
   //---
@@ -295,33 +317,42 @@ void LocomotionController::actuatorCommandsSubscriberDisconnect(const ros::Singl
 void LocomotionController::publish()  {
   if (actuatorCommandsNumSubscribers_ > 0u) {
     series_elastic_actuator_msgs::SeActuatorCommandsPtr actuatorCommands;
-
     {
-      std::lock_guard<std::mutex> lock(mutexActuatorCommands_);
+      boost::shared_lock<boost::shared_mutex> lock(mutexActuatorCommands_);
       actuatorCommands.reset(new series_elastic_actuator_msgs::SeActuatorCommands(*actuatorCommands_));
     }
-
-    {
-      std::lock_guard<std::mutex> lockModel(mutexModel_);
-      model_.getSeActuatorCommands(actuatorCommands);
-    }
-
     actuatorommandsPublisher_.publish(boost::const_pointer_cast<const series_elastic_actuator_msgs::SeActuatorCommands>(actuatorCommands));
   }
+}
 
+void LocomotionController::updateActuatorCommands()
+{
+  boost::unique_lock<boost::shared_mutex> lock(mutexActuatorCommands_);
+  boost::lock_guard<std::mutex> lockModel(mutexModel_);
+  model_.getSeActuatorCommands(actuatorCommands_);
 }
 
 
+void LocomotionController::setQuadrupedState(const quadruped_msgs::QuadrupedState& msg) {
+  boost::unique_lock<boost::shared_mutex> lock(mutexQuadrupedState_);
+  *quadrupedState_ = msg;
+}
+
+void LocomotionController::setActuatorReadings(const series_elastic_actuator_msgs::SeActuatorReadings& msg) {
+  boost::unique_lock<boost::shared_mutex> lock(mutexActuatorReadings_);
+  *actuatorReadings_ = msg;
+}
+
 void LocomotionController::quadrupedStateCallback(const quadruped_msgs::QuadrupedState::ConstPtr& msg) {
   {
-    std::unique_lock<std::mutex> lock(mutexQuadrupedState_);
-    quadrupedState_ = msg;
+    boost::unique_lock<boost::shared_mutex> lock(mutexQuadrupedState_);
+    *quadrupedState_ = *msg;
   }
   
   rcvdQuadrupedState_.notify_all();
 
   if (!useWorker_) {
-    updateControllerAndPublish(msg);
+    updateControllerAndPublish();
   }
 }
 
@@ -332,7 +363,7 @@ bool LocomotionController::updateControllerWorker(const nodewrap::WorkerEvent& e
   {
     bool quadrupedStateOk = false;
     
-    std::unique_lock<std::mutex> lockQuadrupedState(mutexQuadrupedState_);
+    boost::unique_lock<boost::shared_mutex> lockQuadrupedState(mutexQuadrupedState_);
 
     // This indicates that we have never received a robot state, thus we just return
     if ( !quadrupedState_ )
@@ -341,9 +372,9 @@ bool LocomotionController::updateControllerWorker(const nodewrap::WorkerEvent& e
     if (isRealRobot_) {
       // real robot
       if ( quadrupedState_->header.stamp <= quadrupedStateStamp_ ) {
-        std::chrono::nanoseconds quadrupedStateTimeoutNSecs((int64_t(10*timeStep_*1e9)));
+        boost::chrono::nanoseconds quadrupedStateTimeoutNSecs((int64_t(10*timeStep_*1e9)));
         //ROS_INFO_STREAM("prev: quadrupedStateStamp: " << quadrupedStateStamp_ << " current:" << quadrupedState_->header.stamp );
-        if (rcvdQuadrupedState_.wait_for(lockQuadrupedState, quadrupedStateTimeoutNSecs) == std::cv_status::no_timeout) {
+        if (rcvdQuadrupedState_.wait_for(lockQuadrupedState, quadrupedStateTimeoutNSecs) == boost::cv_status::no_timeout) {
           //ROS_WARN_STREAM("Locomotion Controller: Timing might be an issue!");
           quadrupedStateOk = true;
         }
@@ -371,11 +402,6 @@ bool LocomotionController::updateControllerWorker(const nodewrap::WorkerEvent& e
 
 
     if (quadrupedStateOk) {
-      {
-        std::lock_guard<std::mutex> lockModel(mutexModel_);
-        model_.setQuadrupedState(quadrupedState_);
-      }
-      
       quadrupedStateStamp_ = quadrupedState_->header.stamp;
     }
     else {
@@ -388,13 +414,9 @@ bool LocomotionController::updateControllerWorker(const nodewrap::WorkerEvent& e
   //-- Start measuring computation time.
   start = std::chrono::steady_clock::now();
   
-  {
-    std::lock_guard<std::mutex> lockModel(mutexModel_);
-    controllerManager_.updateController();
-  }
-  
+  update();
   publish();
-  //---
+
 
   //-- Measure computation time.
   end = std::chrono::steady_clock::now();
@@ -421,23 +443,15 @@ bool LocomotionController::updateControllerWorker(const nodewrap::WorkerEvent& e
 }
 
 
-void LocomotionController::updateControllerAndPublish(const quadruped_msgs::QuadrupedState::ConstPtr& quadrupedState) {
+void LocomotionController::updateControllerAndPublish() {
   //-- Start measuring computation time.
   std::chrono::time_point<std::chrono::steady_clock> start, end;
   start = std::chrono::steady_clock::now();
   //---
   
-  std::lock_guard<std::mutex> lockUpdateControllerAndPublish(mutexUpdateControllerAndPublish_);
-
   NODEWRAP_DEBUG("Update locomotion controller.");
 
-  {
-    std::lock_guard<std::mutex> lockModel(mutexModel_);
-    model_.setQuadrupedState(quadrupedState);
-  }
-  
-  controllerManager_.updateController();
-  
+  update();
   publish();
 
   //-- Measure computation time.
@@ -458,86 +472,10 @@ void LocomotionController::updateControllerAndPublish(const quadruped_msgs::Quad
 }
 
 void LocomotionController::joystickCallback(const sensor_msgs::Joy::ConstPtr& msg) {
-  std::lock_guard<std::mutex> lock(mutexJoystick_);
-
-  ros::Duration age = (ros::Time::now()-msg->header.stamp);
-  if (age >= ros::Duration(4.0)) {
-    NODEWRAP_WARN("Joystick message is %lf seconds old! Called emergency stop!", age.toSec());
-    
-    controllerManager_.emergencyStop();
-  }
-  else {
-    {
-      std::lock_guard<std::mutex> lockModel(mutexModel_);
-      model_.setJoystickCommands(msg);
-    }
-
-
-/*    // START + LF buttons
-    if (msg->buttons[4] == 1 && msg->buttons[7] == 1 ) {
-      locomotion_controller_msgs::SwitchController::Request  req;
-      locomotion_controller_msgs::SwitchController::Response res;
-      req.name = defaultController_;
-      if(!controllerManager_.switchController(req,res)) {
-      }
-      ROS_INFO("Switched task by joystick (status: %d)",res.status);
-
-    }*/
-
-
-    // LT + LEFT JOY
-    if (msg->buttons[4] == 1 && msg->axes[6] == 1 ) {
-      locomotion_controller_msgs::SwitchController::Request  req;
-      locomotion_controller_msgs::SwitchController::Response res;
-//       req.name = "LocoDemo";
-      req.name = "loco_demo_ros";
-      if(!controllerManager_.switchController(req,res)) {
-      }
-      ROS_INFO("Switched task by joystick to LocoDemo (status: %d)",res.status);
-
-    }
-    // LT + RIGHT JOY
-    if (msg->buttons[4] == 1 && msg->axes[6] == -1 ) {
-      locomotion_controller_msgs::SwitchController::Request  req;
-      locomotion_controller_msgs::SwitchController::Response res;
-//       req.name = "Crawling";
-      req.name = "loco_crawling_ros";
-      if(!controllerManager_.switchController(req,res)) {
-      }
-      ROS_INFO("Switched task by joystick to LocoCrawling (status: %d)",res.status);
-
-    }
-
-
-
-    // RB button
-    if (msg->buttons[5] == 1 ) {
-      NODEWRAP_WARN("Emergency stop by joystick!");
-      
-      controllerManager_.emergencyStop();
-    }
-
-    // LT + RT
-    if (msg->axes[2] == -1 && msg->axes[5] == -1 ) {
-      ROS_INFO("Resetting state estimator by joystick.");
-      //---  Reset the estimator.
-      if (resetStateEstimatorClient_.exists()) {
-        ROS_INFO("Locomotion controller wants to reset state estimator.");
-        locomotion_controller_msgs::ResetStateEstimator resetEstimatorService;
-        resetEstimatorService.request.pose.orientation.w = 1.0;
-        if(!resetStateEstimatorClient_.call(resetEstimatorService)) {
-          ROS_ERROR("Locomotion controller could not reset state estimator.");
-        }
-
-      }
-      else {
-        ROS_ERROR("Service to reset estimator does not exist!");
-      }
-      //---
-    }
-
-  }
+  boost::unique_lock<boost::shared_mutex> lock(mutexJoystickReadings_);
+  *joystickReadings_ = *msg;
 }
+
 
 bool LocomotionController::emergencyStop(locomotion_controller_msgs::EmergencyStop::Request  &req,
                                          locomotion_controller_msgs::EmergencyStop::Response &res) {
@@ -570,19 +508,23 @@ bool LocomotionController::emergencyStop(locomotion_controller_msgs::EmergencySt
   return result;
 }
 
-void LocomotionController::commandVelocityCallback(const geometry_msgs::TwistStamped::ConstPtr& msg) {
+void LocomotionController::velocityCommandsCallback(const geometry_msgs::TwistStamped::ConstPtr& msg) {
   // Ignore old messages for safety
   ros::Duration age = (ros::Time::now()-msg->header.stamp);
-  
   if (age >= ros::Duration(2.0)) {
+    boost::unique_lock<boost::shared_mutex> lock(mutexVelocityCommands_);
+    velocityCommands_->header.stamp = ros::Time::now();
+    velocityCommands_->twist.linear.x = 0.0;
+    velocityCommands_->twist.linear.y = 0.0;
+    velocityCommands_->twist.linear.z = 0.0;
+    velocityCommands_->twist.angular.x = 0.0;
+    velocityCommands_->twist.angular.y = 0.0;
+    velocityCommands_->twist.angular.z = 0.0;
     ROS_WARN("Ignoring commanded velocity which is %lf seconds old. Commanded velocity was set to zero.", age.toSec());
-
-    std::lock_guard<std::mutex> lockModel(mutexModel_);
-    model_.setCommandVelocity(geometry_msgs::Twist());
   }
   else {
-    std::lock_guard<std::mutex> lockModel(mutexModel_);
-    model_.setCommandVelocity(msg->twist);
+    boost::unique_lock<boost::shared_mutex> lock(mutexVelocityCommands_);
+    *velocityCommands_ = *msg;
   }
 
 }
@@ -594,13 +536,105 @@ void LocomotionController::mocapCallback(const geometry_msgs::TransformStamped::
 }
 
 void LocomotionController::seActuatorReadingsCallback(const series_elastic_actuator_msgs::SeActuatorReadings::ConstPtr& msg) {
+  boost::unique_lock<boost::shared_mutex> lock(mutexActuatorReadings_);
+  *actuatorReadings_ = *msg;
+}
+
+void LocomotionController::updateActuatorReadings() {
   std::lock_guard<std::mutex> lockModel(mutexModel_);
-  model_.setSeActuatorReadings(msg);
+  boost::shared_lock<boost::shared_mutex> lock(mutexActuatorReadings_);
+  model_.setSeActuatorReadings(actuatorReadings_);
 }
 
 void LocomotionController::getActuatorCommands(series_elastic_actuator_msgs::SeActuatorCommands& commands) {
+  boost::shared_lock<boost::shared_mutex> lock(mutexActuatorCommands_);
+  commands = *actuatorCommands_;
+}
+
+void LocomotionController::update() {
+  updateQuadrupedState();
+  updateJoystickReadings();
+  updateVelocityCommands();
+  updateActuatorReadings();
+  controllerManager_.updateController();
+  updateActuatorCommands();
+}
+
+void LocomotionController::updateJoystickReadings() {
+  boost::shared_lock<boost::shared_mutex> lock(mutexJoystickReadings_);
+
+  /*
+   * Ignore too old joystick commands.
+   */
+  ros::Duration age = (ros::Time::now()-joystickReadings_->header.stamp);
+  if (isRealRobot_ && (age >= ros::Duration(4.0)) ) {
+    NODEWRAP_WARN("Joystick message is %lf seconds old! Called emergency stop!", age.toSec());
+    controllerManager_.emergencyStop();
+  }
+  else {
+    //-- update the model
+    {
+      std::lock_guard<std::mutex> lockModel(mutexModel_);
+      model_.setJoystickCommands(*joystickReadings_);
+    }
+    //--
+
+    // LT + LEFT JOY
+    if (joystickReadings_->buttons[4] == 1 && joystickReadings_->axes[6] == 1 ) {
+      locomotion_controller_msgs::SwitchController::Request  req;
+      locomotion_controller_msgs::SwitchController::Response res;
+      req.name = "loco_demo_ros";
+      if(controllerManager_.switchController(req,res)) {
+        NODEWRAP_INFO("Switched task by joystick to loco_demo_ros (status: %d)", res.status);
+      }
+    }
+    // LT + RIGHT JOY
+    if (joystickReadings_->buttons[4] == 1 && joystickReadings_->axes[6] == -1 ) {
+      locomotion_controller_msgs::SwitchController::Request  req;
+      locomotion_controller_msgs::SwitchController::Response res;
+      req.name = "loco_crawling_ros";
+      if(controllerManager_.switchController(req,res)) {
+        NODEWRAP_INFO("Switched task by joystick to LocoCrawling (status: %d)",res.status);
+      }
+    }
+
+    // RB button
+    if (joystickReadings_->buttons[5] == 1 ) {
+      NODEWRAP_WARN("Emergency stop by joystick!");
+      controllerManager_.emergencyStop();
+    }
+
+    // LT + RT
+    if (joystickReadings_->axes[2] == -1 && joystickReadings_->axes[5] == -1 ) {
+      NODEWRAP_INFO("Resetting state estimator by joystick.");
+      //---  Reset the estimator.
+      if (resetStateEstimatorClient_.exists()) {
+        NODEWRAP_INFO("Locomotion controller wants to reset state estimator.");
+        locomotion_controller_msgs::ResetStateEstimator resetEstimatorService;
+        resetEstimatorService.request.pose.orientation.w = 1.0;
+        if(!resetStateEstimatorClient_.call(resetEstimatorService)) {
+          NODEWRAP_ERROR("Locomotion controller could not reset state estimator.");
+        }
+      }
+      else {
+        NODEWRAP_ERROR("Service to reset estimator does not exist!");
+      }
+      //---
+    }
+
+  }
+}
+
+void LocomotionController::updateVelocityCommands() {
+  boost::shared_lock<boost::shared_mutex> lock(mutexVelocityCommands_);
   std::lock_guard<std::mutex> lockModel(mutexModel_);
-  model_.getSeActuatorCommands(commands);
+  model_.setCommandVelocity(velocityCommands_->twist);
+}
+
+void LocomotionController::updateQuadrupedState() {
+  boost::shared_lock<boost::shared_mutex> lock(mutexQuadrupedState_);
+  std::lock_guard<std::mutex> lockModel(mutexModel_);
+  model_.setQuadrupedState(quadrupedState_);
 }
 
 } /* namespace locomotion_controller */
