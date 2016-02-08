@@ -245,8 +245,14 @@ void LocomotionController::initializeMessages() {
   }
 
   {
+    boost::unique_lock<boost::shared_mutex> lock(mutexActuatorReadings_);
+    actuatorReadings_.reset(new series_elastic_actuator_msgs::SeActuatorReadings);
+  }
+
+  {
     boost::unique_lock<boost::shared_mutex> lock(mutexJoystickReadings_);
     joystickReadings_.reset(new sensor_msgs::Joy);
+    joystickReadings_->header.stamp = ros::Time::now();
     joystickReadings_->axes.resize(7, 0.0);
     joystickReadings_->buttons.resize(15, 0.0);
   }
@@ -254,8 +260,8 @@ void LocomotionController::initializeMessages() {
   {
     boost::unique_lock<boost::shared_mutex> lock(mutexVelocityCommands_);
     velocityCommands_.reset(new geometry_msgs::TwistStamped);
+    velocityCommands_->header.stamp = ros::Time::now();
   }
-
 
 }
 
