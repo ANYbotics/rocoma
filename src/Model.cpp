@@ -535,12 +535,12 @@ void Model::getTwist(geometry_msgs::TwistWithCovarianceStampedPtr& pose) {
 }
 
 
-void Model::setJoystickCommands(const sensor_msgs::Joy::ConstPtr& msg) {
-  for (int i=0; i<msg->axes.size();i++) {
-    state_.getJoystickPtr()->setAxis(i+1, msg->axes[i]);
+void Model::setJoystickCommands(const sensor_msgs::Joy& joy) {
+  for (int i=0; i<joy.axes.size();i++) {
+    state_.getJoystickPtr()->setAxis(i+1, joy.axes[i]);
   }
-  for (int i=0; i<msg->buttons.size();i++) {
-    state_.getJoystickPtr()->setButton(i+1, msg->buttons[i]);
+  for (int i=0; i<joy.buttons.size();i++) {
+    state_.getJoystickPtr()->setButton(i+1, joy.buttons[i]);
   }
 }
 
