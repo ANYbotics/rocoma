@@ -194,6 +194,13 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
    manager->addController(controllerRocoSeaTestSwingInverseDynamics);
 #endif
 
+#ifdef USE_TASK_ROCOSEATEST_GRAVITY_COMPENSATION
+   auto controllerRocoSeaTestGravityCompensation = new ControllerRos<roco_sea_test_swing::RocoSeaTestGravityCompensation>(state, command);
+   controllerRocoSeaTestGravityCompensation->setControllerManager(manager);
+   controllerRocoSeaTestGravityCompensation->setIsRealRobotFromManager(manager->isRealRobot());
+   manager->addController(controllerRocoSeaTestGravityCompensation);
+#endif
+
 #ifdef USE_TASK_LOCOBOUND
    auto controllerLocoBound = new ControllerRos<loco_bound::LocoBound>(state, command);
    controllerLocoBound->setControllerManager(manager);
