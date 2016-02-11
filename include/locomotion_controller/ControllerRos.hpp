@@ -56,7 +56,7 @@
 #include "locomotion_controller/LocomotionController.hpp"
 #include "locomotion_controller/WorkerWrapper.hpp"
 
-#include <boosth/thread.hpp>
+#include <boost/thread.hpp>
 #include <iostream>
 #include <exception>      // std::exception
 
@@ -75,8 +75,8 @@ class ControllerRos:  public roco::controllers::ControllerAdapterInterface,
  public:
   ControllerRos(State& state,
                 Command& command,
-                boost::shared_mutex& stateMutex,
-                boost::shared_mutex& commandMutex);
+                boost::shared_mutex& mutexState,
+                boost::shared_mutex& mutexCommand);
   virtual ~ControllerRos();
 
   void setControllerManager(ControllerManager* controllerManager);
@@ -131,9 +131,9 @@ class ControllerRos:  public roco::controllers::ControllerAdapterInterface,
   boost::atomic<bool> isCheckingState_;
   roco::time::TimeStd time_;
   State& state_;
-  boost::shared_mutex& stateMutex_;
+  boost::shared_mutex& mutexState_;
   Command& command_;
-  boost::shared_mutex& commandMutex_;
+  boost::shared_mutex& mutexCommand_;
   ControllerManager* controllerManager_;
   std::string emergencyStopControllerName_;
 

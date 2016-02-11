@@ -44,17 +44,17 @@ namespace locomotion_controller {
 template<typename Controller_>
 ControllerRos<Controller_>::ControllerRos(State& state,
                                           Command& command,
-                                          boost::shared_mutex& stateMutex,
-                                          boost::shared_mutex& commandMutex)
+                                          boost::shared_mutex& mutexState,
+                                          boost::shared_mutex& mutexCommand)
     : Controller(),
       isRealRobot_(false),
       isCheckingCommand_(true),
       isCheckingState_(true),
       time_(),
       state_(state),
-      stateMutex_(stateMutex),
+      mutexState_(mutexState),
       command_(command),
-      commandMutex_(commandMutex),
+      mutexCommand_(mutexCommand),
       controllerManager_(nullptr),
       emergencyStopControllerName_("Freeze")
 {
@@ -577,6 +577,18 @@ void ControllerRos<Controller_>::emergencyStop()
 template<typename Controller_>
 void ControllerRos<Controller_>::setControllerManager(ControllerManager* controllerManager) {
   controllerManager_ = controllerManager;
+}
+
+template<typename Controller_>
+boost::shared_mutex& ControllerRos<Controller_>::getStateMutex()
+{
+	return mutexState_;
+}
+
+template<typename Controller_>
+boost::shared_mutex& ControllerRos<Controller_>::getCommandMutex()
+{
+	return mutexCommand_;
 }
 
 }  // namespace locomotion_controller

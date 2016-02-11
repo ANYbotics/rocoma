@@ -77,7 +77,7 @@ void ControllerManager::setupControllers(
     ROS_FATAL("Could not initialized NoTask!");
   }
 
-  add_locomotion_controllers(this, state, command, mutexState, mutexCommand, nodeHandle);
+  add_locomotion_controllers(this, state, mutexState, command, mutexCommand, nodeHandle);
 
   emergencyStopStatePublisher_.shutdown();
   emergencyStopStatePublisher_ = nodeHandle.advertise<any_msgs::State>("notify_emergency_stop", 100);

@@ -82,7 +82,7 @@ const quadruped_model::State& Model::getState() const {
 }
 
 boost::shared_mutex& Model::getStateMutex() {
-  return stateMutex_;
+  return mutexState_;
 }
 
 quadruped_model::Command& Model::getCommand() {
@@ -94,7 +94,7 @@ const quadruped_model::Command& Model::getCommand() const {
 }
 
 boost::shared_mutex& Model::getCommandMutex() {
-  return commandMutex_;
+  return mutexCommand_;
 }
 
 void Model::initializeForControllerFromFile(double dt, bool isRealRobot, const std::string& filePath, const quadruped_model::Quadrupeds& quadruped) {

@@ -41,9 +41,9 @@ namespace locomotion_controller {
 
 void add_locomotion_controllers(locomotion_controller::ControllerManager* manager,
                                 quadruped_model::State& state,
-                                boost::shared_mutex& mutexState;
+                                boost::shared_mutex& mutexState,
                                 quadruped_model::Command& command,
-                                boost::shared_mutex& mutexCommand;
+                                boost::shared_mutex& mutexCommand,
                                 ros::NodeHandle& nodeHandle) {
 
   std::string quadrupedName;
