@@ -172,7 +172,7 @@ void LocomotionController::init() {
     model_.addVariablesToLog();
 
     controllerManager_.setIsRealRobot(isRealRobot_);
-    controllerManager_.setupControllers(timeStep_, model_.getState(), model_.getCommand(), getNodeHandle());
+    controllerManager_.setupControllers(timeStep_, model_.getState(), model_.getCommand(), model_.getStateMutex(), model_.getCommandMutex(), getNodeHandle());
   }
   //---
 

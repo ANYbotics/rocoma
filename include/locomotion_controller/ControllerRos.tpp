@@ -42,14 +42,19 @@
 namespace locomotion_controller {
 
 template<typename Controller_>
-ControllerRos<Controller_>::ControllerRos(State& state, Command& command)
+ControllerRos<Controller_>::ControllerRos(State& state,
+                                          Command& command,
+                                          boost::shared_mutex& mutexState,
+                                          boost::shared_mutex& mutexCommand)
     : Controller(),
       isRealRobot_(false),
       isCheckingCommand_(true),
       isCheckingState_(true),
       time_(),
       state_(state),
+      mutexState_(mutexState),
       command_(command),
+      mutexCommand_(mutexCommand),
       controllerManager_(nullptr),
       emergencyStopControllerName_("Freeze")
 {
@@ -466,6 +471,7 @@ bool ControllerRos<Controller_>::updateState(double dt, bool checkState)
   time_.setNow();
 
   if (checkState && isCheckingState_) {
+    boost::shared_lock<boost::shared_mutex> lock(getStateMutex());
     if (!state_.checkState()) {
       ROCO_ERROR("Bad state!");
       return false;
@@ -482,6 +488,7 @@ bool ControllerRos<Controller_>::updateCommand(double dt,
 {
 
   if (isCheckingCommand_) {
+    boost::unique_lock<boost::shared_mutex> lock(getCommandMutex());
     if (!command_.limitCommand()) {
       ROCO_ERROR("The command is invalid!");
     }
@@ -493,6 +500,7 @@ bool ControllerRos<Controller_>::updateCommand(double dt,
 template<typename Controller_>
 void ControllerRos<Controller_>::sendEmergencyCommand()
 {
+  boost::unique_lock<boost::shared_mutex> lock(getCommandMutex());
   for (auto& command : command_.getActuatorCommands()) {
     command.setMode(quadruped_model::Command::Mode::MODE_FREEZE);
   }
@@ -569,6 +577,18 @@ void ControllerRos<Controller_>::emergencyStop()
 template<typename Controller_>
 void ControllerRos<Controller_>::setControllerManager(ControllerManager* controllerManager) {
   controllerManager_ = controllerManager;
+}
+
+template<typename Controller_>
+boost::shared_mutex& ControllerRos<Controller_>::getStateMutex()
+{
+	return mutexState_;
+}
+
+template<typename Controller_>
+boost::shared_mutex& ControllerRos<Controller_>::getCommandMutex()
+{
+	return mutexCommand_;
 }
 
 }  // namespace locomotion_controller

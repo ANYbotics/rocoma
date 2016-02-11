@@ -76,18 +76,30 @@ robotTerrain::TerrainBase* Model::getTerrainModel() {
 quadruped_model::State& Model::getState() {
   return state_;
 }
-quadruped_model::Command& Model::getCommand() {
-  return command_;
-}
 
 const quadruped_model::State& Model::getState() const {
   return state_;
 }
+
+boost::shared_mutex& Model::getStateMutex() {
+  return mutexState_;
+}
+
+quadruped_model::Command& Model::getCommand() {
+  return command_;
+}
+
 const quadruped_model::Command& Model::getCommand() const {
   return command_;
 }
 
+boost::shared_mutex& Model::getCommandMutex() {
+  return mutexCommand_;
+}
+
 void Model::initializeForControllerFromFile(double dt, bool isRealRobot, const std::string& filePath, const quadruped_model::Quadrupeds& quadruped) {
+  boost::unique_lock<boost::shared_mutex> lock(mutexState_);
+
   quadrupedModel_.reset(new quadruped_model::QuadrupedModel(dt));
   quadrupedModelDesired_.reset(new quadruped_model::QuadrupedModel(dt));
 
@@ -126,6 +138,8 @@ void Model::initializeForControllerFromFile(double dt, bool isRealRobot, const s
 }
 
 void Model::initializeForController(double dt, bool isRealRobot, const std::string& urdfDescription, const quadruped_model::Quadrupeds& quadruped) {
+  boost::unique_lock<boost::shared_mutex> lock(mutexState_);
+
   quadrupedModel_.reset(new quadruped_model::QuadrupedModel(dt));
   quadrupedModelDesired_.reset(new quadruped_model::QuadrupedModel(dt));
 
@@ -215,6 +229,7 @@ void Model::addVariablesToLog() {
 }
 
 void Model::setQuadrupedState(const quadruped_msgs::QuadrupedState::ConstPtr& quadrupedState) {
+  boost::unique_lock<boost::shared_mutex> lock(mutexState_);
 
   /* set contacts */
   static quadruped_model::Force force;
@@ -307,6 +322,9 @@ void Model::setQuadrupedState(const sensor_msgs::ImuPtr& imu,
                    const geometry_msgs::WrenchStampedPtr& contactForceLh,
                    const geometry_msgs::WrenchStampedPtr& contactForceRh,
                    const Eigen::Vector4i& contactFlags) {
+  boost::unique_lock<boost::shared_mutex> lock(mutexState_);
+
+
   namespace rot = kindr::rotations::eigen_impl;
 
   static quadruped_model::VectorQb Qb = quadruped_model::VectorQb::Zero();
@@ -405,6 +423,7 @@ void Model::initializeJointState(sensor_msgs::JointState& jointState) const {
 
 // used by state_estimator_rm
 void Model::getQuadrupedState(quadruped_msgs::QuadrupedStatePtr& quadrupedState) {
+  boost::shared_lock<boost::shared_mutex> lock(mutexState_);
 //  namespace rot = kindr::rotations::eigen_impl;
 //
 //  const RotationQuaternion  orientationWorldToBase(RotationMatrix(quadrupedModel_->getOrientationWorldToBody(quadruped_model::BodyEnum::BASE)));
@@ -481,6 +500,8 @@ void Model::getQuadrupedState(quadruped_msgs::QuadrupedStatePtr& quadrupedState)
 
 
 void Model::getSeActuatorCommands(series_elastic_actuator_msgs::SeActuatorCommandsPtr& actuatorCommands) {
+  boost::shared_lock<boost::shared_mutex> lock(mutexCommand_);
+
   ros::Time stamp = ros::Time::now();
   int i = 0;
   for (auto& command : command_.getActuatorCommands()) {
@@ -491,6 +512,8 @@ void Model::getSeActuatorCommands(series_elastic_actuator_msgs::SeActuatorComman
 }
 
 void Model::getSeActuatorCommands(series_elastic_actuator_msgs::SeActuatorCommands& actuatorCommands) {
+  boost::shared_lock<boost::shared_mutex> lock(mutexCommand_);
+
   ros::Time stamp = ros::Time::now();
   int i = 0;
   for (auto& command : command_.getActuatorCommands()) {
@@ -536,6 +559,7 @@ void Model::getTwist(geometry_msgs::TwistWithCovarianceStampedPtr& pose) {
 
 
 void Model::setJoystickCommands(const sensor_msgs::Joy& joy) {
+  boost::unique_lock<boost::shared_mutex> lock(mutexState_);
   for (int i=0; i<joy.axes.size();i++) {
     state_.getJoystickPtr()->setAxis(i+1, joy.axes[i]);
   }
@@ -546,10 +570,7 @@ void Model::setJoystickCommands(const sensor_msgs::Joy& joy) {
 
 
 void Model::setCommandVelocity(const geometry_msgs::Twist& twist) {
-//	 quadrupedModel_->getSensors().getDesRobotVelocity()->setDesSagittalVelocity(twist.linear.x);
-//	 quadrupedModel_->getSensors().getDesRobotVelocity()->setDesCoronalVelocity(twist.linear.y);
-//	 quadrupedModel_->getSensors().getDesRobotVelocity()->setDesTurningRate(twist.angular.z);
-
+  boost::unique_lock<boost::shared_mutex> lock(mutexState_);
   state_.getDesiredRobotVelocityPtr()->setDesSagittalVelocity(twist.linear.x);
   state_.getDesiredRobotVelocityPtr()->setDesCoronalVelocity(twist.linear.y);
   state_.getDesiredRobotVelocityPtr()->setDesTurningRate(twist.angular.z);
@@ -562,6 +583,7 @@ void Model::setMocapData(const geometry_msgs::TransformStamped::ConstPtr& msg) {
 }
 
 void Model::setSeActuatorReadings(const series_elastic_actuator_msgs::SeActuatorReadings::ConstPtr& msg) {
+  boost::unique_lock<boost::shared_mutex> lock(mutexState_);
   for (int i=0; i<msg->readings.size(); i++) {
     setSeActuatorState(i, msg->readings[i].state);
     setSeActuatorCommanded(i, msg->readings[i].commanded);
