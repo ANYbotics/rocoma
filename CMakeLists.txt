@@ -9,6 +9,7 @@ project(locomotion_controller)
 
 # Activate C++11.
 set(CMAKE_CXX_FLAGS "-std=c++11")
+add_definitions(-DLC_ENABLE_LOGGER)
 
 # Exclude dynamics in robot model.
 if (NOT RM_EXCLUDE_DYNAMICS) 
@@ -31,6 +32,8 @@ set(CATKIN_QUADRUPED_PKGS)
 # This will fill ${CATKIN_ROCO_PKGS} with the enabled roco packages.
 find_package(catkin REQUIRED COMPONENTS roco_assembly quadruped_assembly)
 
+find_package(Boost REQUIRED COMPONENTS thread chrono)
+
 include(${roco_assembly_SOURCE_PREFIX}/cmake/roco_ros.cmake)
 
 find_package(catkin REQUIRED
@@ -52,6 +55,7 @@ find_package(catkin REQUIRED
     signal_logger
     signal_logger_ros
     signal_logger_std
+    notification
 )
 
 ## System dependencies are found with CMake's conventions
@@ -97,7 +101,8 @@ catkin_package(
     signal_logger
     signal_logger_ros
     signal_logger_std
-  DEPENDS
+    notification
+  DEPENDS boost
 )
 
 ###########
@@ -107,6 +112,7 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(include)
+include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${EIGEN3_INCLUDE_DIR})
 include_directories(${catkin_INCLUDE_DIRS})
 include_directories(${kindr_INCLUDE_DIRS})
@@ -131,6 +137,7 @@ add_dependencies(locomotion_controller
 target_link_libraries(locomotion_controller
   model
   ${catkin_LIBRARIES}
+  ${Boost_LIBRARIES}
 )
 
 add_executable(locomotion_controller_node
@@ -143,6 +150,7 @@ target_link_libraries(locomotion_controller_node
   model
   locomotion_controller
   ${catkin_LIBRARIES}
+  ${Boost_LIBRARIES}
 )
 
 

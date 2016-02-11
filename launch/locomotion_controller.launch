@@ -22,7 +22,7 @@
   <!-- Load configuration files -->
   <rosparam command="load" ns="locomotion_controller" file="$(find locomotion_controller)/config/parameters.yaml"/>
   <rosparam command="load" ns="locomotion_controller" file="$(find locomotion_controller)/config/publishers.yaml"/>
-  <rosparam command="load" ns="locomotion_controller" file="$(find locomotion_controller)/config/subscribers.yaml"/>
+  <rosparam command="load" ns="locomotion_controller" file="$(find locomotion_controller)/config/$(arg quadruped_name)_subscribers.yaml"/>
   <rosparam command="load" ns="locomotion_controller" file="$(find locomotion_controller)/config/services.yaml"/>
 
   <!-- Load parameters from arguments -->
@@ -32,13 +32,8 @@
   <param name="locomotion_controller/description_name" type="str" value="$(arg description_name)"/>
 
   <!-- Load simulation specific parameters -->
-  <group if="$(arg simulation)">
-    <param name="locomotion_controller/controller/is_real_robot" value="false"/>
-  </group>
-  <group unless="$(arg simulation)">
-    <param name="locomotion_controller/controller/is_real_robot" value="true"/>
-  </group>
-     
+  <param name="locomotion_controller/controller/simulation" value="$(arg simulation)"/>
+
   <!-- Launch the locomotion controller -->
   <include file="$(find locomotion_controller)/launch/include/locomotion_controller_$(arg execution_mode).launch">
     <arg name="output"        value="$(arg output)"/>

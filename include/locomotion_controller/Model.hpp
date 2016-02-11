@@ -106,10 +106,11 @@ class Model
 
   void getQuadrupedState(quadruped_msgs::QuadrupedStatePtr& quadrupedState);
   void getSeActuatorCommands(series_elastic_actuator_msgs::SeActuatorCommandsPtr& actuatorCommands);
+  void getSeActuatorCommands(series_elastic_actuator_msgs::SeActuatorCommands& actuatorCommands);
   void getPose(geometry_msgs::PoseWithCovarianceStampedPtr& pose);
   void getTwist(geometry_msgs::TwistWithCovarianceStampedPtr& pose);
 
-  void setJoystickCommands(const sensor_msgs::Joy::ConstPtr& msg);
+  void setJoystickCommands(const sensor_msgs::Joy& joy);
   void setCommandVelocity(const geometry_msgs::Twist& msg);
   void setMocapData(const geometry_msgs::TransformStamped::ConstPtr& msg);
 
@@ -122,15 +123,18 @@ class Model
   quadruped_model::Command& getCommand();
 
   const quadruped_model::State& getState() const;
+  boost::shared_mutex& getStateMutex();
   const quadruped_model::Command& getCommand() const;
-
+  boost::shared_mutex& getCommandMutex();
  private:
   ros::Time updateStamp_;
   std::shared_ptr<quadruped_model::QuadrupedModel> quadrupedModel_;
   std::shared_ptr<quadruped_model::QuadrupedModel> quadrupedModelDesired_;
   std::shared_ptr<robotTerrain::TerrainBase> terrain_;
   quadruped_model::State state_;
+  boost::shared_mutex mutexState_;
   quadruped_model::Command command_;
+  boost::shared_mutex mutexCommand_;
 
   quadruped_model::EulerAnglesZyx stateOrientationWorldToBaseEulerAnglesZyx_;
 };

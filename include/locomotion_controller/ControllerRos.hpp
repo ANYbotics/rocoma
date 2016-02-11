@@ -56,8 +56,10 @@
 #include "locomotion_controller/LocomotionController.hpp"
 #include "locomotion_controller/WorkerWrapper.hpp"
 
+#include <boost/thread.hpp>
 #include <iostream>
 #include <exception>      // std::exception
+
 
 namespace locomotion_controller {
 
@@ -71,7 +73,10 @@ class ControllerRos:  public roco::controllers::ControllerAdapterInterface,
   typedef typename Controller::State State;
   typedef typename Controller::Command Command;
  public:
-  ControllerRos(State& state, Command& command);
+  ControllerRos(State& state,
+                Command& command,
+                boost::shared_mutex& mutexState,
+                boost::shared_mutex& mutexCommand);
   virtual ~ControllerRos();
 
   void setControllerManager(ControllerManager* controllerManager);
@@ -95,8 +100,11 @@ class ControllerRos:  public roco::controllers::ControllerAdapterInterface,
   virtual void setIsRealRobotFromManager(bool isRealRobot);
   virtual void setIsRealRobot(bool isRealRobot);
   virtual const State& getState() const;
+  virtual boost::shared_mutex& getStateMutex();
+
   virtual const Command& getCommand() const;
   virtual Command& getCommand();
+  virtual boost::shared_mutex& getCommandMutex();
 
   virtual void emergencyStop();
 
@@ -118,12 +126,14 @@ class ControllerRos:  public roco::controllers::ControllerAdapterInterface,
 
  private:
   //! Indicates if the real robot is controller or only a simulated version.
-  bool isRealRobot_;
-  bool isCheckingCommand_;
-  bool isCheckingState_;
+  boost::atomic<bool> isRealRobot_;
+  boost::atomic<bool> isCheckingCommand_;
+  boost::atomic<bool> isCheckingState_;
   roco::time::TimeStd time_;
   State& state_;
+  boost::shared_mutex& mutexState_;
   Command& command_;
+  boost::shared_mutex& mutexCommand_;
   ControllerManager* controllerManager_;
   std::string emergencyStopControllerName_;
 

@@ -27,7 +27,7 @@
   <depend>signal_logger</depend>
   <depend>signal_logger_ros</depend>
   <depend>signal_logger_std</depend>
-
+  <depend>notification</depend>
   <export>
     <nodelet plugin="${prefix}/nodelet_plugins.xml"/>
   </export>
