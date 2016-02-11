@@ -55,6 +55,7 @@ find_package(catkin REQUIRED
     signal_logger
     signal_logger_ros
     signal_logger_std
+    notification
 )
 
 ## System dependencies are found with CMake's conventions
@@ -100,6 +101,7 @@ catkin_package(
     signal_logger
     signal_logger_ros
     signal_logger_std
+    notification
   DEPENDS boost
 )
 
