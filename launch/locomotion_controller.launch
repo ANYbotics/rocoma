@@ -30,9 +30,16 @@
   <param name="locomotion_controller/quadruped/setup"  type="str" value="$(arg quadruped_setup)"/>
   <param name="locomotion_controller/logger/class"     type="str" value="$(arg logger_class)"/>
   <param name="locomotion_controller/description_name" type="str" value="$(arg description_name)"/>
+  
+
+
+  
 
   <!-- Load simulation specific parameters -->
   <param name="locomotion_controller/controller/simulation" value="$(arg simulation)"/>
+  <param name="locomotion_controller/controller/use_worker"  		value="false" />
+  <param name="locomotion_controller/controller/subscribe_state"  value="true" />
+  <param name="locomotion_controller/controller/subscribe_actuator_readings"  value="true" />
 
   <!-- Launch the locomotion controller -->
   <include file="$(find locomotion_controller)/launch/include/locomotion_controller_$(arg execution_mode).launch">
