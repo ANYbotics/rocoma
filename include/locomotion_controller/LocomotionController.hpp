@@ -51,6 +51,8 @@
 #include <locomotion_controller_msgs/ResetStateEstimator.h>
 #include <std_srvs/Empty.h>
 
+#include <notification/NotificationPublisher.hpp>
+
 #include "locomotion_controller/Model.hpp"
 #include "locomotion_controller/ControllerManager.hpp"
 
@@ -156,6 +158,10 @@ class LocomotionController : public nodewrap::NodeImpl
   ros::Subscriber seActuatorReadingsSubscriber_;
 
   ros::Publisher actuatorommandsPublisher_;
+
+  std::shared_ptr<notification::NotificationPublisher> notificationPublisher_;
+
+
   ros::ServiceServer switchControllerService_;
   ros::ServiceServer emergencyStopService_;
   ros::ServiceServer getAvailableControllersService_;

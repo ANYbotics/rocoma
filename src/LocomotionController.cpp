@@ -55,6 +55,8 @@
 #include <cstdint>
 #include <string>
 
+#define NOTIFICATION_ID "LMC"
+
 NODEWRAP_EXPORT_CLASS(locomotion_controller, locomotion_controller::LocomotionController)
 
 namespace locomotion_controller {
@@ -192,14 +194,27 @@ void LocomotionController::init() {
   workerOptions.privateCallbackQueue = true;
   workerOptions.priority = 99;
   controllerWorker_ = addWorker("controller", workerOptions);
+
+  notificationPublisher_->notify(notification::Level::LEVEL_INFO,
+                             std::string{"Starting up."},
+                             std::string{"Locomotion controller is starting up."},
+                             NOTIFICATION_ID);
 }
 
 
 void LocomotionController::cleanup() {
+  notificationPublisher_->notify(notification::Level::LEVEL_ERROR,
+                             std::string{"LMC is shutting down."},
+                             std::string{"Locomotion controller is shutting down."},
+                             NOTIFICATION_ID);
+  notificationPublisher_->publish();
+
  controllerWorker_.cancel(true);
 
  NODEWRAP_INFO("Cleaning up locomotion controller.");
  controllerManager_.cleanup();
+
+
 }
 
 
@@ -291,6 +306,8 @@ void LocomotionController::initializePublishers() {
   ROS_INFO_STREAM("Commands topic name: " << actuatorommandsPublisher_.getTopic());
   /*****************************/
 
+  notificationPublisher_.reset(new notification::NotificationPublisher("default", getNodeHandle(), false));
+
 }
 
 void LocomotionController::initializeSubscribers() {
@@ -331,6 +348,8 @@ void LocomotionController::publish()  {
     }
     actuatorommandsPublisher_.publish(boost::const_pointer_cast<const series_elastic_actuator_msgs::SeActuatorCommands>(actuatorCommands));
   }
+
+  notificationPublisher_->publish();
 }
 
 void LocomotionController::updateActuatorCommands()
