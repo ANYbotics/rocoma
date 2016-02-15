@@ -58,6 +58,8 @@
 #include <kindr/rotations/RotationDiffEigen.hpp>
 #include <kindr/phys_quant/PhysicalQuantitiesEigen.hpp>
 
+#include <boost/thread.hpp>
+
 namespace model {
 
 class Model
