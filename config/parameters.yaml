@@ -3,7 +3,7 @@ controller:
   default: LocoDemo
 
 logger:
-  sampling_window: 120
+  sampling_window: 180
   sampling_frequency: 400
   script: "/home/integration/.ros/locomotion_controller_logging.script"
   class: "std"
