@@ -37,8 +37,6 @@
 
 #include <roco_assembly/controllers.hpp>
 
-//hack
-#include <loco_crawling/CrawlingSwing.hpp>
 
 namespace locomotion_controller {
 
@@ -52,12 +50,6 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
   std::string quadrupedName;
   nodeHandle.param<std::string>("quadruped/name", quadrupedName, "starleth");
 
-   auto controllerCrawlingSwing = new ControllerRos<loco_crawling_swing::CrawlingSwing>(state, command, mutexState, mutexCommand);
-   controllerCrawlingSwing->setParameterPath(ros::package::getPath("loco_crawling_parameters"));
-   controllerCrawlingSwing->setQuadrupedName(quadrupedName);
-   controllerCrawlingSwing->setControllerManager(manager);
-   controllerCrawlingSwing->setIsRealRobotFromManager(manager->isRealRobot());
-   manager->addController(controllerCrawlingSwing);
 
 #ifdef USE_TASK_LOCODEMO
   auto controllerLocoDemo = new ControllerRos<loco_demo::LocoDemo>(state, command, mutexState, mutexCommand);
@@ -109,6 +101,15 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
    controllerCrawlingRos->setIsRealRobotFromManager(manager->isRealRobot());
    controllerCrawlingRos->setNodeHandle(nodeHandle);
    manager->addController(controllerCrawlingRos);
+#endif
+
+#ifdef USE_TASK_LOCOCRAWLING_SWING
+   auto controllerCrawlingSwing = new ControllerRos<loco_crawling_swing::CrawlingSwing>(state, command, mutexState, mutexCommand);
+   controllerCrawlingSwing->setParameterPath(ros::package::getPath("loco_crawling_parameters"));
+   controllerCrawlingSwing->setQuadrupedName(quadrupedName);
+   controllerCrawlingSwing->setControllerManager(manager);
+   controllerCrawlingSwing->setIsRealRobotFromManager(manager->isRealRobot());
+   manager->addController(controllerCrawlingSwing);
 #endif
 
 #ifdef USE_TASK_LOCOFREEGAIT
