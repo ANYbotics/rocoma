@@ -55,6 +55,8 @@
 #include <cstdint>
 #include <string>
 
+#define NOTIFICATION_ID "LMC"
+
 NODEWRAP_EXPORT_CLASS(locomotion_controller, locomotion_controller::LocomotionController)
 
 namespace locomotion_controller {
@@ -192,14 +194,27 @@ void LocomotionController::init() {
   workerOptions.privateCallbackQueue = true;
   workerOptions.priority = 99;
   controllerWorker_ = addWorker("controller", workerOptions);
+
+  notificationPublisher_->notify(notification::Level::LEVEL_INFO,
+                             std::string{"Starting up."},
+                             std::string{"Locomotion controller is starting up."},
+                             NOTIFICATION_ID);
 }
 
 
 void LocomotionController::cleanup() {
+  notificationPublisher_->notify(notification::Level::LEVEL_ERROR,
+                             std::string{"LMC is shutting down."},
+                             std::string{"Locomotion controller is shutting down."},
+                             NOTIFICATION_ID);
+  notificationPublisher_->publish();
+
  controllerWorker_.cancel(true);
 
  NODEWRAP_INFO("Cleaning up locomotion controller.");
  controllerManager_.cleanup();
+
+
 }
 
 
@@ -291,6 +306,8 @@ void LocomotionController::initializePublishers() {
   ROS_INFO_STREAM("Commands topic name: " << actuatorommandsPublisher_.getTopic());
   /*****************************/
 
+  notificationPublisher_.reset(new notification::NotificationPublisher("default", getNodeHandle(), false));
+
 }
 
 void LocomotionController::initializeSubscribers() {
@@ -331,6 +348,8 @@ void LocomotionController::publish()  {
     }
     actuatorommandsPublisher_.publish(boost::const_pointer_cast<const series_elastic_actuator_msgs::SeActuatorCommands>(actuatorCommands));
   }
+
+  notificationPublisher_->publish();
 }
 
 void LocomotionController::updateActuatorCommands()
@@ -348,7 +367,28 @@ void LocomotionController::setQuadrupedState(const quadruped_msgs::QuadrupedStat
 
 void LocomotionController::setActuatorReadings(const series_elastic_actuator_msgs::SeActuatorReadings& msg) {
   boost::unique_lock<boost::shared_mutex> lock(mutexActuatorReadings_);
-  *actuatorReadings_ = msg;
+
+  // Note that the std::string variables cannot be copied because they cannot be stored in shared memory.
+  for (int i=0; i<actuatorReadings_->readings.size(); i++) {
+    actuatorReadings_->readings[i].state.header.stamp =  msg.readings[i].state.header.stamp;
+    actuatorReadings_->readings[i].state.jointPosition = msg.readings[i].state.jointPosition;
+    actuatorReadings_->readings[i].state.jointVelocity = msg.readings[i].state.jointVelocity;
+    actuatorReadings_->readings[i].state.actuatorPosition = msg.readings[i].state.actuatorPosition;
+    actuatorReadings_->readings[i].state.actuatorVelocity = msg.readings[i].state.actuatorVelocity;
+    actuatorReadings_->readings[i].state.torque = msg.readings[i].state.torque;
+    actuatorReadings_->readings[i].state.current = msg.readings[i].state.current;
+    actuatorReadings_->readings[i].state.statusword = msg.readings[i].state.statusword;
+
+    actuatorReadings_->readings[i].commanded.header.stamp = msg.readings[i].commanded.header.stamp;
+    actuatorReadings_->readings[i].commanded.mode = msg.readings[i].commanded.mode;
+    actuatorReadings_->readings[i].commanded.actuatorPosition = msg.readings[i].commanded.actuatorPosition;
+    actuatorReadings_->readings[i].commanded.actuatorVelocity = msg.readings[i].commanded.actuatorVelocity;
+    actuatorReadings_->readings[i].commanded.jointPosition = msg.readings[i].commanded.jointPosition;
+    actuatorReadings_->readings[i].commanded.jointVelocity = msg.readings[i].commanded.jointVelocity;
+    actuatorReadings_->readings[i].commanded.torque = msg.readings[i].commanded.torque;
+    actuatorReadings_->readings[i].commanded.current = msg.readings[i].commanded.current;
+  }
+
 }
 
 void LocomotionController::quadrupedStateCallback(const quadruped_msgs::QuadrupedState::ConstPtr& msg) {
@@ -466,16 +506,21 @@ void LocomotionController::updateControllerAndPublish() {
   end = std::chrono::steady_clock::now();
   int64_t elapsedTimeNSecs = std::chrono::duration_cast<std::chrono::nanoseconds>(end -
       start).count();
-  int64_t timeStep = (int64_t)(timeStep_*1e9);
-  if (elapsedTimeNSecs > timeStep) {
-    NODEWRAP_WARN("Computation of locomotion controller is not real-time! Elapsed time: %lf ms\n", (double)elapsedTimeNSecs*1e-6);
-  }
-//  if (elapsedTimeNSecs > timeStep*10) {
-//    NODEWRAP_ERROR("Computation took more than 10 times the maximum allowed computation time (%lf ms)!", timeStep_*1e3);
-//
-//    controllerManager_.emergencyStop();
-//  }
+  const int64_t timeStepNSecs = (int64_t)(timeStep_*1e9);
+  const int64_t maxComputationTimeNSecs = timeStepNSecs*10.0;
 
+  if (elapsedTimeNSecs > timeStepNSecs) {
+    if (isRealRobot_) {
+      NODEWRAP_WARN("Computation of locomotion controller is not real-time! Elapsed time: %lf ms\n", (double)elapsedTimeNSecs*1e-6);
+    }
+    else {
+      NODEWRAP_WARN_THROTTLE(3.0, "Computation of locomotion controller is not real-time! Elapsed time: %lf ms\n", (double)elapsedTimeNSecs*1e-6);
+    }
+  }
+  if (isRealRobot_ && (elapsedTimeNSecs > maxComputationTimeNSecs)) {
+    NODEWRAP_ERROR("Computation took more than 10 times the maximum allowed computation time (%lf ms > %lf ms)!", (double)elapsedTimeNSecs*1e-6, (double)maxComputationTimeNSecs*1e-6);
+    controllerManager_.emergencyStop();
+  }
   //---
 }
 
@@ -556,7 +601,17 @@ void LocomotionController::updateActuatorReadings() {
 
 void LocomotionController::getActuatorCommands(series_elastic_actuator_msgs::SeActuatorCommands& commands) {
   boost::shared_lock<boost::shared_mutex> lock(mutexActuatorCommands_);
-  commands = *actuatorCommands_;
+//  commands = *actuatorCommands_;
+  for (int i=0; i<12; i++) {
+    commands.commands[i].header.stamp = actuatorCommands_->commands[i].header.stamp;
+    commands.commands[i].mode = actuatorCommands_->commands[i].mode;
+    commands.commands[i].actuatorPosition = actuatorCommands_->commands[i].actuatorPosition;
+    commands.commands[i].actuatorVelocity = actuatorCommands_->commands[i].actuatorVelocity;
+    commands.commands[i].jointPosition = actuatorCommands_->commands[i].jointPosition;
+    commands.commands[i].jointVelocity = actuatorCommands_->commands[i].jointVelocity;
+    commands.commands[i].torque = actuatorCommands_->commands[i].torque;
+    commands.commands[i].current = actuatorCommands_->commands[i].current;
+  }
 }
 
 void LocomotionController::update() {

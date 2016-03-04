@@ -3,7 +3,7 @@ controller:
   default: LocoDemo
 
 logger:
-  sampling_window: 120
+  sampling_window: 180
   sampling_frequency: 400
   script: "/home/integration/.ros/locomotion_controller_logging.script"
   class: "std"
@@ -12,3 +12,12 @@ logger:
 quadruped:
   name: starleth
   setup: minimal
+
+notification:
+  notifiers:
+    default:
+      topic: /notification
+      queue_size: 100
+      latch: false
+      output_devices: 
+        - "operator_screen"
