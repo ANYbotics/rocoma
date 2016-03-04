@@ -383,9 +383,9 @@ bool ControllerRos<Controller_>::resetController(double dt)
 
 template<typename Controller_>
 bool ControllerRos<Controller_>::signalLoggerWorker(const nodewrap::WorkerEvent& event) {
-#ifdef LC_ENABLE_LOGGER
-  signal_logger::logger->collectLoggerData();
-#endif
+//#ifdef LC_ENABLE_LOGGER
+//  signal_logger::logger->collectLoggerData();
+//#endif
   return true;
 }
 
@@ -407,6 +407,10 @@ bool ControllerRos<Controller_>::advanceController(double dt)
       return true;
     }
     updateCommand(dt, false);
+#ifdef LC_ENABLE_LOGGER
+
+  signal_logger::logger->collectLoggerData();
+#endif
 
   } catch (std::exception& e) {
     ROCO_WARN_STREAM("Exception caught: " << e.what());
