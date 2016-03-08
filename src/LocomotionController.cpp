@@ -475,10 +475,10 @@ bool LocomotionController::updateControllerWorker(const nodewrap::WorkerEvent& e
 
   if (elapsedTimeNSecs > timeStepNSecs) {
     if (isRealRobot_) {
-      NODEWRAP_WARN("Computation of locomotion controller is not real-time! Elapsed time: %lf ms\n", (double)elapsedTimeNSecs*1e-6);
+      NODEWRAP_WARN("Computation of locomotion controller is not real-time! Elapsed time: %lf ms", (double)elapsedTimeNSecs*1e-6);
     }
     else {
-      NODEWRAP_WARN_THROTTLE(3.0, "Computation of locomotion controller is not real-time! Elapsed time: %lf ms\n", (double)elapsedTimeNSecs*1e-6);
+      NODEWRAP_WARN_THROTTLE(3.0, "Computation of locomotion controller is not real-time! Elapsed time: %lf ms", (double)elapsedTimeNSecs*1e-6);
     }
   }
   if (isRealRobot_ && (elapsedTimeNSecs > maxComputationTimeNSecs)) {
@@ -511,10 +511,10 @@ void LocomotionController::updateControllerAndPublish() {
 
   if (elapsedTimeNSecs > timeStepNSecs) {
     if (isRealRobot_) {
-      NODEWRAP_WARN("Computation of locomotion controller is not real-time! Elapsed time: %lf ms\n", (double)elapsedTimeNSecs*1e-6);
+      NODEWRAP_WARN("Computation of locomotion controller is not real-time! Elapsed time: %lf ms", (double)elapsedTimeNSecs*1e-6);
     }
     else {
-      NODEWRAP_WARN_THROTTLE(3.0, "Computation of locomotion controller is not real-time! Elapsed time: %lf ms\n", (double)elapsedTimeNSecs*1e-6);
+      NODEWRAP_WARN_THROTTLE(3.0, "Computation of locomotion controller is not real-time! Elapsed time: %lf ms", (double)elapsedTimeNSecs*1e-6);
     }
   }
   if (isRealRobot_ && (elapsedTimeNSecs > maxComputationTimeNSecs)) {
