@@ -81,6 +81,7 @@ void ControllerManager::setupControllers(
 
   emergencyStopStatePublisher_.shutdown();
   emergencyStopStatePublisher_ = nodeHandle.advertise<any_msgs::State>("notify_emergency_stop", 100);
+  publishEmergencyState(true);
 }
 
 void ControllerManager::addController(ControllerPtr controller)  {
@@ -136,9 +137,9 @@ void ControllerManager::notifyEmergencyState() {
   publishEmergencyState(true);
 }
 
-void ControllerManager::publishEmergencyState(bool emergencyState) {
+void ControllerManager::publishEmergencyState(bool isOk) {
   emergencyStopStateMsg_.stamp = ros::Time::now();
-  emergencyStopStateMsg_.is_ok = emergencyState;
+  emergencyStopStateMsg_.is_ok = isOk;
 
   any_msgs::StatePtr stateMsg( new any_msgs::State(emergencyStopStateMsg_) );
   emergencyStopStatePublisher_.publish( any_msgs::StateConstPtr(stateMsg) );

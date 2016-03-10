@@ -115,7 +115,7 @@ class ControllerManager
   std::recursive_mutex activeControllerMutex_;
 
   //--- Notify an emergency stop
-  void publishEmergencyState(bool emergencyState);
+  void publishEmergencyState(bool isOk);
   ros::Publisher emergencyStopStatePublisher_;
   any_msgs::State emergencyStopStateMsg_;
   //---
