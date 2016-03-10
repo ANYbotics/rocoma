@@ -80,7 +80,7 @@ void ControllerManager::setupControllers(
   add_locomotion_controllers(this, state, mutexState, command, mutexCommand, nodeHandle);
 
   emergencyStopStatePublisher_.shutdown();
-  emergencyStopStatePublisher_ = nodeHandle.advertise<any_msgs::State>("notify_emergency_stop", 100);
+  emergencyStopStatePublisher_ = nodeHandle.advertise<any_msgs::State>("notify_emergency_stop", 1, true);
   publishEmergencyState(true);
 }
 
