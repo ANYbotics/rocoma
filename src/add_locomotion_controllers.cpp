@@ -113,20 +113,38 @@ void add_locomotion_controllers(locomotion_controller::ControllerManager* manage
 #endif
 
 #ifdef USE_TASK_LOCOFREEGAIT
-   auto controllerFreeGait = new ControllerRos<loco_free_gait::FreeGait>(state, command, mutexState, mutexCommand);
-   controllerFreeGait->setControllerPath(ros::package::getPath("loco_free_gait"));
-   controllerFreeGait->setControllerManager(manager);
-   controllerFreeGait->setIsRealRobotFromManager(manager->isRealRobot());
-   manager->addController(controllerFreeGait);
+   auto controllerFreeGaitVirtualModel = new ControllerRos<loco_free_gait::FreeGaitVirtualModel>(state, command, mutexState, mutexCommand);
+   controllerFreeGaitVirtualModel->setControllerPath(ros::package::getPath("loco_free_gait"));
+   controllerFreeGaitVirtualModel->setQuadrupedName(quadrupedName);
+   controllerFreeGaitVirtualModel->setControllerManager(manager);
+   controllerFreeGaitVirtualModel->setIsRealRobotFromManager(manager->isRealRobot());
+   manager->addController(controllerFreeGaitVirtualModel);
+
+   auto controllerFreeGaitImpedance = new ControllerRos<loco_free_gait::FreeGaitImpedance>(state, command, mutexState, mutexCommand);
+   controllerFreeGaitImpedance->setControllerPath(ros::package::getPath("loco_free_gait"));
+   controllerFreeGaitImpedance->setQuadrupedName(quadrupedName);
+   controllerFreeGaitImpedance->setControllerManager(manager);
+   controllerFreeGaitImpedance->setIsRealRobotFromManager(manager->isRealRobot());
+   manager->addController(controllerFreeGaitImpedance);
 #endif
 
 #ifdef USE_TASK_LOCOFREEGAIT_ROS
-   auto controllerFreeGaitRos = new ControllerRos<loco_free_gait_ros::FreeGaitRos>(state, command, mutexState, mutexCommand);
-   controllerFreeGaitRos->setControllerPath(ros::package::getPath("loco_free_gait"));
-   controllerFreeGaitRos->setControllerManager(manager);
-   controllerFreeGaitRos->setIsRealRobotFromManager(manager->isRealRobot());
-   controllerFreeGaitRos->setNodeHandle(nodeHandle);
-   manager->addController(controllerFreeGaitRos);
+
+   auto controllerFreeGaitVirtualModelRos = new ControllerRos<loco_free_gait::FreeGaitVirtualModelRos>(state, command, mutexState, mutexCommand);
+   controllerFreeGaitVirtualModelRos->setControllerPath(ros::package::getPath("loco_free_gait"));
+   controllerFreeGaitVirtualModelRos->setControllerManager(manager);
+   controllerFreeGaitVirtualModelRos->setQuadrupedName(quadrupedName);
+   controllerFreeGaitVirtualModelRos->setIsRealRobotFromManager(manager->isRealRobot());
+   controllerFreeGaitVirtualModelRos->setNodeHandle(nodeHandle);
+   manager->addController(controllerFreeGaitVirtualModelRos);
+
+   auto controllerFreeGaitImpedanceRos = new ControllerRos<loco_free_gait::FreeGaitImpedanceRos>(state, command, mutexState, mutexCommand);
+   controllerFreeGaitImpedanceRos->setControllerPath(ros::package::getPath("loco_free_gait"));
+   controllerFreeGaitImpedanceRos->setControllerManager(manager);
+   controllerFreeGaitImpedanceRos->setQuadrupedName(quadrupedName);
+   controllerFreeGaitImpedanceRos->setIsRealRobotFromManager(manager->isRealRobot());
+   controllerFreeGaitImpedanceRos->setNodeHandle(nodeHandle);
+   manager->addController(controllerFreeGaitImpedanceRos);
 #endif
 
 #ifdef USE_TASK_LOCOJOINTTRAJECTORIES
