@@ -18,7 +18,9 @@
   <arg name="launch_prefix" default=""/>
   <!-- Name of the robot description parameter -->
   <arg name="description_name" default="quadruped_description"/>
-  
+  <!-- Set to true to use multithreading -->
+  <arg name="use_worker" default="false"/>
+   
   <!-- Load configuration files -->
   <rosparam command="load" ns="locomotion_controller" file="$(find locomotion_controller)/config/parameters.yaml"/>
   <rosparam command="load" ns="locomotion_controller" file="$(find locomotion_controller)/config/publishers.yaml"/>
@@ -30,15 +32,11 @@
   <param name="locomotion_controller/quadruped/setup"  type="str" value="$(arg quadruped_setup)"/>
   <param name="locomotion_controller/logger/class"     type="str" value="$(arg logger_class)"/>
   <param name="locomotion_controller/description_name" type="str" value="$(arg description_name)"/>
-  
-
-
-  
 
   <!-- Load simulation specific parameters -->
-  <param name="locomotion_controller/controller/simulation" value="$(arg simulation)"/>
-  <param name="locomotion_controller/controller/use_worker"  		value="false" />
-  <param name="locomotion_controller/controller/subscribe_state"  value="true" />
+  <param name="locomotion_controller/controller/simulation"                   value="$(arg simulation)"/>
+  <param name="locomotion_controller/controller/use_worker"                   value="$(arg use_worker)" />
+  <param name="locomotion_controller/controller/subscribe_state"              value="true" />
   <param name="locomotion_controller/controller/subscribe_actuator_readings"  value="true" />
 
   <!-- Launch the locomotion controller -->
