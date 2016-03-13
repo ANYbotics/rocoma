@@ -272,10 +272,10 @@ void Model::setQuadrupedState(const quadruped_msgs::QuadrupedState::ConstPtr& qu
     jointVelocities(i) = quadrupedState->joints.velocity[i];
   }
 
-  RotationQuaternion orientationWorldToBase(quadrupedState->pose.pose.orientation.w,
-                                            quadrupedState->pose.pose.orientation.x,
-                                            quadrupedState->pose.pose.orientation.y,
-                                            quadrupedState->pose.pose.orientation.z);
+  const RotationQuaternion orientationWorldToBase(quadrupedState->pose.pose.orientation.w,
+                                                  quadrupedState->pose.pose.orientation.x,
+                                                  quadrupedState->pose.pose.orientation.y,
+                                                  quadrupedState->pose.pose.orientation.z);
 
   // for logging only
   stateOrientationWorldToBaseEulerAnglesZyx_ = quadruped_model::EulerAnglesZyx(orientationWorldToBase).getUnique();
@@ -305,6 +305,21 @@ void Model::setQuadrupedState(const quadruped_msgs::QuadrupedState::ConstPtr& qu
   quadrupedModelState.setLinearVelocityBaseInWorldFrame(I_v_B);
   quadrupedModelState.setAngularVelocityBaseInBaseFrame(localAngularVelocityKindr);
   quadrupedModelState.setJointVelocities(jointVelocities);
+  //--
+
+  //-- Pose transforms
+  for (const auto& tf : quadrupedState->frame_transforms) {
+    const std::string transformName = tf.header.frame_id + "_to_" + tf.child_frame_id;
+    quadruped_model::Pose pose;
+    pose.getPosition() = Position(tf.transform.translation.x,
+                                  tf.transform.translation.y,
+                                  tf.transform.translation.z);
+    pose.getRotation() = RotationQuaternion(tf.transform.rotation.w,
+                                            tf.transform.rotation.x,
+                                            tf.transform.rotation.y,
+                                            tf.transform.rotation.z);
+    quadrupedModelState.setNamedPose(transformName, pose);
+  }
   //--
 
   quadrupedModel_->setJointTorques(jointTorques);
