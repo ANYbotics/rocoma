@@ -89,6 +89,7 @@ class ControllerRos:  public roco::controllers::ControllerAdapterInterface,
   virtual bool changeController();
   virtual bool cleanupController();
   virtual bool stopController();
+  virtual bool preStopController();
 
   virtual const roco::time::Time& getTime() const;
   virtual void setTime(const roco::time::Time& time);

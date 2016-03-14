@@ -9,7 +9,7 @@
   <!-- Quadruped setup -->
   <arg name="quadruped_setup" default="minimal"/>
   <!-- Set to true for simulation -->
-  <arg name="simulation" default="true"/>
+  <arg name="simulation" default="false"/>
   <!-- The logger class can either be std or ros -->
   <arg name="logger_class" default="std"/>
   <!-- The output can either be screen, log or an empty string -->
