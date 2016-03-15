@@ -39,6 +39,7 @@
 
 // quadruped state and command helpers
 #include <quadruped_model/common/quadruped_model_common.hpp>
+#include <quadruped_model/common/topology_conversions.hpp>
 #include <quadruped_model/robots/quadrupeds.hpp>
 #include <quadruped_model/robots/anymal.hpp>
 #include <quadruped_model/robots/starleth.hpp>
@@ -310,15 +311,15 @@ void Model::setQuadrupedState(const quadruped_msgs::QuadrupedState::ConstPtr& qu
   //-- Pose transforms
   for (const auto& tf : quadrupedState->frame_transforms) {
     const std::string transformName = tf.header.frame_id + "_to_" + tf.child_frame_id;
-    quadruped_model::Pose pose;
-    pose.getPosition() = Position(tf.transform.translation.x,
-                                  tf.transform.translation.y,
-                                  tf.transform.translation.z);
-    pose.getRotation() = RotationQuaternion(tf.transform.rotation.w,
-                                            tf.transform.rotation.x,
-                                            tf.transform.rotation.y,
-                                            tf.transform.rotation.z);
-    quadrupedModelState.setNamedPose(transformName, pose);
+    quadruped_model::Pose transform;
+    transform.getPosition() = Position(tf.transform.translation.x,
+                                       tf.transform.translation.y,
+                                       tf.transform.translation.z);
+    transform.getRotation() = RotationQuaternion(tf.transform.rotation.w,
+                                                tf.transform.rotation.x,
+                                                tf.transform.rotation.y,
+                                                tf.transform.rotation.z);
+    quadrupedModelState.setFrameTransform(quadruped_model::getFrameTransformEnumFromFrameTransformString(transformName), transform);
   }
   //--
 
