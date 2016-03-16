@@ -173,6 +173,7 @@ void LocomotionController::init() {
 //    model_.getRobotModel()->params().printParams();
     model_.addVariablesToLog();
 
+
     controllerManager_.setIsRealRobot(isRealRobot_);
     controllerManager_.setupControllers(timeStep_, model_.getState(), model_.getCommand(), model_.getStateMutex(), model_.getCommandMutex(), getNodeHandle());
   }
@@ -182,6 +183,34 @@ void LocomotionController::init() {
   initializeServices();
   initializePublishers();
   initializeSubscribers();
+
+  //-- Addd variables
+  std::string nsPrefix{"/sea/"};
+  {
+    boost::shared_lock<boost::shared_mutex> lock(mutexActuatorReadings_);
+
+   for(int i=0; i<actuatorReadings_->readings.size(); i++) {
+     const std::string name = actuatorReadings_->readings[i].state.name;
+     std::string ns = nsPrefix + name + "/state/";
+     signal_logger::logger->addDoubleToLog(actuatorReadings_->readings[i].state.jointPosition, "jointPosition", ns, "rad");
+     signal_logger::logger->addDoubleToLog(actuatorReadings_->readings[i].state.jointVelocity, "jointVelocity", ns, "rad/s");
+     signal_logger::logger->addDoubleToLog(actuatorReadings_->readings[i].state.actuatorPosition, "actuatorPosition", ns, "rad");
+     signal_logger::logger->addDoubleToLog(actuatorReadings_->readings[i].state.actuatorVelocity, "actuatorVelocity", ns, "rad/s");
+     signal_logger::logger->addDoubleToLog(actuatorReadings_->readings[i].state.torque, "torque", ns, "Nm");
+     signal_logger::logger->addDoubleToLog(actuatorReadings_->readings[i].state.current, "current", ns, "A");
+     signal_logger::logger->addDoubleToLog(actuatorReadings_->readings[i].state.statusword, "statusword", ns, "A");
+     ns = nsPrefix + name + "/commanded/";
+     signal_logger::logger->addIntToLog(actuatorReadings_->readings[i].commanded.mode, "mode", ns, "-");
+     signal_logger::logger->addDoubleToLog(actuatorReadings_->readings[i].commanded.jointPosition, "jointPosition", ns, "rad");
+     signal_logger::logger->addDoubleToLog(actuatorReadings_->readings[i].commanded.jointVelocity, "jointVelocity", ns, "rad/s");
+     signal_logger::logger->addDoubleToLog(actuatorReadings_->readings[i].commanded.actuatorPosition, "actuatorPosition", ns, "rad");
+     signal_logger::logger->addDoubleToLog(actuatorReadings_->readings[i].commanded.actuatorVelocity, "actuatorVelocity", ns, "rad/s");
+     signal_logger::logger->addDoubleToLog(actuatorReadings_->readings[i].commanded.torque, "torque", ns, "Nm");
+     signal_logger::logger->addDoubleToLog(actuatorReadings_->readings[i].commanded.current, "current", ns, "A");
+   }
+   signal_logger::logger->updateLogger(true);
+
+  }
 
   /*
    * Start workers
@@ -262,6 +291,7 @@ void LocomotionController::initializeMessages() {
   {
     boost::unique_lock<boost::shared_mutex> lock(mutexActuatorReadings_);
     actuatorReadings_.reset(new series_elastic_actuator_msgs::SeActuatorReadings);
+    quadruped_description::initializeSeActuatorReadings(*actuatorReadings_);
   }
 
   {
