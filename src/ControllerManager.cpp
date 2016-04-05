@@ -107,6 +107,7 @@ void ControllerManager::updateController() {
 }
 
 bool ControllerManager::emergencyStop() {
+ activeController_->preStopController();
  activeController_->stopController();
  return true;
 }
