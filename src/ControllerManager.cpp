@@ -107,6 +107,7 @@ void ControllerManager::updateController() {
 }
 
 bool ControllerManager::emergencyStop() {
+ activeController_->preStopController();
  activeController_->stopController();
  return true;
 }
@@ -160,8 +161,15 @@ bool ControllerManager::switchController(locomotion_controller_msgs::SwitchContr
   for (auto& controller : controllers_) {
     if (req.name == controller.getName()) {
 
+      // store pointers to old and new controllers
       ControllerPtr initController = &controller;
       ControllerPtr oldActiveController = activeController_;
+
+      // shutdown communication for active controller
+      {
+        std::lock_guard<std::recursive_mutex> lock(activeControllerMutex_);
+        oldActiveController->preStopController();
+      }
 
       initController->initializeController(timeStep_);
 

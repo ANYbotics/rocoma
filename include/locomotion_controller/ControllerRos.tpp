@@ -531,6 +531,24 @@ bool ControllerRos<Controller_>::stopController()
 
 
 template<typename Controller_>
+bool ControllerRos<Controller_>::preStopController() {
+
+  try {
+     if(!this->preStop()) {
+       ROCO_WARN("Could not prepare to stop controller %s!", this->getName().c_str());
+       return false;
+     }
+   }
+   catch (std::exception& e) {
+     ROCO_WARN_STREAM("Could not prepare to stop controller " << this->getName() << "! Exception caught: " << e.what());
+	 this->emergencyStop();
+	 return false;
+   }
+   return true;
+}
+
+
+template<typename Controller_>
 void ControllerRos<Controller_>::swapOut() {
 ROS_INFO("Calling swap out for controller %s",this->getName().c_str());
   cancelWorkers();
