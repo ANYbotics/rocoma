@@ -341,7 +341,7 @@ void Model::setQuadrupedState(const sensor_msgs::ImuPtr& imu,
   boost::unique_lock<boost::shared_mutex> lock(mutexState_);
 
 
-  namespace rot = kindr::rotations::eigen_impl;
+  namespace rot = kindr;
 
   static quadruped_model::VectorQb Qb = quadruped_model::VectorQb::Zero();
   static quadruped_model::VectorQb dQb = quadruped_model::VectorQb::Zero();

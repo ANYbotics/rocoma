@@ -54,9 +54,7 @@
 #include <quadruped_model/common/State.hpp>
 #include <quadruped_model/common/Command.hpp>
 
-#include <kindr/rotations/RotationEigen.hpp>
-#include <kindr/rotations/RotationDiffEigen.hpp>
-#include <kindr/phys_quant/PhysicalQuantitiesEigen.hpp>
+#include <kindr/Core>
 
 #include <boost/thread.hpp>
 
@@ -66,19 +64,19 @@ class Model
 {
  public:
   static constexpr int numberOfJoints_ = 12;
-  typedef kindr::rotations::eigen_impl::RotationQuaternionPD RotationQuaternion;
-  typedef kindr::rotations::eigen_impl::RotationMatrixPD     RotationMatrix;
-  typedef kindr::rotations::eigen_impl::EulerAnglesZyxPD EulerAnglesZyx;
-  typedef kindr::rotations::eigen_impl::LocalAngularVelocityPD LocalAngularVelocity;
-  typedef kindr::rotations::eigen_impl::AngleAxisPD AngleAxis;
-  typedef kindr::phys_quant::eigen_impl::Position3D Position;
-  typedef kindr::phys_quant::eigen_impl::Velocity3D LinearVelocity;
-  typedef kindr::phys_quant::eigen_impl::VectorTypeless3D Vector;
-  typedef kindr::phys_quant::eigen_impl::Force3D Force;
+  typedef kindr::RotationQuaternionPD RotationQuaternion;
+  typedef kindr::RotationMatrixPD     RotationMatrix;
+  typedef kindr::EulerAnglesZyxPD EulerAnglesZyx;
+  typedef kindr::LocalAngularVelocityPD LocalAngularVelocity;
+  typedef kindr::AngleAxisPD AngleAxis;
+  typedef kindr::Position3D Position;
+  typedef kindr::Velocity3D LinearVelocity;
+  typedef kindr::VectorTypeless3D Vector;
+  typedef kindr::Force3D Force;
 
-  typedef kindr::phys_quant::eigen_impl::Position<double, numberOfJoints_> JointPositions;
-  typedef kindr::phys_quant::eigen_impl::Velocity<double, numberOfJoints_> JointVelocities;
-  typedef kindr::phys_quant::eigen_impl::Torque<double, numberOfJoints_> JointTorques;
+  typedef kindr::Position<double, numberOfJoints_> JointPositions;
+  typedef kindr::Velocity<double, numberOfJoints_> JointVelocities;
+  typedef kindr::Torque<double, numberOfJoints_> JointTorques;
  public:
   Model();
   virtual ~Model();
