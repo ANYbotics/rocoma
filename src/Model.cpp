@@ -197,28 +197,28 @@ void Model::addVariablesToLog() {
   command_.addVariablesToLog(true);
   quadrupedModel_->addVariablesToLog(true);
 
-  Eigen::Matrix<std::string, 12,1> names;
-
-  names << "LF_HAA_th", "LF_HFE_th", "LF_KFE_th",
-       "RF_HAA_th", "RF_HFE_th", "RF_KFE_th",
-       "LH_HAA_th", "LH_HFE_th", "LH_KFE_th",
-       "RH_HAA_th", "RH_HFE_th", "RH_KFE_th";
-  signal_logger::logger->addDoubleEigenMatrixToLog(state_.getJointPositions().toImplementation(), names);
-
-  names << "LF_HAA_thd", "LF_HFE_thd", "LF_KFE_thd",
-       "RF_HAA_thd", "RF_HFE_thd", "RF_KFE_thd",
-       "LH_HAA_thd", "LH_HFE_thd", "LH_KFE_thd",
-       "RH_HAA_thd", "RH_HFE_thd", "RH_KFE_thd";
-  signal_logger::logger->addDoubleEigenMatrixToLog(state_.getJointVelocities().toImplementation(), names);
-
-  names << "LF_HAA_load", "LF_HFE_load", "LF_KFE_load",
-       "RF_HAA_load", "RF_HFE_load", "RF_KFE_load",
-       "LH_HAA_load", "LH_HFE_load", "LH_KFE_load",
-       "RH_HAA_load", "RH_HFE_load", "RH_KFE_load";
-  signal_logger::logger->addDoubleEigenMatrixToLog(state_.getJointTorques().toImplementation(), names);
-
-
-  signal_logger::logger->addDoubleKindrEulerAnglesZyxToLog(stateOrientationWorldToBaseEulerAnglesZyx_, "qEulerZyx", "/rm/q/");
+//  Eigen::Matrix<std::string, 12,1> names;
+//
+//  names << "LF_HAA_th", "LF_HFE_th", "LF_KFE_th",
+//       "RF_HAA_th", "RF_HFE_th", "RF_KFE_th",
+//       "LH_HAA_th", "LH_HFE_th", "LH_KFE_th",
+//       "RH_HAA_th", "RH_HFE_th", "RH_KFE_th";
+//  signal_logger::logger->addDoubleEigenMatrixToLog(state_.getQuadrupedModel().getState().getJointPositions().toImplementation(), names);
+//
+//  names << "LF_HAA_thd", "LF_HFE_thd", "LF_KFE_thd",
+//       "RF_HAA_thd", "RF_HFE_thd", "RF_KFE_thd",
+//       "LH_HAA_thd", "LH_HFE_thd", "LH_KFE_thd",
+//       "RH_HAA_thd", "RH_HFE_thd", "RH_KFE_thd";
+//  signal_logger::logger->addDoubleEigenMatrixToLog(state_.getQuadrupedModelPtr()->getState().getJointVelocities().toImplementation(), names);
+//
+//  names << "LF_HAA_load", "LF_HFE_load", "LF_KFE_load",
+//       "RF_HAA_load", "RF_HFE_load", "RF_KFE_load",
+//       "LH_HAA_load", "LH_HFE_load", "LH_KFE_load",
+//       "RH_HAA_load", "RH_HFE_load", "RH_KFE_load";
+//  signal_logger::logger->addDoubleEigenMatrixToLog(state_.getQuadrupedModelPtr()->getJointTorques().toImplementation(), names);
+//
+//
+//  signal_logger::logger->addDoubleKindrEulerAnglesZyxToLog(stateOrientationWorldToBaseEulerAnglesZyx_, "qEulerZyx", "/rm/q/");
 
 //  Eigen::Matrix<std::string, 4,1> contactNames;
 //  contactNames << "LF_CONTACT_FLAG", "RF_CONTACT_FLAG", "LH_CONTACT_FLAG", "RH_CONTACT_FLAG";
@@ -273,24 +273,24 @@ void Model::setQuadrupedState(const quadruped_msgs::QuadrupedState::ConstPtr& qu
     jointVelocities(i) = quadrupedState->joints.velocity[i];
   }
 
-  const RotationQuaternion orientationWorldToBase(quadrupedState->pose.pose.orientation.w,
+  const RotationQuaternion orientationBaseToWorld(quadrupedState->pose.pose.orientation.w,
                                                   quadrupedState->pose.pose.orientation.x,
                                                   quadrupedState->pose.pose.orientation.y,
                                                   quadrupedState->pose.pose.orientation.z);
 
+
   // for logging only
-  stateOrientationWorldToBaseEulerAnglesZyx_ = quadruped_model::EulerAnglesZyx(orientationWorldToBase).getUnique();
+  stateOrientationWorldToBaseEulerAnglesZyx_ = quadruped_model::EulerAnglesZyx(orientationBaseToWorld.inverted()).getUnique();
 
   quadruped_model::LinearVelocity B_v_B(quadrupedState->twist.twist.linear.x,
                                         quadrupedState->twist.twist.linear.y,
                                         quadrupedState->twist.twist.linear.z);
-  const quadruped_model::LinearVelocity I_v_B = orientationWorldToBase.inverseRotate(B_v_B);
+  const quadruped_model::LinearVelocity I_v_B = orientationBaseToWorld.rotate(B_v_B);
 
 
   quadruped_model::LocalAngularVelocity localAngularVelocityKindr(quadrupedState->twist.twist.angular.x,
                                                                   quadrupedState->twist.twist.angular.y,
                                                                   quadrupedState->twist.twist.angular.z);
-
 
   quadruped_model::QuadrupedState quadrupedModelState;
 
@@ -298,7 +298,7 @@ void Model::setQuadrupedState(const quadruped_msgs::QuadrupedState::ConstPtr& qu
   quadrupedModelState.setPositionWorldToBaseInWorldFrame(quadruped_model::Position(quadrupedState->pose.pose.position.x,
                                                                                    quadrupedState->pose.pose.position.y,
 																				   quadrupedState->pose.pose.position.z));
-  quadrupedModelState.setOrientationWorldToBase(orientationWorldToBase);
+  quadrupedModelState.setOrientationBaseToWorld(orientationBaseToWorld);
   quadrupedModelState.setJointPositions(jointPositions);
   //--
 
@@ -325,8 +325,6 @@ void Model::setQuadrupedState(const quadruped_msgs::QuadrupedState::ConstPtr& qu
 
   quadrupedModel_->setJointTorques(jointTorques);
   quadrupedModel_->setState(quadrupedModelState, true, true, false);
-
-  state_.copyStateFromQuadrupedModel();
   state_.setStatus((quadruped_model::State::StateStatus)quadrupedState->state);
 }
 
@@ -341,7 +339,7 @@ void Model::setQuadrupedState(const sensor_msgs::ImuPtr& imu,
   boost::unique_lock<boost::shared_mutex> lock(mutexState_);
 
 
-  namespace rot = kindr::rotations::eigen_impl;
+  namespace rot = kindr;
 
   static quadruped_model::VectorQb Qb = quadruped_model::VectorQb::Zero();
   static quadruped_model::VectorQb dQb = quadruped_model::VectorQb::Zero();
@@ -426,7 +424,6 @@ void Model::setQuadrupedState(const sensor_msgs::ImuPtr& imu,
 
 //  quadrupedModel_->update();
   updateStamp_ = ros::Time::now();
-  state_.copyStateFromQuadrupedModel();
 }
 
 void Model::initializeQuadrupedState(quadruped_msgs::QuadrupedStatePtr& quadrupedState) const {

@@ -56,10 +56,7 @@
 #include "locomotion_controller/Model.hpp"
 #include "locomotion_controller/ControllerManager.hpp"
 
-#include <kindr/rotations/RotationEigen.hpp>
-#include <kindr/rotations/RotationDiffEigen.hpp>
-#include <kindr/phys_quant/PhysicalQuantitiesEigen.hpp>
-
+#include <kindr/Core>
 
 #include <boost/thread.hpp>
 #include <boost/chrono.hpp>
@@ -69,13 +66,13 @@ namespace locomotion_controller {
 class LocomotionController : public nodewrap::NodeImpl
 {
  public:
-  typedef kindr::rotations::eigen_impl::RotationQuaternionPD RotationQuaternion;
-  typedef kindr::rotations::eigen_impl::EulerAnglesZyxPD EulerAnglesZyx;
-  typedef kindr::rotations::eigen_impl::LocalAngularVelocityPD LocalAngularVelocity;
-  typedef kindr::rotations::eigen_impl::AngleAxisPD AngleAxis;
-  typedef kindr::phys_quant::eigen_impl::Position3D Position;
-  typedef kindr::phys_quant::eigen_impl::Velocity3D LinearVelocity;
-  typedef kindr::phys_quant::eigen_impl::VectorTypeless3D Vector;
+  typedef kindr::RotationQuaternionPD RotationQuaternion;
+  typedef kindr::EulerAnglesZyxPD EulerAnglesZyx;
+  typedef kindr::LocalAngularVelocityPD LocalAngularVelocity;
+  typedef kindr::AngleAxisPD AngleAxis;
+  typedef kindr::Position3D Position;
+  typedef kindr::Velocity3D LinearVelocity;
+  typedef kindr::VectorTypeless3D Vector;
  public:
   LocomotionController();
   virtual ~LocomotionController();
