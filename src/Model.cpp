@@ -310,7 +310,7 @@ void Model::setQuadrupedState(const quadruped_msgs::QuadrupedState::ConstPtr& qu
 
   //-- Pose transforms
   for (const auto& tf : quadrupedState->frame_transforms) {
-    const std::string transformName = tf.header.frame_id + "_to_" + tf.child_frame_id;
+    const std::string transformName = tf.child_frame_id + "_to_" + tf.header.frame_id;
     quadruped_model::Pose transform;
     transform.getPosition() = Position(tf.transform.translation.x,
                                        tf.transform.translation.y,
