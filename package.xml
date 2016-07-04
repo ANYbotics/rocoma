@@ -1,34 +1,13 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>locomotion_controller</name>
+  <name>rocoma</name>
   <version>0.0.0</version>
-  <description>The locomotion_controller package</description>
+  <description>The robot controller manager package</description>
   <maintainer email="gehrinch@ethz.ch">Christian Gehring</maintainer>
   <license>BSD</license>
-  <!-- <url type="website">http://wiki.ros.org/locomotion_controller</url> -->
   <author email="gehrinch@ethz.ch">Christian Gehring</author>
 
   <buildtool_depend>catkin</buildtool_depend>
-  
-  <depend>any_msgs</depend>
-  <depend>locomotion_controller_msgs</depend>
-  <depend>nodelet</depend>
-  <depend>parameter_handler_ros</depend>
-  <depend>quadruped_assembly</depend>
-  <depend>quadruped_model</depend>
-  <depend>quadruped_msgs</depend>
-  <depend>robot_utils</depend>
   <depend>roco</depend>
-  <depend>roco_assembly</depend>
-  <depend>roco_freeze</depend>
-  <depend>roscpp</depend>
-  <depend>roscpp_nodewrap</depend>
-  <depend>series_elastic_actuator_ros</depend>
-  <depend>signal_logger</depend>
-  <depend>signal_logger_ros</depend>
-  <depend>signal_logger_std</depend>
-  <depend>notification</depend>
-  <export>
-    <nodelet plugin="${prefix}/nodelet_plugins.xml"/>
-  </export>
+
 </package>

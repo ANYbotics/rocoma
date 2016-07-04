@@ -1,7 +1,0 @@
-<library path="lib/liblocomotion_controller">
-  <class name="locomotion_controller/LocomotionController" type="nodewrap::Nodelet<locomotion_controller::LocomotionController>" base_class_type="nodelet::Nodelet">
-    <description>
-      Locomotion Controller
-    </description>
-  </class>
-</library>
