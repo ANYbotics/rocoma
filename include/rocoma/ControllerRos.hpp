@@ -52,11 +52,10 @@
 #include "quadruped_model/common/containers.hpp"
 #include "quadruped_model/common/Command.hpp"
 
-#include "locomotion_controller/ControllerManager.hpp"
 #include "locomotion_controller/LocomotionController.hpp"
-#include "locomotion_controller/WorkerWrapper.hpp"
-
 #include <boost/thread.hpp>
+#include <rocoma/ControllerManager.hpp>
+#include <rocoma/WorkerWrapper.hpp>
 #include <iostream>
 #include <exception>      // std::exception
 
@@ -151,4 +150,4 @@ class ControllerRos:  public roco::controllers::ControllerAdapterInterface,
 } // namespace locomotion_controller
 
 
-#include "ControllerRos.tpp"
+#include <rocoma/ControllerRos.tpp>

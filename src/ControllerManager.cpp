@@ -24,29 +24,31 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
-*/
+ */
 /*!
  * @file    ControllerManager.hpp
  * @author  Christian Gehring
  * @date    Oct, 2014
  */
-#include "locomotion_controller/ControllerManager.hpp"
-#include "locomotion_controller/ControllerRos.hpp"
-#include <locomotion_controller/LocomotionController.hpp>
+#include "rocoma/ControllerManager.hpp"
 
-#include "signal_logger_ros/LoggerRos.hpp"
+#include "message_logger/message_logger.hpp"
 
-namespace locomotion_controller {
+namespace rocoma {
 
-ControllerManager::ControllerManager(locomotion_controller::LocomotionController* locomotionController) :
-    timeStep_(0.0),
-    isInitializingTask_(false),
-    controllers_(),
-    activeController_(nullptr),
-    isRealRobot_(false),
-    locomotionController_(locomotionController)
+ControllerManager::ControllerManager(std::unique_ptr<Controller> emergencyStopController,
+                                     std::unique_ptr<Controller> fallbackController) :
+                  timeStep_(0.0),
+                  isRealRobot_(false),
+                  controllers_(),
+                  emergencyStopController_(std::move(emergencyStopController)),
+                  fallbackController_(std::move(fallbackController)),
+                  activeController_(nullptr)
 {
-
+  if(emergencyStopController_ == nullptr) {
+    MELO_ERROR("Emergency controller is nullptr!");
+    abort();
+  }
 }
 
 
@@ -55,192 +57,165 @@ ControllerManager::~ControllerManager()
 
 }
 
+bool ControllerManager::addController(std::unique_ptr<Controller> controller)  {
 
-void ControllerManager::setupControllers(
-    double dt,
-    quadruped_model::State& state,
-    quadruped_model::Command& command,
-    boost::shared_mutex& mutexState,
-    boost::shared_mutex& mutexCommand,
-    ros::NodeHandle& nodeHandle)
-{
-  timeStep_ = dt;
+  // controller name (controller is moved within this function, therefore not safe to access everywhere)
+  std::string controllerName = controller->getName();
+  MELO_INFO("Adding controller %s ...", controllerName.c_str());
 
-  /* Create controller freeze, which is active until estimator converged*/
-  auto controller = new ControllerRos<robot_controller::RocoFreeze>(state, command, mutexState, mutexCommand);
-  controller->setControllerManager(this);
-  //controller->setIsCheckingState(false);
-  addController(controller);
-  activeController_ = &controllers_.back();
-
-  if (!activeController_->initializeController(timeStep_)) {
-    ROS_FATAL("Could not initialized NoTask!");
+  // check if controller already exists
+  auto ctrl = controllers_.find(controllerName);
+  if(ctrl != controllers_.end()) {
+    MELO_ERROR("Could not add controller %s. A controller with the same name already exists.", controllerName.c_str());
+    return false;
   }
 
-  add_locomotion_controllers(this, state, mutexState, command, mutexCommand, nodeHandle);
+  // insert controller (move ownership to controller / controller is set to nullptr)
+  using KV = std::pair<std::string, std::unique_ptr<Controller> >;
+  controllers_.insert( KV(controllerName,std::unique_ptr<Controller>( std::move(controller) ) ) );
 
-  emergencyStopStatePublisher_.shutdown();
-  emergencyStopStatePublisher_ = nodeHandle.advertise<any_msgs::State>("notify_emergency_stop", 1, true);
-  publishEmergencyState(true);
-}
 
-void ControllerManager::addController(ControllerPtr controller)  {
-  ROS_INFO("[ControllerManager] Adding controller %s ...", controller->getName().c_str());
-  controllers_.push_back(controller);
-
-  if (!controller->createController(timeStep_)) {
-    ROS_ERROR("[ControllerManager] Could not create controller %s!", controller->getName().c_str());
-    std::string error = "Could not add controller " +  controller->getName() + "!";
-    throw std::runtime_error(error);
+  // create controller
+  if (!controllers_.at(controllerName)->createController(timeStep_)) {
+    MELO_ERROR("Could not create controller %s!", controllerName.c_str());
+    return false;
   }
-  ROS_INFO("[ControllerManager] ... finished adding controller %s.", controller->getName().c_str());
+
+  MELO_INFO("... finished adding controller %s.", controllerName.c_str());
+
+  return true;
 }
 
-
-
-
-void ControllerManager::updateController() {
+bool ControllerManager::updateController() {
   {
     std::lock_guard<std::recursive_mutex> lock(activeControllerMutex_);
-    activeController_->advanceController(timeStep_);
+
+    bool success = (*activeController_)->advanceController(timeStep_);
+
+    if(fallbackController_ != nullptr) {
+      success = fallbackController_->advanceController(timeStep_) && success;
+    }
+
+    return success;
   }
 }
 
 bool ControllerManager::emergencyStop() {
- activeController_->preStopController();
- activeController_->stopController();
- return true;
+  {
+    // TODO what to do with fallback controller
+    std::lock_guard<std::recursive_mutex> lock(activeControllerMutex_);
+    bool successPrestop = (*activeController_)->preStopController();
+    bool successStop = (*activeController_)->stopController();
+    return successPrestop && successStop;
+  }
 }
 
-bool ControllerManager::switchControllerAfterEmergencyStop() {
-  this->switchToEmergencyTask();
- return true;
-}
-
-void ControllerManager::switchToEmergencyTask() {
+bool ControllerManager::switchToEmergencyController() {
   std::lock_guard<std::recursive_mutex> lock(activeControllerMutex_);
-  if (activeController_->getName() != "Freeze") {
-    for (auto& controller : controllers_) {
-      if (controller.getName() == "Freeze") {
-        activeController_ = &controller;
-        activeController_->resetController(timeStep_);
-        return;
-      }
-    }
-    throw std::runtime_error("Controller 'freeze' not found!");
+
+  if ( *activeController_ != emergencyStopController_) {
+    activeController_ = &emergencyStopController_;
+    return (*activeController_)->resetController(timeStep_);
   }
 
+  return true;
 }
 
+bool ControllerManager::cleanup() {
+  bool success = emergencyStop();
 
-void ControllerManager::notifyEmergencyState() {
-  publishEmergencyState(false);
-  publishEmergencyState(true);
-}
-
-void ControllerManager::publishEmergencyState(bool isOk) {
-  emergencyStopStateMsg_.stamp = ros::Time::now();
-  emergencyStopStateMsg_.is_ok = isOk;
-
-  any_msgs::StatePtr stateMsg( new any_msgs::State(emergencyStopStateMsg_) );
-  emergencyStopStatePublisher_.publish( any_msgs::StateConstPtr(stateMsg) );
-}
-
-
-bool ControllerManager::switchController(locomotion_controller_msgs::SwitchController::Request  &req,
-                                         locomotion_controller_msgs::SwitchController::Response &res)
-{
-
-  //--- Check if controller is already active
-  if (req.name == activeController_->getName()) {
-    res.status = res.STATUS_RUNNING;
-    ROS_INFO("Controller is already running!");
-    return true;
-  }
-
+  // cleanup all controllers
   for (auto& controller : controllers_) {
-    if (req.name == controller.getName()) {
+    success = controller.second->cleanupController() && success;
+  }
 
-      // store pointers to old and new controllers
-      ControllerPtr initController = &controller;
-      ControllerPtr oldActiveController = activeController_;
+  return success;
+}
 
-      // shutdown communication for active controller
+ControllerManager::SwitchResponse ControllerManager::switchController(const std::string & controllerName) {
+
+  SwitchResponse response = SwitchResponse::ERROR;
+  {
+    std::lock_guard<std::recursive_mutex> lock(activeControllerMutex_);
+
+    //! Check if controller is already active
+    if (controllerName == (*activeController_)->getName()) {
+      MELO_INFO("Controller %s is already running!", controllerName.c_str());
+      return SwitchResponse::RUNNING;
+    }
+  }
+
+  auto controller = controllers_.find(controllerName);
+  if(controller != controllers_.end()) {
+    // store pointers to old and new controllers
+    std::unique_ptr<Controller>* newController = &controller->second;
+    std::unique_ptr<Controller>* oldController = activeController_;
+
+    // shutdown communication for active controller
+    {
+      std::lock_guard<std::recursive_mutex> lock(activeControllerMutex_);
+      (*oldController)->preStopController();
+    }
+
+    // initialize new controller
+    (*newController)->initializeController(timeStep_);
+
+    if ( (*newController)->isInitialized() ) {
       {
+        // set active controller
         std::lock_guard<std::recursive_mutex> lock(activeControllerMutex_);
-        oldActiveController->preStopController();
+        activeController_ = newController;
       }
 
-      initController->initializeController(timeStep_);
+      // swap out old controller
+      //(*oldController)->swapOut();
 
-      if (initController->isInitialized()) {
-       {
-          std::lock_guard<std::recursive_mutex> lock(activeControllerMutex_);
-          activeController_ = initController;
-       }
+      MELO_INFO("Switched to controller %s", (*activeController_)->getName().c_str());
+      response = SwitchResponse::SWITCHED;
 
-       oldActiveController->swapOut();
-
-       res.status = res.STATUS_SWITCHED;
-                ROS_INFO("Switched to controller %s",
-                         initController->getName().c_str());
-      }
-      else {
-        // switch to freeze controller
-        switchToEmergencyTask();
-        res.status = res.STATUS_ERROR;
-        ROS_INFO("Could not switch to controller %s", initController->getName().c_str());
-      }
-
-      return true;
+    }
+    else {
+      // switch to freeze controller TODO: react if can't switch to emergency state?
+      switchToEmergencyController();
+      ROS_INFO("Could not switch to controller %s", (*newController)->getName().c_str());
+      response = SwitchResponse::ERROR;
     }
   }
-  res.status = res.STATUS_NOTFOUND;
-  ROS_INFO("Controller %s not found!", req.name.c_str());
-  return true;
-}
-
-
-
-bool ControllerManager::getAvailableControllers(locomotion_controller_msgs::GetAvailableControllers::Request &req,
-                                                locomotion_controller_msgs::GetAvailableControllers::Response &res)
-{
-
-  for (auto& controller : controllers_) {
-    res.available_controllers.push_back(controller.getName());
+  else {
+    // controller is not part of controller map
+    MELO_INFO("Controller %s not found!", controllerName.c_str());
+    response = SwitchResponse::NOTFOUND;
   }
 
-  return true;
+  return response;
+
 }
 
+std::vector<std::string> ControllerManager::getAvailableControllerNames() {
+  // TODO: Is this lock needed?
+  std::lock_guard<std::recursive_mutex> lock(activeControllerMutex_);
 
-locomotion_controller::LocomotionController* ControllerManager::getLocomotionController() {
-  return locomotionController_;
+  // fill vector of controller names
+  std::vector<std::string> controllerNames;
+  for( auto & controller : controllers_ )
+  {
+    controllerNames.push_back(controller.first);
+  }
+
+  return controllerNames;
 }
 
-
-bool ControllerManager::getActiveController(locomotion_controller_msgs::GetActiveController::Request &req,
-                                            locomotion_controller_msgs::GetActiveController::Response &res) {
-
-  res.active_controller_name = activeController_->getName();
-  res.active_controller_locomotion_mode = activeController_->getLocomotionModeName();
-
-  return true;
+std::string ControllerManager::getActiveControllerName() {
+  std::lock_guard<std::recursive_mutex> lock(activeControllerMutex_);
+  return (*activeController_)->getName();
 }
-
 
 bool ControllerManager::isRealRobot() const {
-	return isRealRobot_;
+  return isRealRobot_;
 }
+
 void ControllerManager::setIsRealRobot(bool isRealRobot) {
-	isRealRobot_ = isRealRobot;
+  isRealRobot_ = isRealRobot;
 }
 
-void ControllerManager::cleanup() {
-  emergencyStop();
-  for (auto& controller : controllers_) {
-      controller.cleanupController();
-  }
-}
-
-} /* namespace locomotion_controller */
+} /* namespace rocoma */

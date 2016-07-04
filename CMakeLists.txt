@@ -7,6 +7,7 @@ find_package(Boost REQUIRED COMPONENTS thread chrono)
 find_package(catkin REQUIRED
   COMPONENTS
     roco
+    message_logger
 )
 
 ## System dependencies are found with CMake's conventions
@@ -26,6 +27,7 @@ catkin_package(
   LIBRARIES
   CATKIN_DEPENDS
     roco
+    message_logger
   DEPENDS boost
 )
 
@@ -41,4 +43,13 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 include_directories(${catkin_INCLUDE_DIRS})
 include_directories(${kindr_INCLUDE_DIRS})
 
-
+add_library(coma
+  src/ControllerManager.cpp
+)
+add_dependencies(coma
+  ${catkin_EXPORTED_TARGETS}
+)
+target_link_libraries(coma
+  ${catkin_LIBRARIES}
+  ${Boost_LIBRARIES}
+)
