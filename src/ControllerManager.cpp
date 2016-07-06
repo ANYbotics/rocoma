@@ -27,7 +27,7 @@
  */
 /*!
  * @file    ControllerManager.hpp
- * @author  Christian Gehring
+ * @author  Christian Gehring, Gabriel Hottiger
  * @date    Oct, 2014
  */
 #include "rocoma/ControllerManager.hpp"
@@ -168,7 +168,7 @@ ControllerManager::SwitchResponse ControllerManager::switchController(const std:
       }
 
       // swap out old controller
-      //(*oldController)->swapOut();
+      (*oldController)->stopController();
 
       MELO_INFO("Switched to controller %s", (*activeController_)->getName().c_str());
       response = SwitchResponse::SWITCHED;

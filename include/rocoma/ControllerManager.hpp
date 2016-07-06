@@ -52,8 +52,8 @@ class ControllerManager
 {
  public:
   //! Convenience typedefs
-  using Controller = roco::controllers::ControllerInterface;
-  using ControllerPtr = roco::controllers::ControllerInterface*;
+  using Controller = roco::ControllerAdapterInterface;
+  using ControllerPtr = roco::ControllerAdapterInterface*;
 
   //! Enumeration for switch controller feedback
   enum class SwitchResponse : int {
