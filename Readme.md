@@ -7,4 +7,4 @@ This package contains a controller manager for ROCO controllers.
 
 ## Overview
 An overview of the software structure is given in the following image.
-![rocoUML.png](https://bitbucket.org/repo/GLj58a/images/3775701108-rocoUML.png)
+![Rocoma.png](https://bitbucket.org/repo/GLj58a/images/3970331274-Rocoma.png)
