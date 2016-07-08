@@ -32,13 +32,13 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-add_library(coma
+add_library(${PROJECT_NAME}
   src/ControllerManager.cpp
 )
-add_dependencies(coma
+add_dependencies(${PROJECT_NAME}
   ${catkin_EXPORTED_TARGETS}
 )
-target_link_libraries(coma
+target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}
 )
