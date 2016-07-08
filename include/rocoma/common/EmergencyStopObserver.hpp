@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2016, Gabriel Hottiger
  * All rights reserved.
  *
@@ -26,15 +26,23 @@
  *
 */
 /*!
- * @file    ControllerManager.hpp
+ * @file    EmergencyStopObserver.hpp
  * @author  Gabriel Hottiger
  * @date    Jun, 2016
  */
 
 #pragma once
 
-#include <roco/controllers/ControllerInterface.hpp>
+//! Defines an interface for a class that wants to observe emergency stops on the controller manager.
+/*! rocoma_ros::ControllerManagerRos implements this.
+ *
+ */
+class EmergencyStopObserver {
 
-class EmergencyControllerInterface : public roco::controllers::ControllerInterface {
+  //! Executed when entering the "smart" emergency stop controller
+  void smartEmergencyStop();
+
+  //! Executed when entering the fail-proof controller
+  void emergencyStop();
 
 };
