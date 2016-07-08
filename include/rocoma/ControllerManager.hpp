@@ -34,7 +34,7 @@
 #pragma once
 
 // Controller Interface
-#include <roco/controllers/ControllerInterface.hpp>
+#include <roco/controllers/adapters/ControllerAdapterInterface.hpp>
 
 // Boost
 #include <boost/ptr_container/ptr_unordered_map.hpp>

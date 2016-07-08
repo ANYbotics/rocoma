@@ -8,26 +8,17 @@ find_package(catkin REQUIRED
   COMPONENTS
     roco
     message_logger
+    any_worker
 )
-
-## System dependencies are found with CMake's conventions
-find_package(Eigen3 REQUIRED)
-
-# Attempt to find catkinized kindr
-find_package(kindr QUIET)
-if(NOT kindr_FOUND)
-  # Attempt to find package-based kindr
-  find_package(PkgConfig REQUIRED)
-  pkg_check_modules(kindr kindr REQUIRED)
-endif()
 
 catkin_package(
   INCLUDE_DIRS
-    include 
+    include
   LIBRARIES
   CATKIN_DEPENDS
     roco
     message_logger
+    any_worker
   DEPENDS boost
 )
 
@@ -35,13 +26,11 @@ catkin_package(
 ## Build ##
 ###########
 
-## Specify additional locations of header files
-## Your package locations should be listed before other locations
-include_directories(include)
-include_directories(${Boost_INCLUDE_DIRS})
-include_directories(${EIGEN3_INCLUDE_DIR})
-include_directories(${catkin_INCLUDE_DIRS})
-include_directories(${kindr_INCLUDE_DIRS})
+include_directories(
+  include
+  ${Boost_INCLUDE_DIRS}
+  ${catkin_INCLUDE_DIRS}
+)
 
 add_library(coma
   src/ControllerManager.cpp

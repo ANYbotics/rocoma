@@ -62,6 +62,7 @@ class ControllerImplementation: public Controller_ {
                            Command& command,
                            boost::shared_mutex& mutexState,
                            boost::shared_mutex& mutexCommand):
+      Controller(),
       state_(state),
       command_(command),
       mutexState_(mutexState),

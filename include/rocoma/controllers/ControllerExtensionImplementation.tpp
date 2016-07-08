@@ -33,63 +33,62 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 /*!
- * @file     ControllerExtensionImplementation.hpp
+ * @file     ControllerExtensionImplementation.tpp
  * @author   Christian Gehring, Gabriel Hottiger
  * @date     Dec, 2014
  * @note     Restructured, June 2016
  */
 
+#include <any_worker/Worker.hpp>
+#include <rocoma/common/WorkerWrapper.hpp>
+
 namespace rocoma {
 
 template<typename Controller_, typename State_, typename Command_>
+ControllerExtensionImplementation<Controller_, State_, Command_>::ControllerExtensionImplementation( State& state,
+                                                                                                     Command& command,
+                                                                                                     boost::shared_mutex& mutexState,
+                                                                                                     boost::shared_mutex& mutexCommand):
+    Base(state, command, mutexState, mutexCommand),
+    isRealRobot_(false),
+    isCheckingCommand_(true),
+    isCheckingState_(true),
+    time_()
+{
+
+}
+
+template<typename Controller_, typename State_, typename Command_>
+ControllerExtensionImplementation<Controller_, State_, Command_>::~ControllerExtensionImplementation()
+{
+
+}
+
+template<typename Controller_, typename State_, typename Command_>
 roco::WorkerHandle ControllerExtensionImplementation<Controller_, State_, Command_>::addWorker(const roco::WorkerOptions&  options) {
-  workers_.emplace(options.name_, WorkerWrapper());
-  auto& wrapper = workers_[options.name_];
-  wrapper.options_ = options;
 
-  nodewrap::WorkerOptions workerOptions;
-  workerOptions.autostart = options.autostart_;
-  workerOptions.frequency = options.frequency_;
-  workerOptions.priority = options.priority_;
-  workerOptions.synchronous = options.synchronous_;
-  workerOptions.callback = boost::bind(&WorkerWrapper::workerCallback, wrapper, _1);
-
-  wrapper.worker_ = controllerManager_->getLocomotionController()->addWrappedWorker(options.name_, workerOptions);
-
-  roco::WorkerHandle workerHandle;
-  workerHandle.name_ = options.name_;
-
-  return workerHandle;
+  WorkerWrapper wrapper(options);
+  workerManager_.addWorker(options.name_, 1.0/options.frequency_,
+                           std::bind(&WorkerWrapper::workerCallback, wrapper, std::placeholders::_1), options.priority_);
+  return roco::WorkerHandle(options.name_);
 }
 
 template<typename Controller_, typename State_, typename Command_>
 roco::WorkerHandle ControllerExtensionImplementation<Controller_, State_, Command_>::addWorker(roco::Worker& worker) {
 
-  auto& options  = worker.options_;
-  workers_.emplace(options.name_, WorkerWrapper());
-  auto& wrapper = workers_[options.name_];
-
-  wrapper.options_ = options;
-
-  nodewrap::WorkerOptions workerOptions;
-  workerOptions.autostart =  options.autostart_;
-  workerOptions.frequency =  options.frequency_;
-  workerOptions.priority =  options.priority_;
-  workerOptions.synchronous =  options.synchronous_;
-  workerOptions.callback = boost::bind(&WorkerWrapper::workerCallback, wrapper, _1);
-  wrapper.worker_ = controllerManager_->getLocomotionController()->addWrappedWorker(options.name_, workerOptions);
-
-  worker.workerStartCallback_ = boost::bind(&RobotController<Controller_,State_, Command_>::startWorker, this, _1);
-  worker.workerCancelCallback_ = boost::bind(&RobotController<Controller_,State_, Command_>::cancelWorker, this, _1, _2 );
-
-  worker.handle_.name_ = options.name_;
+  WorkerWrapper wrapper(worker.options_);
+  workerManager_.addWorker(worker.options_.name_, 1.0/worker.options_.frequency_,
+                           std::bind(&WorkerWrapper::workerCallback, wrapper, std::placeholders::_1), worker.options_.priority_);
+  worker.workerStartCallback_ = boost::bind(&ControllerExtensionImplementation<Controller_,State_, Command_>::startWorker, this, _1);
+  worker.workerCancelCallback_ = boost::bind(&ControllerExtensionImplementation<Controller_,State_, Command_>::cancelWorker, this, _1, _2 );
+  worker.handle_.name_ = worker.options_.name_;
   return worker.handle_;
 }
 
 template<typename Controller_, typename State_, typename Command_>
 bool ControllerExtensionImplementation<Controller_, State_, Command_>::startWorker(const roco::WorkerHandle& workerHandle) {
   MELO_INFO_STREAM("ControllerRos::startWorker: start " << workerHandle.name_);
-  workers_[workerHandle.name_].worker_.start();
+  workerManager_.startWorker(workerHandle.name_);
   MELO_INFO_STREAM("ControllerRos::startWorker started " << workerHandle.name_);
   return true;
 }
@@ -97,7 +96,7 @@ bool ControllerExtensionImplementation<Controller_, State_, Command_>::startWork
 template<typename Controller_, typename State_, typename Command_>
 bool ControllerExtensionImplementation<Controller_, State_, Command_>::cancelWorker(const roco::WorkerHandle& workerHandle, bool block) {
   MELO_INFO_STREAM("ControllerRos::cancelWorker: cancel  " << workerHandle.name_);
-  workers_[workerHandle.name_].worker_.cancel(block);
+  workerManager_.stopWorker(workerHandle.name_, block);
   return true;
 }
 

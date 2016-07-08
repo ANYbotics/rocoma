@@ -9,6 +9,7 @@
 
   <buildtool_depend>catkin</buildtool_depend>
   <depend>roco</depend>
+  <depend>any_worker</depend>
   <depend>message_logger</depend>
-  
+
 </package>

@@ -7,50 +7,54 @@
 
 #pragma once
 
-#include <roscpp_nodewrap/worker/Worker.h>
-#include <roscpp_nodewrap/worker/WorkerEvent.h>
+#include <any_worker/Worker.hpp>
+#include <any_worker/WorkerEvent.hpp>
+
 #include <roco/workers/WorkerOptions.hpp>
 #include <roco/workers/WorkerEventInterface.hpp>
 #include <roco/workers/WorkerEventStd.hpp>
 
+namespace rocoma {
 
-class WrapperWorkerEvent : public roco::WorkerEventStd, public nodewrap::WorkerEvent {
+class WrapperWorkerEvent : public roco::WorkerEventStd, public any_worker::WorkerEvent {
 public:
-  WrapperWorkerEvent() {
+  WrapperWorkerEvent() = delete;
+  WrapperWorkerEvent(const any_worker::WorkerEvent& event ):
+    any_worker::WorkerEvent(event)
+  {
 
   }
 
-  WrapperWorkerEvent(const nodewrap::WorkerEvent& event ): nodewrap::WorkerEvent(event)  {
-    actualCycleTime_.from(event.actualCycleTime.sec, event.actualCycleTime.nsec);
-    expectedCycleTime_.from(event.expectedCycleTime.sec, event.expectedCycleTime.nsec);
-  }
-
-  virtual ~WrapperWorkerEvent() {
+  virtual ~WrapperWorkerEvent()
+  {
 
   }
-  /** \brief The expected cycle time of the worker
-    */
-  virtual roco::time::Time& getExpectedCycleTime() {
-    return actualCycleTime_;
-  }
-
-  /** \brief The momentary, actual cycle time of the worker
-    */
-  virtual roco::time::Time& getActualCycleTime() {
-    return expectedCycleTime_;
-  }
-
-
 };
 
 class WorkerWrapper
 {
  public:
-  inline bool workerCallback(const nodewrap::WorkerEvent& workerEvent)
+  WorkerWrapper() = delete;
+
+  WorkerWrapper(roco::WorkerOptions options):
+    options_(options)
+  {
+
+  }
+
+  virtual ~WorkerWrapper()
+  {
+
+  }
+
+  inline bool workerCallback(const any_worker::WorkerEvent& workerEvent)
   {
     WrapperWorkerEvent event(workerEvent);
     return options_.callback_(event);
   }
+
+ private:
   roco::WorkerOptions options_;
-  nodewrap::Worker worker_;
 };
+
+}

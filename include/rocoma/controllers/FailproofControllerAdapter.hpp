@@ -48,7 +48,7 @@
 #include <roco/controllers/FailproofController.hpp>
 
 // Rocoma
-#include <rocoma/ControllerExtensionImplementation.hpp>
+#include <rocoma/controllers/ControllerImplementation.hpp>
 
 // STL
 #include <exception>
@@ -58,7 +58,7 @@
 namespace rocoma {
 
 template<typename Controller_, typename State_, typename Command_>
-class FailproofControllerAdapter: public roco::FailproofControllerAdapterInterface, public ControllerExtensionImplementation<Controller_, State_, Command_>
+class FailproofControllerAdapter: public roco::FailproofControllerAdapterInterface, public ControllerImplementation<Controller_, State_, Command_>
 {
   //! Check if template parameters implement the required interfaces
   static_assert(std::is_base_of<roco::StateInterface, State_>::value, "[ControllerRos]: The State class does not implement roco::StateInterface!" );
@@ -67,6 +67,7 @@ class FailproofControllerAdapter: public roco::FailproofControllerAdapterInterfa
 
  public:
   //! Convenience typedefs
+  using Base = ControllerImplementation<Controller_, State_, Command_>;
   using Controller = Controller_;
   using State = State_;
   using Command = Command_;
@@ -85,10 +86,15 @@ class FailproofControllerAdapter: public roco::FailproofControllerAdapterInterfa
   FailproofControllerAdapter(State& state,
                     Command& command,
                     boost::shared_mutex& mutexState,
-                    boost::shared_mutex& mutexCommand);
+                    boost::shared_mutex& mutexCommand):
+    Base(state, command, mutexState, mutexCommand)
+  {
 
+  }
   //! Virtual destructor
-  virtual ~FailproofControllerAdapter();
+  virtual ~FailproofControllerAdapter()
+  {
+  }
 
   //! Implementation of the adapter interface (roco::FailproofControllerAdapterInterface)
   virtual bool createController(double dt)    {  return this->create(dt); }

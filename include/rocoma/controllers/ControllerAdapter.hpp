@@ -47,7 +47,7 @@
 #include <roco/controllers/adapters/ControllerAdapterInterface.hpp>
 
 // Rocoma
-#include <rocoma/ControllerExtensionImplementation.hpp>
+#include <rocoma/controllers/ControllerExtensionImplementation.hpp>
 
 // STL
 #include <exception>
@@ -66,6 +66,7 @@ class ControllerAdapter: public roco::ControllerAdapterInterface, public Control
 
  public:
   //! Convenience typedefs
+  using Base = ControllerExtensionImplementation<Controller_, State_, Command_>;
   using Controller = Controller_;
   using State = State_;
   using Command = Command_;
@@ -112,4 +113,4 @@ class ControllerAdapter: public roco::ControllerAdapterInterface, public Control
 } // namespace rocoma
 
 
-#include <rocoma/ControllerAdapter.tpp>
+#include <rocoma/controllers/ControllerAdapter.tpp>

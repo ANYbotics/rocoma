@@ -42,7 +42,7 @@
 #pragma once
 
 // rocoma
-#include <rocoma/ControllerImplementation.hpp>
+#include <rocoma/controllers/ControllerImplementation.hpp>
 
 // roco
 #include <roco/time/Time.hpp>
@@ -53,6 +53,9 @@
 // Boost
 #include <boost/thread.hpp>
 
+// AnyWorker
+#include <any_worker/WorkerManager.hpp>
+
 namespace rocoma {
 
 template<typename Controller_, typename State_, typename Command_>
@@ -60,8 +63,10 @@ class ControllerExtensionImplementation: public ControllerImplementation<Control
 
  public:
   //! Convenience typedefs
+  using Base = ControllerImplementation<Controller_, State_, Command_>;
   using Controller = Controller_;
   using State = State_;
+  using Command = Command_;
 
  public:
   ControllerExtensionImplementation() = delete;
@@ -71,7 +76,7 @@ class ControllerExtensionImplementation: public ControllerImplementation<Control
                                     boost::shared_mutex& mutexState,
                                     boost::shared_mutex& mutexCommand);
 
-  virtual ~ControllerExtensionImplementation() { };
+  virtual ~ControllerExtensionImplementation();
 
   virtual bool isRealRobot() const                      { return isRealRobot_; }
 
@@ -98,9 +103,11 @@ class ControllerExtensionImplementation: public ControllerImplementation<Control
   boost::atomic<bool> isCheckingState_;
   //! Time
   roco::time::TimeStd time_;
+  //! Worker Manager
+  any_worker::WorkerManager workerManager_;
 
 };
 
 } /** namespace rocoma */
 
-#include <rocoma/ControllerExtensionImplementation.tpp>
+#include <rocoma/controllers/ControllerExtensionImplementation.tpp>

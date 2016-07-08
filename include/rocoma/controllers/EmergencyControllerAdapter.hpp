@@ -46,7 +46,7 @@
 #include <roco/controllers/adapters/EmergencyControllerAdapterInterface.hpp>
 
 // Rocoma
-#include <rocoma/ControllerAdapter.hpp>
+#include <rocoma/controllers/ControllerAdapter.hpp>
 
 // STL
 #include <type_traits>
@@ -61,6 +61,7 @@ class EmergencyControllerAdapter: public roco::EmergencyControllerAdapterInterfa
 
  public:
   //! Convenience typedefs
+  using Base = ControllerAdapter<Controller_, State_, Command_>;
   using Controller = Controller_;
   using State = State_;
   using Command = Command_;
@@ -79,10 +80,17 @@ class EmergencyControllerAdapter: public roco::EmergencyControllerAdapterInterfa
   EmergencyControllerAdapter(State& state,
                              Command& command,
                              boost::shared_mutex& mutexState,
-                             boost::shared_mutex& mutexCommand);
+                             boost::shared_mutex& mutexCommand):
+    Base(state, command, mutexState, mutexCommand)
+  {
+
+  }
 
   //! Virtual destructor
-  virtual ~EmergencyControllerAdapter();
+  virtual ~EmergencyControllerAdapter()
+  {
+
+  }
 
   //! Implement adapter
   virtual bool initializeControllerFast(double dt) {
