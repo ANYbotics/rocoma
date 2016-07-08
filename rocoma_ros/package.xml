@@ -12,5 +12,6 @@
   <depend>rocoma</depend>
   <depend>rocoma_msgs</depend>
   <depend>any_msgs</depend>
+  <depend>pluginlib</depend>
 
 </package>
