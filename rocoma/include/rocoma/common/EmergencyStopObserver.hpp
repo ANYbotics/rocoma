@@ -24,7 +24,7 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
-*/
+ */
 /*!
  * @file    EmergencyStopObserver.hpp
  * @author  Gabriel Hottiger
@@ -33,16 +33,26 @@
 
 #pragma once
 
+namespace rocoma {
+
 //! Defines an interface for a class that wants to observe emergency stops on the controller manager.
 /*! rocoma_ros::ControllerManagerRos implements this.
  *
  */
 class EmergencyStopObserver {
 
-  //! Executed when entering the "smart" emergency stop controller
-  void smartEmergencyStop();
+ public:
+  enum class EmergencyStopType: unsigned int {
+    SMART_EMERGENCY_STOP = 0,
+        FAILPROOF_EMERGENCY_STOP
+  };
 
-  //! Executed when entering the fail-proof controller
-  void emergencyStop();
+ public:
+  EmergencyStopObserver() { };
+  virtual ~EmergencyStopObserver() { };
 
+  //! Executed when entering the emergency stop controller
+  virtual void reactOnEmergencyStop(EmergencyStopType type) = 0;
 };
+
+}

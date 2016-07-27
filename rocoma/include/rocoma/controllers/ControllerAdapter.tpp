@@ -48,12 +48,13 @@ template<typename Controller_, typename State_, typename Command_>
 ControllerAdapter<Controller_, State_, Command_>::ControllerAdapter(State& state,
                                                                     Command& command,
                                                                     boost::shared_mutex& mutexState,
-                                                                    boost::shared_mutex& mutexCommand):
-    Base(state, command, mutexState, mutexCommand)
-{
+                                                                    boost::shared_mutex& mutexCommand,
+                                                                    any_worker::WorkerManager& workerManager):
+                                                                    Base(state, command, mutexState, mutexCommand, workerManager)
+                                                                    {
 
 
-}
+                                                                    }
 
 template<typename Controller_, typename State_, typename Command_>
 ControllerAdapter<Controller_, State_, Command_>::~ControllerAdapter()
@@ -64,36 +65,164 @@ ControllerAdapter<Controller_, State_, Command_>::~ControllerAdapter()
 template<typename Controller_, typename State_, typename Command_>
 bool ControllerAdapter<Controller_, State_, Command_>::createController(double dt)
 {
+  // Check if controller was already created
+  if (this->isCreated()) {
+    MELO_WARN_STREAM("[ControllerAdapter]: Controller has already been created!");
+    return true;
+  }
+
+  try {
+
+    // create controller
+    if (!this->create(dt)) {
+      this->isCreated_ = false;
+      MELO_WARN_STREAM("[ControllerAdapter]: Controller could not be created!");
+      return false;
+    }
+
+    // set flag
+    this->isCreated_ = true;
+
+  } catch (std::exception& e) {
+    MELO_WARN_STREAM("[ControllerAdapter]: Exception caught: " << e.what());
+    this->isCreated_ = false;
+    return false;
+  }
+
   return true;
 }
 
 template<typename Controller_, typename State_, typename Command_>
 bool ControllerAdapter<Controller_, State_, Command_>::initializeController(double dt)
 {
+  // Check if controller was created
+  if (!this->isCreated()) {
+    MELO_WARN_STREAM("[ControllerAdapter]: Controller was not created!");
+    return false;
+  }
+
+  // Reset instead of initialization if the controller has been already initialized
+  if (this->isInitialized()) {
+    return resetController(dt);
+  }
+
+  try {
+    // Update the state
+    updateState(dt, false);
+
+    // Initialize the controller
+    if (!this->initialize(dt)) {
+      MELO_WARN_STREAM("[ControllerAdapter]: Controller could not be initialized!");
+      return false;
+    }
+
+    // Update the command
+    updateCommand(dt);
+
+    // Set init flag
+    this->isInitialized_ = true;
+
+  }
+  catch (std::exception& e) {
+    MELO_WARN_STREAM("[ControllerAdapter]: Exception caught:\n" << e.what());
+    this->isInitialized_ = false;
+    return false;
+  }
+
+  // Set running flag
+  this->isRunning_ = true;
+  MELO_INFO_STREAM("[ControllerAdapter]: Initialized controller " << this->getName() << " successfully!");
+
   return true;
 }
 
 template<typename Controller_, typename State_, typename Command_>
 bool ControllerAdapter<Controller_,State_, Command_>::resetController(double dt)
 {
-  return true;
-}
+  // Check if controller was created
+  if (!this->isCreated()) {
+    MELO_WARN_STREAM("[ControllerAdapter]: Controller was not created!");
+    return false;
+  }
 
-template<typename Controller_, typename State_, typename Command_>
-bool ControllerAdapter<Controller_,State_, Command_>::changeController()
-{
+  // Initialize instead of reset if the controller has not been already initialized
+  if (!this->isInitialized()) {
+    return initializeController(dt);
+  }
+
+  try {
+    // Update the state
+    updateState(dt, false);
+
+    // Initialize the controller
+    if (!this->reset(dt)) {
+      MELO_WARN_STREAM("[ControllerAdapter]: Controller could not be reset!");
+      return false;
+    }
+
+    // Update the command
+    updateCommand(dt);
+  }
+  catch (std::exception& e) {
+    MELO_WARN_STREAM("[ControllerAdapter]: Exception caught:\n" << e.what());
+    return false;
+  }
+
+  // Set running flag
+  this->isRunning_ = true;
+  MELO_INFO_STREAM("[ControllerAdapter]: Reset controller " << this->getName() << " successfully!");
+
   return true;
 }
 
 template<typename Controller_, typename State_, typename Command_>
 bool ControllerAdapter<Controller_,State_, Command_>::cleanupController()
 {
+  MELO_INFO_STREAM("[ControllerAdapter]: Cleaning controller " << this->getName() << " up.");
+
+  // Check if controller was created
+  if (!this->isCreated()) {
+    MELO_WARN_STREAM("[ControllerAdapter]: Controller is not created!");
+    return false;
+  }
+
+  // Cleanup the controller
+  try {
+    if (!this->cleanup()) {
+      MELO_WARN_STREAM("[ControllerAdapter]: Could not clean up the controller!");
+      return false;
+    }
+
+  } catch (std::exception& e) {
+    MELO_WARN_STREAM("[ControllerAdapter]: Exception caught: " << e.what());
+    return false;
+  }
+
+  // Reset flags
+  this->isInitialized_ = false;
+  this->isCreated_ = false;
+  this->isRunning_ = false;
+
   return true;
 }
 
 template<typename Controller_, typename State_, typename Command_>
 bool ControllerAdapter<Controller_, State_, Command_>::stopController()
 {
+  // set flag
+  this->isRunning_ = false;
+
+  // stop controller
+  try {
+    if(!this->stop()) {
+      MELO_WARN("[ControllerAdapter]: Could not stop controller %s!", this->getName().c_str());
+      return false;
+    }
+  } catch (std::exception& e) {
+    MELO_WARN_STREAM("[ControllerAdapter]: Could not stop controller " << this->getName() << "! Exception caught: " << e.what());
+    return false;
+  }
+
   return true;
 }
 
@@ -101,23 +230,51 @@ bool ControllerAdapter<Controller_, State_, Command_>::stopController()
 template<typename Controller_, typename State_, typename Command_>
 bool ControllerAdapter<Controller_,State_, Command_>::preStopController()
 {
+  try {
+    if(!this->preStop()) {
+      MELO_WARN("[ControllerAdapter]: Could not prepare to stop controller %s!", this->getName().c_str());
+      return false;
+    }
+  } catch (std::exception& e) {
+    MELO_WARN_STREAM("[ControllerAdapter]: Could not prepare to stop controller " << this->getName() << "! Exception caught: " << e.what());
+    return false;
+  }
+
   return true;
 }
 
 template<typename Controller_, typename State_, typename Command_>
 void ControllerAdapter<Controller_,State_, Command_>::setIsRealRobot(bool isRealRobot)
 {
+  this->isRealRobot_ = isRealRobot;
 }
 
 template<typename Controller_, typename State_, typename Command_>
 bool ControllerAdapter<Controller_,State_, Command_>::updateState(double dt, bool checkState)
 {
+  time_.setNow();
+
+  if (checkState && isCheckingState_) {
+    boost::shared_lock<boost::shared_mutex> lock(getStateMutex());
+    if (!state_.checkState()) {
+      MELO_ERROR("[ControllerAdapter]: Bad state!");
+      return false;
+    }
+  }
   return true;
 }
 
 template<typename Controller_, typename State_, typename Command_>
-bool ControllerAdapter<Controller_,State_, Command_>::updateCommand(double dt, bool forceSendingControlModes)
+bool ControllerAdapter<Controller_,State_, Command_>::updateCommand(double dt)
 {
+  if (isCheckingCommand_) {
+    boost::unique_lock<boost::shared_mutex> lock(getCommandMutex());
+    if (!command_.limitCommand()) {
+      MELO_ERROR("[ControllerAdapter]: The command is invalid!");
+      return false;
+    }
+  }
+
   return true;
 }
 

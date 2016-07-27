@@ -42,12 +42,13 @@
 #pragma once
 
 // Roco
-#include <roco/model/CommandInterface.hpp>
-#include <roco/model/StateInterface.hpp>
-#include <roco/controllers/adapters/ControllerAdapterInterface.hpp>
+#include "roco/model/CommandInterface.hpp"
+#include "roco/model/StateInterface.hpp"
+#include "roco/controllers/Controller.hpp"
+#include "roco/controllers/adapters/ControllerAdapterInterface.hpp"
 
 // Rocoma
-#include <rocoma/controllers/ControllerExtensionImplementation.hpp>
+#include "rocoma/controllers/ControllerExtensionImplementation.hpp"
 
 // STL
 #include <exception>
@@ -60,9 +61,9 @@ template<typename Controller_, typename State_, typename Command_>
 class ControllerAdapter: public roco::ControllerAdapterInterface, public ControllerExtensionImplementation<Controller_, State_, Command_>
 {
   //! Check if template parameters implement the required interfaces
-  static_assert(std::is_base_of<roco::StateInterface, State_>::value, "[ControllerRos]: The State class does not implement roco::StateInterface!" );
-  static_assert(std::is_base_of<roco::CommandInterface, Command_>::value, "[ControllerRos]: The Command class does not implement roco::CommandInterface!" );
-  static_assert(std::is_base_of<roco::Controller<State_, Command_>, Controller_>::value, "[ControllerRos]: The Controller class does not inherit from roco::Controllers<State_, Command_>!" );
+  static_assert(std::is_base_of<roco::StateInterface, State_>::value, "[ControllerAdapter]: The State class does not implement roco::StateInterface!" );
+  static_assert(std::is_base_of<roco::CommandInterface, Command_>::value, "[ControllerAdapter]: The Command class does not implement roco::CommandInterface!" );
+  static_assert(std::is_base_of<roco::Controller<State_, Command_>, Controller_>::value, "[ControllerAdapter]: The Controller class does not inherit from roco::Controller<State_, Command_>!" );
 
  public:
   //! Convenience typedefs
@@ -85,7 +86,8 @@ class ControllerAdapter: public roco::ControllerAdapterInterface, public Control
   ControllerAdapter(State& state,
                     Command& command,
                     boost::shared_mutex& mutexState,
-                    boost::shared_mutex& mutexCommand);
+                    boost::shared_mutex& mutexCommand,
+                    any_worker::WorkerManager& workerManager);
 
   //! Virtual destructor
   virtual ~ControllerAdapter();
@@ -95,7 +97,6 @@ class ControllerAdapter: public roco::ControllerAdapterInterface, public Control
   virtual bool initializeController(double dt);
   virtual bool resetController(double dt);
   virtual bool advanceController(double dt);
-  virtual bool changeController();
   virtual bool cleanupController();
   virtual bool stopController();
   virtual bool preStopController();
@@ -105,8 +106,8 @@ class ControllerAdapter: public roco::ControllerAdapterInterface, public Control
   virtual void setIsRealRobot(bool isRealRobot);
 
  protected:
-  bool updateState(double dt, bool checkState=true);
-  bool updateCommand(double dt, bool forceSendingControlModes);
+  bool updateState(double dt, bool checkState = true);
+  bool updateCommand(double dt);
 
 };
 

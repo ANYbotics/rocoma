@@ -42,10 +42,10 @@
 #pragma once
 
 // Roco
-#include <roco/model/CommandInterface.hpp>
-#include <roco/model/StateInterface.hpp>
-#include <roco/controllers/adapters/FailproofControllerAdapterInterface.hpp>
-#include <roco/controllers/FailproofController.hpp>
+#include "roco/controllers/adapters/FailproofControllerAdapterInterface.hpp"
+#include "roco/controllers/FailproofController.hpp"
+#include "roco/model/CommandInterface.hpp"
+#include "roco/model/StateInterface.hpp"
 
 // Rocoma
 #include <rocoma/controllers/ControllerImplementation.hpp>
@@ -61,16 +61,17 @@ template<typename Controller_, typename State_, typename Command_>
 class FailproofControllerAdapter: public roco::FailproofControllerAdapterInterface, public ControllerImplementation<Controller_, State_, Command_>
 {
   //! Check if template parameters implement the required interfaces
-  static_assert(std::is_base_of<roco::StateInterface, State_>::value, "[ControllerRos]: The State class does not implement roco::StateInterface!" );
-  static_assert(std::is_base_of<roco::CommandInterface, Command_>::value, "[ControllerRos]: The Command class does not implement roco::CommandInterface!" );
-  static_assert(std::is_base_of<roco::FailproofController<State_, Command_>, Controller_>::value, "[ControllerRos]: The Controller class does not inherit from roco::Controllers<State_, Command_>!" );
+  static_assert(std::is_base_of<roco::StateInterface, State_>::value, "[FailproofControllerAdapter]: The State class does not implement roco::StateInterface!" );
+  static_assert(std::is_base_of<roco::CommandInterface, Command_>::value, "[FailproofControllerAdapter]: The Command class does not implement roco::CommandInterface!" );
+  static_assert(std::is_base_of<roco::FailproofController<State_, Command_>, Controller_>::value, "[FailproofControllerAdapter]: The Controller class does not inherit from roco::FailproofController<State_, Command_>!" );
 
  public:
   //! Convenience typedefs
-  using Base = ControllerImplementation<Controller_, State_, Command_>;
   using Controller = Controller_;
   using State = State_;
   using Command = Command_;
+  using Base = ControllerImplementation<Controller, State, Command>;
+
 
  public:
   //! Delete default constructor
@@ -83,10 +84,10 @@ class FailproofControllerAdapter: public roco::FailproofControllerAdapterInterfa
    * @param mutexState    mutex for state class
    * @param mutexCommand  mutex for command class
    */
-  FailproofControllerAdapter(State& state,
-                    Command& command,
-                    boost::shared_mutex& mutexState,
-                    boost::shared_mutex& mutexCommand):
+  FailproofControllerAdapter( State& state,
+                              Command& command,
+                              boost::shared_mutex& mutexState,
+                              boost::shared_mutex& mutexCommand):
     Base(state, command, mutexState, mutexCommand)
   {
 
@@ -99,7 +100,8 @@ class FailproofControllerAdapter: public roco::FailproofControllerAdapterInterfa
   //! Implementation of the adapter interface (roco::FailproofControllerAdapterInterface)
   virtual bool createController(double dt)    {  return this->create(dt); }
   virtual void advanceController(double dt)   {  this->advance(dt); return; }
-  virtual bool cleanupController()            {  return this->cleanup(dt); }
+  virtual bool cleanupController()            {  return this->cleanup(); }
+  // TODO is this implementation sufficient?
 
 };
 

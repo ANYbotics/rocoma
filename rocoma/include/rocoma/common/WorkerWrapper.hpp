@@ -22,7 +22,6 @@ public:
   WrapperWorkerEvent(const any_worker::WorkerEvent& event ):
     any_worker::WorkerEvent(event)
   {
-
   }
 
   virtual ~WrapperWorkerEvent()

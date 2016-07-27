@@ -48,12 +48,14 @@ template<typename Controller_, typename State_, typename Command_>
 ControllerExtensionImplementation<Controller_, State_, Command_>::ControllerExtensionImplementation( State& state,
                                                                                                      Command& command,
                                                                                                      boost::shared_mutex& mutexState,
-                                                                                                     boost::shared_mutex& mutexCommand):
+                                                                                                     boost::shared_mutex& mutexCommand,
+                                                                                                     any_worker::WorkerManager& workerManager):
     Base(state, command, mutexState, mutexCommand),
     isRealRobot_(false),
     isCheckingCommand_(true),
     isCheckingState_(true),
-    time_()
+    time_(),
+    workerManager_(workerManager)
 {
 
 }
@@ -87,15 +89,15 @@ roco::WorkerHandle ControllerExtensionImplementation<Controller_, State_, Comman
 
 template<typename Controller_, typename State_, typename Command_>
 bool ControllerExtensionImplementation<Controller_, State_, Command_>::startWorker(const roco::WorkerHandle& workerHandle) {
-  MELO_INFO_STREAM("ControllerRos::startWorker: start " << workerHandle.name_);
+  MELO_INFO_STREAM("ControllerExtensionImplementation::startWorker: start " << workerHandle.name_);
   workerManager_.startWorker(workerHandle.name_);
-  MELO_INFO_STREAM("ControllerRos::startWorker started " << workerHandle.name_);
+  MELO_INFO_STREAM("ControllerExtensionImplementation::startWorker started " << workerHandle.name_);
   return true;
 }
 
 template<typename Controller_, typename State_, typename Command_>
 bool ControllerExtensionImplementation<Controller_, State_, Command_>::cancelWorker(const roco::WorkerHandle& workerHandle, bool block) {
-  MELO_INFO_STREAM("ControllerRos::cancelWorker: cancel  " << workerHandle.name_);
+  MELO_INFO_STREAM("ControllerExtensionImplementation::cancelWorker: cancel  " << workerHandle.name_);
   workerManager_.stopWorker(workerHandle.name_, block);
   return true;
 }

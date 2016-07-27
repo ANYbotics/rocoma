@@ -74,7 +74,6 @@ bool ControllerManager::addController(std::unique_ptr<Controller> controller)  {
   using KV = std::pair<std::string, std::unique_ptr<Controller> >;
   controllers_.insert( KV(controllerName,std::unique_ptr<Controller>( std::move(controller) ) ) );
 
-
   // create controller
   if (!controllers_.at(controllerName)->createController(timeStep_)) {
     MELO_ERROR("Could not create controller %s!", controllerName.c_str());

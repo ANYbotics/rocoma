@@ -57,7 +57,7 @@ namespace rocoma {
 template<typename Controller_, typename State_, typename Command_>
 class EmergencyControllerAdapter: public roco::EmergencyControllerAdapterInterface, public ControllerAdapter<Controller_, State_, Command_>
 {
-  static_assert(std::is_base_of<roco::EmergencyControllerAdapteeInterface, Controller_>::value, "[ControllerRos]: The Controller class does not implement the EmergencyControllerAdatpeeInterface.");
+  static_assert(std::is_base_of<roco::EmergencyControllerAdapteeInterface, Controller_>::value, "[EmergencyControllerAdapter]: The Controller class does not implement the EmergencyControllerAdatpeeInterface.");
 
  public:
   //! Convenience typedefs
@@ -80,8 +80,9 @@ class EmergencyControllerAdapter: public roco::EmergencyControllerAdapterInterfa
   EmergencyControllerAdapter(State& state,
                              Command& command,
                              boost::shared_mutex& mutexState,
-                             boost::shared_mutex& mutexCommand):
-    Base(state, command, mutexState, mutexCommand)
+                             boost::shared_mutex& mutexCommand,
+                             any_worker::WorkerManager& workerManager):
+    Base(state, command, mutexState, mutexCommand, workerManager)
   {
 
   }
@@ -94,7 +95,40 @@ class EmergencyControllerAdapter: public roco::EmergencyControllerAdapterInterfa
 
   //! Implement adapter
   virtual bool initializeControllerFast(double dt) {
+    // Check if controller was created
+    if (!this->isCreated()) {
+      MELO_WARN_STREAM("[EmergencyControllerAdapter]: Controller was not created!");
+      return false;
+    }
+
+    try {
+      // Update the state
+      updateState(dt, false);
+
+      // Initialize the controller
+      if (!this->initializeControllerFast(dt)) {
+        MELO_WARN_STREAM("[EmergencyControllerAdapter]: Controller could not be fast initialized!");
+        return false;
+      }
+
+      // Update the command
+      updateCommand(dt);
+
+      // Set init flag
+      this->isInitialized_ = true;
+
+    }
+    catch (std::exception& e) {
+      MELO_WARN_STREAM("[EmergencyControllerAdapter]: Exception caught:\n" << e.what());
+      this->isInitialized_ = false;
+      return false;
+    }
+
+    // Set running flag
+    this->isRunning_ = true;
+    MELO_INFO_STREAM("[EmergencyControllerAdapter]: Initialized controller fast" << this->getName() << " successfully!");
     return true;
+
   }
 
 };

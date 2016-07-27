@@ -42,19 +42,19 @@
 #pragma once
 
 // rocoma
-#include <rocoma/controllers/ControllerImplementation.hpp>
+#include "rocoma/controllers/ControllerImplementation.hpp"
 
 // roco
-#include <roco/time/Time.hpp>
-#include <roco/workers/Worker.hpp>
-#include <roco/workers/WorkerHandle.hpp>
-#include <roco/workers/WorkerOptions.hpp>
+#include "roco/time/Time.hpp"
+#include "roco/workers/Worker.hpp"
+#include "roco/workers/WorkerHandle.hpp"
+#include "roco/workers/WorkerOptions.hpp"
+
+// any worker
+#include "any_worker/WorkerManager.hpp"
 
 // Boost
 #include <boost/thread.hpp>
-
-// AnyWorker
-#include <any_worker/WorkerManager.hpp>
 
 namespace rocoma {
 
@@ -74,7 +74,8 @@ class ControllerExtensionImplementation: public ControllerImplementation<Control
   ControllerExtensionImplementation(State& state,
                                     Command& command,
                                     boost::shared_mutex& mutexState,
-                                    boost::shared_mutex& mutexCommand);
+                                    boost::shared_mutex& mutexCommand,
+                                    any_worker::WorkerManager& workerManager);
 
   virtual ~ControllerExtensionImplementation();
 
@@ -104,7 +105,7 @@ class ControllerExtensionImplementation: public ControllerImplementation<Control
   //! Time
   roco::time::TimeStd time_;
   //! Worker Manager
-  any_worker::WorkerManager workerManager_;
+  any_worker::WorkerManager& workerManager_;
 
 };
 

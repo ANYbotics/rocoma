@@ -65,7 +65,8 @@ class ControllerManager
 
  public:
   //! Delete default constructor
-  ControllerManager() = delete;
+//  ControllerManager() = delete;
+  ControllerManager(){};
 
   /**
    * @brief Constructs a controller manager
