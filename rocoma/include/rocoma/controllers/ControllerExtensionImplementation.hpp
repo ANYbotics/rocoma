@@ -45,7 +45,7 @@
 #include "rocoma/controllers/ControllerImplementation.hpp"
 
 // roco
-#include "roco/time/Time.hpp"
+#include "roco/time/TimeStd.hpp"
 #include "roco/workers/Worker.hpp"
 #include "roco/workers/WorkerHandle.hpp"
 #include "roco/workers/WorkerOptions.hpp"
@@ -95,7 +95,7 @@ class ControllerExtensionImplementation: public ControllerImplementation<Control
   virtual bool startWorker(const roco::WorkerHandle& workerHandle);
   virtual bool cancelWorker(const roco::WorkerHandle& workerHandle, bool block = false);
 
- private:
+protected:
   //! Indicates if the real robot is controller or only a simulated version.
   boost::atomic<bool> isRealRobot_;
   //! Indicates if command is checked for limits

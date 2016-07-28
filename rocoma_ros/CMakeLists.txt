@@ -12,7 +12,7 @@ find_package(catkin REQUIRED
 
 catkin_package(
 INCLUDE_DIRS include
-LIBRARIES rocoma_ros
+LIBRARIES ${PROJECT_NAME}
 CATKIN_DEPENDS
   roscpp
   roco

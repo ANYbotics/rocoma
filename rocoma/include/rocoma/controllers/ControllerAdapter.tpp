@@ -252,11 +252,11 @@ void ControllerAdapter<Controller_,State_, Command_>::setIsRealRobot(bool isReal
 template<typename Controller_, typename State_, typename Command_>
 bool ControllerAdapter<Controller_,State_, Command_>::updateState(double dt, bool checkState)
 {
-  time_.setNow();
+  this->time_.setNow();
 
-  if (checkState && isCheckingState_) {
-    boost::shared_lock<boost::shared_mutex> lock(getStateMutex());
-    if (!state_.checkState()) {
+  if (checkState && this->isCheckingState_) {
+    boost::shared_lock<boost::shared_mutex> lock(this->getStateMutex());
+    if (!this->state_.checkState()) {
       MELO_ERROR("[ControllerAdapter]: Bad state!");
       return false;
     }
@@ -267,9 +267,9 @@ bool ControllerAdapter<Controller_,State_, Command_>::updateState(double dt, boo
 template<typename Controller_, typename State_, typename Command_>
 bool ControllerAdapter<Controller_,State_, Command_>::updateCommand(double dt)
 {
-  if (isCheckingCommand_) {
-    boost::unique_lock<boost::shared_mutex> lock(getCommandMutex());
-    if (!command_.limitCommand()) {
+  if (this->isCheckingCommand_) {
+    boost::unique_lock<boost::shared_mutex> lock(this->getCommandMutex());
+    if (!this->command_.limitCommand()) {
       MELO_ERROR("[ControllerAdapter]: The command is invalid!");
       return false;
     }

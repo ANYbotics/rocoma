@@ -41,6 +41,7 @@
 
 #include <any_worker/Worker.hpp>
 #include <rocoma/common/WorkerWrapper.hpp>
+#include <message_logger/message_logger.hpp>
 
 namespace rocoma {
 

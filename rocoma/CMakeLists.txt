@@ -14,7 +14,7 @@ find_package(catkin REQUIRED
 catkin_package(
   INCLUDE_DIRS
     include
-  LIBRARIES
+  LIBRARIES ${PROJECT_NAME}
   CATKIN_DEPENDS
     roco
     message_logger
