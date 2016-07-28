@@ -56,6 +56,9 @@
 // Boost
 #include <boost/thread.hpp>
 
+// STL
+#include <memory>
+
 namespace rocoma {
 
 template<typename Controller_, typename State_, typename Command_>
@@ -69,13 +72,19 @@ class ControllerExtensionImplementation: public ControllerImplementation<Control
   using Command = Command_;
 
  public:
-  ControllerExtensionImplementation() = delete;
+  ControllerExtensionImplementation():
+    Base(),
+    workerManager_(nullptr)
+  {
 
-  ControllerExtensionImplementation(State& state,
-                                    Command& command,
-                                    boost::shared_mutex& mutexState,
-                                    boost::shared_mutex& mutexCommand,
-                                    any_worker::WorkerManager& workerManager);
+  }
+//  ControllerExtensionImplementation() = delete;
+
+  ControllerExtensionImplementation(std::shared_ptr<State> state,
+                                    std::shared_ptr<Command> command,
+                                    std::shared_ptr<boost::shared_mutex> mutexState,
+                                    std::shared_ptr<boost::shared_mutex> mutexCommand,
+                                    std::shared_ptr<any_worker::WorkerManager> workerManager);
 
   virtual ~ControllerExtensionImplementation();
 
@@ -105,7 +114,7 @@ protected:
   //! Time
   roco::time::TimeStd time_;
   //! Worker Manager
-  any_worker::WorkerManager& workerManager_;
+  std::shared_ptr<any_worker::WorkerManager> workerManager_;
 
 };
 

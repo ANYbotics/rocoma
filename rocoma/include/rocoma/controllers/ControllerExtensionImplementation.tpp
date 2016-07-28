@@ -46,11 +46,11 @@
 namespace rocoma {
 
 template<typename Controller_, typename State_, typename Command_>
-ControllerExtensionImplementation<Controller_, State_, Command_>::ControllerExtensionImplementation( State& state,
-                                                                                                     Command& command,
-                                                                                                     boost::shared_mutex& mutexState,
-                                                                                                     boost::shared_mutex& mutexCommand,
-                                                                                                     any_worker::WorkerManager& workerManager):
+ControllerExtensionImplementation<Controller_, State_, Command_>::ControllerExtensionImplementation( std::shared_ptr<State> state,
+                                                                                                     std::shared_ptr<Command> command,
+                                                                                                     std::shared_ptr<boost::shared_mutex> mutexState,
+                                                                                                     std::shared_ptr<boost::shared_mutex> mutexCommand,
+                                                                                                     std::shared_ptr<any_worker::WorkerManager> workerManager):
     Base(state, command, mutexState, mutexCommand),
     isRealRobot_(false),
     isCheckingCommand_(true),
@@ -71,7 +71,7 @@ template<typename Controller_, typename State_, typename Command_>
 roco::WorkerHandle ControllerExtensionImplementation<Controller_, State_, Command_>::addWorker(const roco::WorkerOptions&  options) {
 
   WorkerWrapper wrapper(options);
-  workerManager_.addWorker(options.name_, 1.0/options.frequency_,
+  workerManager_->addWorker(options.name_, 1.0/options.frequency_,
                            std::bind(&WorkerWrapper::workerCallback, wrapper, std::placeholders::_1), options.priority_);
   return roco::WorkerHandle(options.name_);
 }
@@ -80,7 +80,7 @@ template<typename Controller_, typename State_, typename Command_>
 roco::WorkerHandle ControllerExtensionImplementation<Controller_, State_, Command_>::addWorker(roco::Worker& worker) {
 
   WorkerWrapper wrapper(worker.options_);
-  workerManager_.addWorker(worker.options_.name_, 1.0/worker.options_.frequency_,
+  workerManager_->addWorker(worker.options_.name_, 1.0/worker.options_.frequency_,
                            std::bind(&WorkerWrapper::workerCallback, wrapper, std::placeholders::_1), worker.options_.priority_);
   worker.workerStartCallback_ = boost::bind(&ControllerExtensionImplementation<Controller_,State_, Command_>::startWorker, this, _1);
   worker.workerCancelCallback_ = boost::bind(&ControllerExtensionImplementation<Controller_,State_, Command_>::cancelWorker, this, _1, _2 );
@@ -91,7 +91,7 @@ roco::WorkerHandle ControllerExtensionImplementation<Controller_, State_, Comman
 template<typename Controller_, typename State_, typename Command_>
 bool ControllerExtensionImplementation<Controller_, State_, Command_>::startWorker(const roco::WorkerHandle& workerHandle) {
   MELO_INFO_STREAM("ControllerExtensionImplementation::startWorker: start " << workerHandle.name_);
-  workerManager_.startWorker(workerHandle.name_);
+  workerManager_->startWorker(workerHandle.name_);
   MELO_INFO_STREAM("ControllerExtensionImplementation::startWorker started " << workerHandle.name_);
   return true;
 }
@@ -99,7 +99,7 @@ bool ControllerExtensionImplementation<Controller_, State_, Command_>::startWork
 template<typename Controller_, typename State_, typename Command_>
 bool ControllerExtensionImplementation<Controller_, State_, Command_>::cancelWorker(const roco::WorkerHandle& workerHandle, bool block) {
   MELO_INFO_STREAM("ControllerExtensionImplementation::cancelWorker: cancel  " << workerHandle.name_);
-  workerManager_.stopWorker(workerHandle.name_, block);
+  workerManager_->stopWorker(workerHandle.name_, block);
   return true;
 }
 

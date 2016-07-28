@@ -33,16 +33,19 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 /*!
-* @file     ControllerImplementation.hpp
-* @author   Christian Gehring, Gabriel Hottiger
-* @date     Dec, 2014
-* @note     Restructured, June 2016
-*/
+ * @file     ControllerImplementation.hpp
+ * @author   Christian Gehring, Gabriel Hottiger
+ * @date     Dec, 2014
+ * @note     Restructured, June 2016
+ */
 
 #pragma once
 
 // Boost
 #include <boost/thread.hpp>
+
+// STL
+#include <memory>
 
 namespace rocoma {
 
@@ -56,17 +59,25 @@ class ControllerImplementation: public Controller_ {
   using Command = Command_;
 
  public:
-  ControllerImplementation() = delete;
+  //  ControllerImplementation() = delete;
+  ControllerImplementation():
+    state_(),
+    command_(),
+    mutexState_(),
+    mutexCommand_()
+ {
 
-  ControllerImplementation(State& state,
-                           Command& command,
-                           boost::shared_mutex& mutexState,
-                           boost::shared_mutex& mutexCommand):
-      Controller(),
-      state_(state),
-      command_(command),
-      mutexState_(mutexState),
-      mutexCommand_(mutexCommand_)
+ }
+
+  ControllerImplementation(std::shared_ptr<State> state,
+                           std::shared_ptr<Command> command,
+                           std::shared_ptr<boost::shared_mutex> mutexState,
+                           std::shared_ptr<boost::shared_mutex> mutexCommand):
+     Controller(),
+     state_(state),
+     command_(command),
+     mutexState_(mutexState),
+     mutexCommand_(mutexCommand)
   {
 
   }
@@ -76,22 +87,22 @@ class ControllerImplementation: public Controller_ {
 
   }
 
-  virtual const State& getState() const           { return state_; }
-  virtual boost::shared_mutex& getStateMutex()    { return mutexState_; }
+  virtual const State& getState() const           { return *state_; }
+  virtual boost::shared_mutex& getStateMutex()    { return *mutexState_; }
 
-  virtual const Command& getCommand() const       { return command_; }
-  virtual Command& getCommand()                   { return command_; }
-  virtual boost::shared_mutex& getCommandMutex()  { return mutexCommand_; }
+  virtual const Command& getCommand() const       { return *command_; }
+  virtual Command& getCommand()                   { return *command_; }
+  virtual boost::shared_mutex& getCommandMutex()  { return *mutexCommand_; }
 
  private:
   //! Robot state container
-  State& state_;
+  std::shared_ptr<State> state_;
   //! Robot state container mutex
-  boost::shared_mutex& mutexState_;
+  std::shared_ptr<boost::shared_mutex> mutexState_;
   //! Actuator command container
-  Command& command_;
+  std::shared_ptr<Command> command_;
   //! Actuator command container mutex
-  boost::shared_mutex& mutexCommand_;
+  std::shared_ptr<boost::shared_mutex> mutexCommand_;
 
 };
 

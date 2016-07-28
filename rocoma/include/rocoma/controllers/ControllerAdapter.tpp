@@ -45,11 +45,11 @@
 namespace rocoma {
 
 template<typename Controller_, typename State_, typename Command_>
-ControllerAdapter<Controller_, State_, Command_>::ControllerAdapter(State& state,
-                                                                    Command& command,
-                                                                    boost::shared_mutex& mutexState,
-                                                                    boost::shared_mutex& mutexCommand,
-                                                                    any_worker::WorkerManager& workerManager):
+ControllerAdapter<Controller_, State_, Command_>::ControllerAdapter(std::shared_ptr<State> state,
+                                                                    std::shared_ptr<Command> command,
+                                                                    std::shared_ptr<boost::shared_mutex> mutexState,
+                                                                    std::shared_ptr<boost::shared_mutex> mutexCommand,
+                                                                    std::shared_ptr<any_worker::WorkerManager> workerManager):
                                                                     Base(state, command, mutexState, mutexCommand, workerManager)
                                                                     {
 
@@ -132,6 +132,13 @@ bool ControllerAdapter<Controller_, State_, Command_>::initializeController(doub
   // Set running flag
   this->isRunning_ = true;
   MELO_INFO_STREAM("[ControllerAdapter]: Initialized controller " << this->getName() << " successfully!");
+
+  return true;
+}
+
+template<typename Controller_, typename State_, typename Command_>
+bool ControllerAdapter<Controller_, State_, Command_>::advanceController(double dt)
+{
 
   return true;
 }
@@ -256,7 +263,7 @@ bool ControllerAdapter<Controller_,State_, Command_>::updateState(double dt, boo
 
   if (checkState && this->isCheckingState_) {
     boost::shared_lock<boost::shared_mutex> lock(this->getStateMutex());
-    if (!this->state_.checkState()) {
+    if (!this->getState().checkState()) {
       MELO_ERROR("[ControllerAdapter]: Bad state!");
       return false;
     }
@@ -269,7 +276,7 @@ bool ControllerAdapter<Controller_,State_, Command_>::updateCommand(double dt)
 {
   if (this->isCheckingCommand_) {
     boost::unique_lock<boost::shared_mutex> lock(this->getCommandMutex());
-    if (!this->command_.limitCommand()) {
+    if (!this->getCommand().limitCommand()) {
       MELO_ERROR("[ControllerAdapter]: The command is invalid!");
       return false;
     }

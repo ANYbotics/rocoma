@@ -54,11 +54,13 @@
 #include <exception>
 #include <type_traits>
 #include <assert.h>
+#include <memory>
+
 
 namespace rocoma {
 
 template<typename Controller_, typename State_, typename Command_>
-class ControllerAdapter: public roco::ControllerAdapterInterface, public ControllerExtensionImplementation<Controller_, State_, Command_>
+class ControllerAdapter: virtual public roco::ControllerAdapterInterface, public ControllerExtensionImplementation<Controller_, State_, Command_>
 {
   //! Check if template parameters implement the required interfaces
   static_assert(std::is_base_of<roco::StateInterface, State_>::value, "[ControllerAdapter]: The State class does not implement roco::StateInterface!" );
@@ -74,7 +76,8 @@ class ControllerAdapter: public roco::ControllerAdapterInterface, public Control
 
  public:
   //! Delete default constructor
-  ControllerAdapter() = delete;
+//  ControllerAdapter() = delete;
+  ControllerAdapter():Base() { }
 
   /**
    * @brief Constructor for state and command
@@ -83,11 +86,11 @@ class ControllerAdapter: public roco::ControllerAdapterInterface, public Control
    * @param mutexState    mutex for state class
    * @param mutexCommand  mutex for command class
    */
-  ControllerAdapter(State& state,
-                    Command& command,
-                    boost::shared_mutex& mutexState,
-                    boost::shared_mutex& mutexCommand,
-                    any_worker::WorkerManager& workerManager);
+  ControllerAdapter(std::shared_ptr<State> state,
+                    std::shared_ptr<Command> command,
+                    std::shared_ptr<boost::shared_mutex> mutexState,
+                    std::shared_ptr<boost::shared_mutex> mutexCommand,
+                    std::shared_ptr<any_worker::WorkerManager> workerManager);
 
   //! Virtual destructor
   virtual ~ControllerAdapter();
@@ -101,6 +104,8 @@ class ControllerAdapter: public roco::ControllerAdapterInterface, public Control
   virtual bool stopController();
   virtual bool preStopController();
 
+  bool isInitialized() const          { return this->isInitialized(); }
+  const std::string& getName() const  { return this->getName(); }
 
   //! Set isRealRobot is only allowed on the adapter
   virtual void setIsRealRobot(bool isRealRobot);

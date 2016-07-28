@@ -84,10 +84,10 @@ class FailproofControllerAdapter: public roco::FailproofControllerAdapterInterfa
    * @param mutexState    mutex for state class
    * @param mutexCommand  mutex for command class
    */
-  FailproofControllerAdapter( State& state,
-                              Command& command,
-                              boost::shared_mutex& mutexState,
-                              boost::shared_mutex& mutexCommand):
+  FailproofControllerAdapter( std::shared_ptr<State> state,
+                              std::shared_ptr<Command> command,
+                              std::shared_ptr<boost::shared_mutex> mutexState,
+                              std::shared_ptr<boost::shared_mutex> mutexCommand):
     Base(state, command, mutexState, mutexCommand)
   {
 

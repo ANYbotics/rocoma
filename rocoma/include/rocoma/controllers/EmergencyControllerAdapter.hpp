@@ -51,6 +51,7 @@
 // STL
 #include <type_traits>
 #include <assert.h>
+#include <memory>
 
 namespace rocoma {
 
@@ -77,11 +78,11 @@ class EmergencyControllerAdapter: public roco::EmergencyControllerAdapterInterfa
    * @param mutexState    mutex for state class
    * @param mutexCommand  mutex for command class
    */
-  EmergencyControllerAdapter(State& state,
-                             Command& command,
-                             boost::shared_mutex& mutexState,
-                             boost::shared_mutex& mutexCommand,
-                             any_worker::WorkerManager& workerManager):
+  EmergencyControllerAdapter(std::shared_ptr<State> state,
+                             std::shared_ptr<Command> command,
+                             std::shared_ptr<boost::shared_mutex> mutexState,
+                             std::shared_ptr<boost::shared_mutex> mutexCommand,
+                             std::shared_ptr<any_worker::WorkerManager> workerManager):
     Base(state, command, mutexState, mutexCommand, workerManager)
   {
 
