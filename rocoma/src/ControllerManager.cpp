@@ -60,7 +60,7 @@ ControllerManager::~ControllerManager()
 bool ControllerManager::addController(std::unique_ptr<Controller> controller)  {
 
   // controller name (controller is moved within this function, therefore not safe to access everywhere)
-  std::string controllerName = controller->getName();
+  std::string controllerName = controller->getControllerName();
   MELO_INFO("Adding controller %s ...", controllerName.c_str());
 
   // check if controller already exists
@@ -138,7 +138,7 @@ ControllerManager::SwitchResponse ControllerManager::switchController(const std:
     std::lock_guard<std::recursive_mutex> lock(activeControllerMutex_);
 
     //! Check if controller is already active
-    if (controllerName == (*activeController_)->getName()) {
+    if (controllerName == (*activeController_)->getControllerName()) {
       MELO_INFO("Controller %s is already running!", controllerName.c_str());
       return SwitchResponse::RUNNING;
     }
@@ -159,7 +159,7 @@ ControllerManager::SwitchResponse ControllerManager::switchController(const std:
     // initialize new controller
     (*newController)->initializeController(timeStep_);
 
-    if ( (*newController)->isInitialized() ) {
+    if ( (*newController)->isControllerInitialized() ) {
       {
         // set active controller
         std::lock_guard<std::recursive_mutex> lock(activeControllerMutex_);
@@ -169,14 +169,14 @@ ControllerManager::SwitchResponse ControllerManager::switchController(const std:
       // swap out old controller
       (*oldController)->stopController();
 
-      MELO_INFO("Switched to controller %s", (*activeController_)->getName().c_str());
+      MELO_INFO("Switched to controller %s", (*activeController_)->getControllerName().c_str());
       response = SwitchResponse::SWITCHED;
 
     }
     else {
       // switch to freeze controller TODO: react if can't switch to emergency state?
       switchToEmergencyController();
-      ROS_INFO("Could not switch to controller %s", (*newController)->getName().c_str());
+      ROS_INFO("Could not switch to controller %s", (*newController)->getControllerName().c_str());
       response = SwitchResponse::ERROR;
     }
   }
@@ -206,7 +206,7 @@ std::vector<std::string> ControllerManager::getAvailableControllerNames() {
 
 std::string ControllerManager::getActiveControllerName() {
   std::lock_guard<std::recursive_mutex> lock(activeControllerMutex_);
-  return (*activeController_)->getName();
+  return (*activeController_)->getControllerName();
 }
 
 bool ControllerManager::isRealRobot() const {

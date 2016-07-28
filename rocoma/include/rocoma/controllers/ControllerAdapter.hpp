@@ -45,10 +45,10 @@
 #include "roco/model/CommandInterface.hpp"
 #include "roco/model/StateInterface.hpp"
 #include "roco/controllers/Controller.hpp"
-#include "roco/controllers/adapters/ControllerAdapterInterface.hpp"
 
 // Rocoma
 #include "rocoma/controllers/ControllerExtensionImplementation.hpp"
+#include "rocoma/plugin/ControllerPluginInterface.hpp"
 
 // STL
 #include <exception>
@@ -60,7 +60,7 @@
 namespace rocoma {
 
 template<typename Controller_, typename State_, typename Command_>
-class ControllerAdapter: virtual public roco::ControllerAdapterInterface, public ControllerExtensionImplementation<Controller_, State_, Command_>
+class ControllerAdapter: public rocoma::ControllerPluginInterface<State_, Command_>, public ControllerExtensionImplementation<Controller_, State_, Command_>
 {
   //! Check if template parameters implement the required interfaces
   static_assert(std::is_base_of<roco::StateInterface, State_>::value, "[ControllerAdapter]: The State class does not implement roco::StateInterface!" );
@@ -82,7 +82,7 @@ class ControllerAdapter: virtual public roco::ControllerAdapterInterface, public
   /**
    * @brief Constructor for state and command
    * @param state         robot state container class
-   * @param command       actutator command containter class
+   * @param command       actutator command container class
    * @param mutexState    mutex for state class
    * @param mutexCommand  mutex for command class
    */
@@ -104,11 +104,14 @@ class ControllerAdapter: virtual public roco::ControllerAdapterInterface, public
   virtual bool stopController();
   virtual bool preStopController();
 
-  bool isInitialized() const          { return this->isInitialized(); }
-  const std::string& getName() const  { return this->getName(); }
-
   //! Set isRealRobot is only allowed on the adapter
   virtual void setIsRealRobot(bool isRealRobot);
+
+  //! Controller name adapter
+  virtual const std::string& getControllerName() const { return this->getName(); }
+
+  //! Indicates if the controller is initialized
+  virtual bool isControllerInitialized() const { return this->isInitialized(); }
 
  protected:
   bool updateState(double dt, bool checkState = true);

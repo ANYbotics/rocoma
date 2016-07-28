@@ -4,6 +4,7 @@
 #include "rocoma/ControllerManager.hpp"
 #include "rocoma/controllers/ControllerAdapter.hpp"
 #include "rocoma/common/EmergencyStopObserver.hpp"
+#include "rocoma/plugin/ControllerPluginInterface.hpp"
 
 // rocoma msgs
 #include "rocoma_msgs/GetAvailableControllers.h"
@@ -23,6 +24,7 @@
 // ros
 #include <pluginlib/class_loader.h>
 #include <ros/ros.h>
+#include <ros/console.h>
 
 // stl
 #include <string>
@@ -46,19 +48,25 @@ class ControllerManagerRos : public rocoma::EmergencyStopObserver{
                      const std::string & namespaceName,
                      const std::string & className,
                      double dt,
-                     State_& state,
-                     Command_& command,
-                     boost::shared_mutex& mutexState,
-                     boost::shared_mutex& mutexCommand,
-                     any_worker::WorkerManager& workerManager,
-                     ros::NodeHandle& nodeHandle)
+                     std::shared_ptr<State_> state,
+                     std::shared_ptr<Command_> command,
+                     std::shared_ptr<boost::shared_mutex> mutexState,
+                     std::shared_ptr<boost::shared_mutex> mutexCommand,
+                     std::shared_ptr<any_worker::WorkerManager> workerManager)
   {
+if( ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug) ) {
+   ros::console::notifyLoggerLevelsChanged();
+}
+    using BaseType = rocoma::ControllerPluginInterface<State_, Command_>;
+
     const std::string scopedClassName = namespaceName + std::string("::") + className;
-    pluginlib::ClassLoader<roco::ControllerAdapterInterface> controller_loader(packageName, scopedClassName);
+    pluginlib::ClassLoader<BaseType> controller_loader("rocoma", "rocoma::ControllerPluginInterface<rocomaex_model::State, rocomaex_model::Command>");
 
     try
     {
-      auto controller = controller_loader.createInstance(scopedClassName);
+      boost::shared_ptr<BaseType> controller = controller_loader.createInstance("rocoma::ControllerAdapter<rocomaex_ctrl1::Controller1, rocomaex_model::State, rocomaex_model::Command>");
+      controller->setStateAndCommand(state, mutexState, command, mutexCommand);
+      std::cout<<"Add controller "<<controller->getControllerName()<<std::endl;
       controllerManager_.addController(std::unique_ptr<roco::ControllerAdapterInterface>(controller.get()));
       // FIXME is the controller ptr still valid when it goes out of scope. Hopefully yes because of move
     }

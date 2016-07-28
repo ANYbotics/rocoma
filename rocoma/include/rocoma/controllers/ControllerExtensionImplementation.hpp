@@ -78,7 +78,6 @@ class ControllerExtensionImplementation: public ControllerImplementation<Control
   {
 
   }
-//  ControllerExtensionImplementation() = delete;
 
   ControllerExtensionImplementation(std::shared_ptr<State> state,
                                     std::shared_ptr<Command> command,

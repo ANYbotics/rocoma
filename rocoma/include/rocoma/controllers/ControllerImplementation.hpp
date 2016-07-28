@@ -61,6 +61,7 @@ class ControllerImplementation: public Controller_ {
  public:
   //  ControllerImplementation() = delete;
   ControllerImplementation():
+    Controller(),
     state_(),
     command_(),
     mutexState_(),
@@ -85,6 +86,16 @@ class ControllerImplementation: public Controller_ {
   virtual ~ControllerImplementation()
   {
 
+  }
+
+  virtual void setStateAndCommand(std::shared_ptr<State> state,
+                                  std::shared_ptr<boost::shared_mutex> mutexState,
+                                  std::shared_ptr<Command> command,
+                                  std::shared_ptr<boost::shared_mutex> mutexCommand) {
+    state_ = state;
+    mutexState_ = mutexState;
+    command_ = command;
+    mutexCommand_ = mutexCommand;
   }
 
   virtual const State& getState() const           { return *state_; }
