@@ -45,10 +45,10 @@
 #include "roco/model/CommandInterface.hpp"
 #include "roco/model/StateInterface.hpp"
 #include "roco/controllers/Controller.hpp"
+#include "roco/controllers/adapters/ControllerAdapterInterface.hpp"
 
 // Rocoma
 #include "rocoma/controllers/ControllerExtensionImplementation.hpp"
-#include "rocoma/plugin/ControllerPluginInterface.hpp"
 
 // STL
 #include <exception>
@@ -60,7 +60,7 @@
 namespace rocoma {
 
 template<typename Controller_, typename State_, typename Command_>
-class ControllerAdapter: public rocoma::ControllerPluginInterface<State_, Command_>, public ControllerExtensionImplementation<Controller_, State_, Command_>
+class ControllerAdapter: virtual public roco::ControllerAdapterInterface, public ControllerExtensionImplementation<Controller_, State_, Command_>
 {
   //! Check if template parameters implement the required interfaces
   static_assert(std::is_base_of<roco::StateInterface, State_>::value, "[ControllerAdapter]: The State class does not implement roco::StateInterface!" );

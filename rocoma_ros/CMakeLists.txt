@@ -6,6 +6,7 @@ find_package(catkin REQUIRED
   roco
   rocoma
   rocoma_msgs
+  rocoma_plugin
   any_msgs
   pluginlib
 )
@@ -18,6 +19,7 @@ CATKIN_DEPENDS
   roco
   rocoma
   rocoma_msgs
+  rocoma_plugin
   any_msgs
   pluginlib
 )

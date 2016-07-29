@@ -1,7 +1,7 @@
 /**********************************************************************
  * Software License Agreement (BSD License)
  *
- * Copyright (c) 2014, Christian Gehring
+ * Copyright (c) 2016, Gabriel Hottiger
  * All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -33,7 +33,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 /*!
-* @file     ControllerPluginInterface.hpp
+* @file     FailproofControllerPlugin.hpp
 * @author   Gabriel Hottiger
 * @date     Jul, 2016
 */
@@ -41,30 +41,15 @@
 #pragma once
 
 // roco
-#include <roco/controllers/adapters/ControllerAdapterInterface.hpp>
-#include <roco/controllers/ControllerBase.hpp>
+#include <rocoma_plugin/interfaces/FailproofControllerPluginInterface.hpp>
+#include <rocoma/controllers/FailproofControllerAdapter.hpp>
 
-namespace rocoma {
+namespace rocoma_plugin {
 
-template<typename State_, typename Command_>
-class ControllerPluginInterface: public roco::ControllerAdapterInterface, virtual public roco::Controller<State_, Command_>
+template<typename Controller_, typename State_, typename Command_>
+class ControllerPlugin: public rocoma::FailproofControllerAdapter<Controller_, State_, Command_>, public rocoma_plugin::FailproofControllerPluginInterface<State_, Command_>
 {
- public:
-
-  //! Empty constructor
-  ControllerPluginInterface():
-    roco::ControllerAdapterInterface(),
-    roco::Controller<State_, Command_>()
-  {
-
-  }
-
-  //! Empty constructor
-  virtual ~ControllerPluginInterface()
-  {
-
-  }
-
+	
 };
 
-} /* namespace rocoma */
+} /* namespace rocoma_plugin */

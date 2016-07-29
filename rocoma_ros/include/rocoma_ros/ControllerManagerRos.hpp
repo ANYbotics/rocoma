@@ -4,7 +4,9 @@
 #include "rocoma/ControllerManager.hpp"
 #include "rocoma/controllers/ControllerAdapter.hpp"
 #include "rocoma/common/EmergencyStopObserver.hpp"
-#include "rocoma/plugin/ControllerPluginInterface.hpp"
+
+// rocoma plugin
+#include "rocoma_plugin/interfaces/ControllerPluginInterface.hpp"
 
 // rocoma msgs
 #include "rocoma_msgs/GetAvailableControllers.h"
@@ -57,14 +59,14 @@ class ControllerManagerRos : public rocoma::EmergencyStopObserver{
 if( ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug) ) {
    ros::console::notifyLoggerLevelsChanged();
 }
-    using BaseType = rocoma::ControllerPluginInterface<State_, Command_>;
+    using BaseType = rocoma_plugin::ControllerPluginInterface<State_, Command_>;
 
     const std::string scopedClassName = namespaceName + std::string("::") + className;
-    pluginlib::ClassLoader<BaseType> controller_loader("rocoma", "rocoma::ControllerPluginInterface<rocomaex_model::State, rocomaex_model::Command>");
+    pluginlib::ClassLoader<BaseType> controller_loader("rocoma_plugin", "rocoma_plugin::ControllerPluginInterface<rocomaex_model::State, rocomaex_model::Command>");
 
     try
     {
-      boost::shared_ptr<BaseType> controller = controller_loader.createInstance("Controller1Adapter");
+      boost::shared_ptr<BaseType> controller = controller_loader.createInstance("Controller1Plugin");
       controller->setStateAndCommand(state, mutexState, command, mutexCommand);
       std::string name = "MyFirstPluginController";
       controller->setName(name);

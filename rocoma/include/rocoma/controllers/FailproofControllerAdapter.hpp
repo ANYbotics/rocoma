@@ -58,7 +58,7 @@
 namespace rocoma {
 
 template<typename Controller_, typename State_, typename Command_>
-class FailproofControllerAdapter: public roco::FailproofControllerAdapterInterface, public ControllerImplementation<Controller_, State_, Command_>
+class FailproofControllerAdapter: virtual public roco::FailproofControllerAdapterInterface, public ControllerImplementation<Controller_, State_, Command_>
 {
   //! Check if template parameters implement the required interfaces
   static_assert(std::is_base_of<roco::StateInterface, State_>::value, "[FailproofControllerAdapter]: The State class does not implement roco::StateInterface!" );

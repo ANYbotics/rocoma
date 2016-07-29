@@ -56,7 +56,7 @@
 namespace rocoma {
 
 template<typename Controller_, typename State_, typename Command_>
-class EmergencyControllerAdapter: public roco::EmergencyControllerAdapterInterface, public ControllerAdapter<Controller_, State_, Command_>
+class EmergencyControllerAdapter: virtual public roco::EmergencyControllerAdapterInterface, public ControllerAdapter<Controller_, State_, Command_>
 {
   static_assert(std::is_base_of<roco::EmergencyControllerAdapteeInterface, Controller_>::value, "[EmergencyControllerAdapter]: The Controller class does not implement the EmergencyControllerAdatpeeInterface.");
 
