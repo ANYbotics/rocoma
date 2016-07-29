@@ -40,6 +40,13 @@
 
 #pragma once
 
+#define ROCOMA_EXPORT_CONTROLLER(name, controller, state, command) 															\
+				namespace plugin_internal{																															\
+					using name = rocoma_plugin::ControllerPlugin<controller , state , command>;		\
+					using PluginBase = rocoma_plugin::ControllerPluginInterface<state , command>;			\
+					PLUGINLIB_EXPORT_CLASS(name, PluginBase)																						\
+				}																																												\
+
 // roco
 #include <rocoma_plugin/interfaces/ControllerPluginInterface.hpp>
 #include <rocoma/controllers/ControllerAdapter.hpp>
