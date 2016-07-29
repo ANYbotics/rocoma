@@ -64,8 +64,10 @@ if( ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels
 
     try
     {
-      boost::shared_ptr<BaseType> controller = controller_loader.createInstance("rocoma::ControllerAdapter<rocomaex_ctrl1::Controller1, rocomaex_model::State, rocomaex_model::Command>");
+      boost::shared_ptr<BaseType> controller = controller_loader.createInstance("Controller1Adapter");
       controller->setStateAndCommand(state, mutexState, command, mutexCommand);
+      std::string name = "MyFirstPluginController";
+      controller->setName(name);
       std::cout<<"Add controller "<<controller->getControllerName()<<std::endl;
       controllerManager_.addController(std::unique_ptr<roco::ControllerAdapterInterface>(controller.get()));
       // FIXME is the controller ptr still valid when it goes out of scope. Hopefully yes because of move
