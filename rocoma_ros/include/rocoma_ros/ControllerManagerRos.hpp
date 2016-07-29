@@ -46,33 +46,40 @@ class ControllerManagerRos : public rocoma::EmergencyStopObserver{
   }
 
   template<typename State_, typename Command_>
-  bool addController(const std::string & packageName,
-                     const std::string & namespaceName,
-                     const std::string & className,
-                     double dt,
+  bool addController(const std::string & controllerPluginName,
+                     const std::string & scopedStateName,
+                     const std::string & scopedCommandName,
+                     double timeStep,
                      std::shared_ptr<State_> state,
                      std::shared_ptr<Command_> command,
                      std::shared_ptr<boost::shared_mutex> mutexState,
                      std::shared_ptr<boost::shared_mutex> mutexCommand,
                      std::shared_ptr<any_worker::WorkerManager> workerManager)
   {
-if( ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug) ) {
-   ros::console::notifyLoggerLevelsChanged();
-}
-    using BaseType = rocoma_plugin::ControllerPluginInterface<State_, Command_>;
+    // TODO remove when done debugging
+    if( ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug) ) {
+       ros::console::notifyLoggerLevelsChanged();
+    }
 
-    const std::string scopedClassName = namespaceName + std::string("::") + className;
-    pluginlib::ClassLoader<BaseType> controller_loader("rocoma_plugin", "rocoma_plugin::ControllerPluginInterface<rocomaex_model::State, rocomaex_model::Command>");
+    // Convinience typedef
+    using PluginBaseType = rocoma_plugin::ControllerPluginInterface<State_, Command_>;
+
+    // Create plugin loader
+    pluginlib::ClassLoader<PluginBaseType> controller_loader("rocoma_plugin",
+          "rocoma_plugin::ControllerPluginInterface<" + scopedStateName + ", " + scopedCommandName + ">");
 
     try
     {
-      boost::shared_ptr<BaseType> controller = controller_loader.createInstance("Controller1Plugin");
+      // Instantiate controller
+      boost::shared_ptr<PluginBaseType> controller = controller_loader.createInstance(controllerPluginName);
+
+      // Initialize Controller
       controller->setStateAndCommand(state, mutexState, command, mutexCommand);
-      std::string name = "MyFirstPluginController";
-      controller->setName(name);
-      std::cout<<"Add controller "<<controller->getControllerName()<<std::endl;
-      controllerManager_.addController(std::unique_ptr<roco::ControllerAdapterInterface>(controller.get()));
+
+      // Transfer ownership of the controller to the controller manager
       // FIXME is the controller ptr still valid when it goes out of scope. Hopefully yes because of move
+      MELO_INFO_STREAM("Adding controller " << controller->getControllerName() << " to the controller manager.");
+      controllerManager_.addController(std::unique_ptr<roco::ControllerAdapterInterface>(controller.get()));
     }
     catch(pluginlib::PluginlibException& ex)
     {
