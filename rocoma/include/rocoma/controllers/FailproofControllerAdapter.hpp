@@ -61,8 +61,6 @@ template<typename Controller_, typename State_, typename Command_>
 class FailproofControllerAdapter: virtual public roco::FailproofControllerAdapterInterface, public ControllerImplementation<Controller_, State_, Command_>
 {
   //! Check if template parameters implement the required interfaces
-  static_assert(std::is_base_of<roco::StateInterface, State_>::value, "[FailproofControllerAdapter]: The State class does not implement roco::StateInterface!" );
-  static_assert(std::is_base_of<roco::CommandInterface, Command_>::value, "[FailproofControllerAdapter]: The Command class does not implement roco::CommandInterface!" );
   static_assert(std::is_base_of<roco::FailproofController<State_, Command_>, Controller_>::value, "[FailproofControllerAdapter]: The Controller class does not inherit from roco::FailproofController<State_, Command_>!" );
 
  public:
@@ -75,27 +73,10 @@ class FailproofControllerAdapter: virtual public roco::FailproofControllerAdapte
 
  public:
   //! Delete default constructor
-  FailproofControllerAdapter() = delete;
+  FailproofControllerAdapter() { };
 
-  /**
-   * @brief Constructor for state and command
-   * @param state         robot state container class
-   * @param command       actutator command containter class
-   * @param mutexState    mutex for state class
-   * @param mutexCommand  mutex for command class
-   */
-  FailproofControllerAdapter( std::shared_ptr<State> state,
-                              std::shared_ptr<Command> command,
-                              std::shared_ptr<boost::shared_mutex> mutexState,
-                              std::shared_ptr<boost::shared_mutex> mutexCommand):
-    Base(state, command, mutexState, mutexCommand)
-  {
-
-  }
   //! Virtual destructor
-  virtual ~FailproofControllerAdapter()
-  {
-  }
+  virtual ~FailproofControllerAdapter() { };
 
   //! Implementation of the adapter interface (roco::FailproofControllerAdapterInterface)
   virtual bool createController(double dt)    {  return this->create(dt); }

@@ -64,6 +64,8 @@ namespace rocoma {
 template<typename Controller_, typename State_, typename Command_>
 class ControllerExtensionImplementation: public ControllerImplementation<Controller_, State_, Command_> {
 
+  static_assert(std::is_base_of<roco::Controller<State_, Command_>, Controller_>::value, "[ControllerExtensionImplementation]: The Controller class does not inherit from roco::Controller<State_, Command_>!" );
+
  public:
   //! Convenience typedefs
   using Base = ControllerImplementation<Controller_, State_, Command_>;
@@ -78,12 +80,6 @@ class ControllerExtensionImplementation: public ControllerImplementation<Control
   {
 
   }
-
-  ControllerExtensionImplementation(std::shared_ptr<State> state,
-                                    std::shared_ptr<Command> command,
-                                    std::shared_ptr<boost::shared_mutex> mutexState,
-                                    std::shared_ptr<boost::shared_mutex> mutexCommand,
-                                    std::shared_ptr<any_worker::WorkerManager> workerManager);
 
   virtual ~ControllerExtensionImplementation();
 

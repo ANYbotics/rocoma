@@ -46,22 +46,6 @@
 namespace rocoma {
 
 template<typename Controller_, typename State_, typename Command_>
-ControllerExtensionImplementation<Controller_, State_, Command_>::ControllerExtensionImplementation( std::shared_ptr<State> state,
-                                                                                                     std::shared_ptr<Command> command,
-                                                                                                     std::shared_ptr<boost::shared_mutex> mutexState,
-                                                                                                     std::shared_ptr<boost::shared_mutex> mutexCommand,
-                                                                                                     std::shared_ptr<any_worker::WorkerManager> workerManager):
-    Base(state, command, mutexState, mutexCommand),
-    isRealRobot_(false),
-    isCheckingCommand_(true),
-    isCheckingState_(true),
-    time_(),
-    workerManager_(workerManager)
-{
-
-}
-
-template<typename Controller_, typename State_, typename Command_>
 ControllerExtensionImplementation<Controller_, State_, Command_>::~ControllerExtensionImplementation()
 {
 

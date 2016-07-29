@@ -40,6 +40,13 @@
 
 #pragma once
 
+#define ROCOMA_EXPORT_EMERGENCY_CONTROLLER(name, controller, state, command)                              \
+        namespace plugin_internal{                                                                        \
+          using name = rocoma_plugin::EmergencyControllerPlugin<controller , state , command>;            \
+          using PluginBase = rocoma_plugin::EmergencyControllerPluginInterface<state , command>;          \
+          PLUGINLIB_EXPORT_CLASS(name, PluginBase)                                                        \
+        }
+
 // roco
 #include <rocoma_plugin/interfaces/EmergencyControllerPluginInterface.hpp>
 #include <rocoma/controllers/EmergencyControllerAdapter.hpp>
@@ -47,7 +54,7 @@
 namespace rocoma_plugin {
 
 template<typename Controller_, typename State_, typename Command_>
-class ControllerPlugin: public rocoma::EmergencyControllerAdapter<Controller_, State_, Command_>, public rocoma_plugin::EmergencyControllerPluginInterface<State_, Command_>
+class EmergencyControllerPlugin: public rocoma::EmergencyControllerAdapter<Controller_, State_, Command_>, public rocoma_plugin::EmergencyControllerPluginInterface<State_, Command_>
 {
 	
 };

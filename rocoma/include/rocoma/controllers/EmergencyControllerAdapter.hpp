@@ -69,30 +69,10 @@ class EmergencyControllerAdapter: virtual public roco::EmergencyControllerAdapte
 
  public:
   //! Delete default constructor
-  EmergencyControllerAdapter() = delete;
-
-  /**
-   * @brief Constructor for state and command
-   * @param state         robot state container class
-   * @param command       actutator command containter class
-   * @param mutexState    mutex for state class
-   * @param mutexCommand  mutex for command class
-   */
-  EmergencyControllerAdapter(std::shared_ptr<State> state,
-                             std::shared_ptr<Command> command,
-                             std::shared_ptr<boost::shared_mutex> mutexState,
-                             std::shared_ptr<boost::shared_mutex> mutexCommand,
-                             std::shared_ptr<any_worker::WorkerManager> workerManager):
-    Base(state, command, mutexState, mutexCommand, workerManager)
-  {
-
-  }
+  EmergencyControllerAdapter() { };
 
   //! Virtual destructor
-  virtual ~EmergencyControllerAdapter()
-  {
-
-  }
+  virtual ~EmergencyControllerAdapter() { }
 
   //! Implement adapter
   virtual bool initializeControllerFast(double dt) {
@@ -104,7 +84,7 @@ class EmergencyControllerAdapter: virtual public roco::EmergencyControllerAdapte
 
     try {
       // Update the state
-      updateState(dt, false);
+      this->updateState(dt, false);
 
       // Initialize the controller
       if (!this->initializeControllerFast(dt)) {
@@ -113,7 +93,7 @@ class EmergencyControllerAdapter: virtual public roco::EmergencyControllerAdapte
       }
 
       // Update the command
-      updateCommand(dt);
+      this->updateCommand(dt);
 
       // Set init flag
       this->isInitialized_ = true;

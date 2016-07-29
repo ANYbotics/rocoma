@@ -62,11 +62,6 @@ namespace rocoma {
 template<typename Controller_, typename State_, typename Command_>
 class ControllerAdapter: virtual public roco::ControllerAdapterInterface, public ControllerExtensionImplementation<Controller_, State_, Command_>
 {
-  //! Check if template parameters implement the required interfaces
-  static_assert(std::is_base_of<roco::StateInterface, State_>::value, "[ControllerAdapter]: The State class does not implement roco::StateInterface!" );
-  static_assert(std::is_base_of<roco::CommandInterface, Command_>::value, "[ControllerAdapter]: The Command class does not implement roco::CommandInterface!" );
-  static_assert(std::is_base_of<roco::Controller<State_, Command_>, Controller_>::value, "[ControllerAdapter]: The Controller class does not inherit from roco::Controller<State_, Command_>!" );
-
  public:
   //! Convenience typedefs
   using Base = ControllerExtensionImplementation<Controller_, State_, Command_>;
@@ -76,24 +71,10 @@ class ControllerAdapter: virtual public roco::ControllerAdapterInterface, public
 
  public:
   //! Delete default constructor
-//  ControllerAdapter() = delete;
-  ControllerAdapter():Base() { }
-
-  /**
-   * @brief Constructor for state and command
-   * @param state         robot state container class
-   * @param command       actutator command container class
-   * @param mutexState    mutex for state class
-   * @param mutexCommand  mutex for command class
-   */
-  ControllerAdapter(std::shared_ptr<State> state,
-                    std::shared_ptr<Command> command,
-                    std::shared_ptr<boost::shared_mutex> mutexState,
-                    std::shared_ptr<boost::shared_mutex> mutexCommand,
-                    std::shared_ptr<any_worker::WorkerManager> workerManager);
+  ControllerAdapter() { }
 
   //! Virtual destructor
-  virtual ~ControllerAdapter();
+  virtual ~ControllerAdapter() { }
 
   //! Implementation of the adapter interface (roco::ControllerAdapterInterface)
   virtual bool createController(double dt);
@@ -105,13 +86,13 @@ class ControllerAdapter: virtual public roco::ControllerAdapterInterface, public
   virtual bool preStopController();
 
   //! Set isRealRobot is only allowed on the adapter
-  virtual void setIsRealRobot(bool isRealRobot);
+  virtual void setIsRealRobot(bool isRealRobot)         { this->isRealRobot_ = isRealRobot; }
 
   //! Controller name adapter
-  virtual const std::string& getControllerName() const { return this->getName(); }
+  virtual const std::string& getControllerName() const  { return this->getName(); }
 
   //! Indicates if the controller is initialized
-  virtual bool isControllerInitialized() const { return this->isInitialized(); }
+  virtual bool isControllerInitialized() const          { return this->isInitialized(); }
 
  protected:
   bool updateState(double dt, bool checkState = true);

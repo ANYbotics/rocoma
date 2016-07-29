@@ -45,24 +45,6 @@
 namespace rocoma {
 
 template<typename Controller_, typename State_, typename Command_>
-ControllerAdapter<Controller_, State_, Command_>::ControllerAdapter(std::shared_ptr<State> state,
-                                                                    std::shared_ptr<Command> command,
-                                                                    std::shared_ptr<boost::shared_mutex> mutexState,
-                                                                    std::shared_ptr<boost::shared_mutex> mutexCommand,
-                                                                    std::shared_ptr<any_worker::WorkerManager> workerManager):
-                                                                    Base(state, command, mutexState, mutexCommand, workerManager)
-                                                                    {
-
-
-                                                                    }
-
-template<typename Controller_, typename State_, typename Command_>
-ControllerAdapter<Controller_, State_, Command_>::~ControllerAdapter()
-{
-
-}
-
-template<typename Controller_, typename State_, typename Command_>
 bool ControllerAdapter<Controller_, State_, Command_>::createController(double dt)
 {
   // Check if controller was already created
@@ -248,12 +230,6 @@ bool ControllerAdapter<Controller_,State_, Command_>::preStopController()
   }
 
   return true;
-}
-
-template<typename Controller_, typename State_, typename Command_>
-void ControllerAdapter<Controller_,State_, Command_>::setIsRealRobot(bool isRealRobot)
-{
-  this->isRealRobot_ = isRealRobot;
 }
 
 template<typename Controller_, typename State_, typename Command_>

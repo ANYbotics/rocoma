@@ -52,6 +52,10 @@ namespace rocoma {
 template<typename Controller_, typename State_, typename Command_>
 class ControllerImplementation: public Controller_ {
 
+  //! Check if template parameters implement the required interfaces
+  static_assert(std::is_base_of<roco::StateInterface, State_>::value, "[ControllerImplementation]: The State class does not implement roco::StateInterface!" );
+  static_assert(std::is_base_of<roco::CommandInterface, Command_>::value, "[ControllerImplementation]: The Command class does not implement roco::CommandInterface!" );
+
  public:
   //! Convenience typedefs
   using Controller = Controller_;
@@ -69,19 +73,6 @@ class ControllerImplementation: public Controller_ {
  {
 
  }
-
-  ControllerImplementation(std::shared_ptr<State> state,
-                           std::shared_ptr<Command> command,
-                           std::shared_ptr<boost::shared_mutex> mutexState,
-                           std::shared_ptr<boost::shared_mutex> mutexCommand):
-     Controller(),
-     state_(state),
-     command_(command),
-     mutexState_(mutexState),
-     mutexCommand_(mutexCommand)
-  {
-
-  }
 
   virtual ~ControllerImplementation()
   {

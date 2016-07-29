@@ -44,7 +44,7 @@ class EmergencyStopObserver {
  public:
   enum class EmergencyStopType: unsigned int {
     SMART_EMERGENCY_STOP = 0,
-        FAILPROOF_EMERGENCY_STOP
+    FAILPROOF_EMERGENCY_STOP
   };
 
  public:
