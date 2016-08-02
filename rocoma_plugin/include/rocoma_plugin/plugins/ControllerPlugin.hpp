@@ -41,7 +41,7 @@
 #pragma once
 
 #define ROCOMA_EXPORT_CONTROLLER(name, controller, state, command) 															\
-				namespace plugin_internal{																															\
+				namespace plugin_##name_internal{																															\
 					using name = rocoma_plugin::ControllerPlugin<controller , state , command>;		\
 					using PluginBase = rocoma_plugin::ControllerPluginInterface<state , command>;			\
 					PLUGINLIB_EXPORT_CLASS(name, PluginBase)																						\
@@ -56,7 +56,7 @@ namespace rocoma_plugin {
 template<typename Controller_, typename State_, typename Command_>
 class ControllerPlugin: public rocoma::ControllerAdapter<Controller_, State_, Command_>, public rocoma_plugin::ControllerPluginInterface<State_, Command_>
 {
-	
+
 };
 
 } /* namespace rocoma_plugin */

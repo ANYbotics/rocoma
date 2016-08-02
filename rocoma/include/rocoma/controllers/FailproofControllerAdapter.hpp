@@ -78,6 +78,9 @@ class FailproofControllerAdapter: virtual public roco::FailproofControllerAdapte
   //! Virtual destructor
   virtual ~FailproofControllerAdapter() { };
 
+  //! Controller name adapter
+  virtual const std::string& getControllerName() const  { return this->getName(); }
+
   //! Implementation of the adapter interface (roco::FailproofControllerAdapterInterface)
   virtual bool createController(double dt)    {  return this->create(dt); }
   virtual void advanceController(double dt)   {  this->advance(dt); return; }

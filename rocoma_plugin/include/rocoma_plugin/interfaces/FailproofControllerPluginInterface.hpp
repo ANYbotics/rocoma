@@ -41,10 +41,10 @@
 #pragma once
 
 // roco
-#include <roco/controllers/adapters/ControllerAdapterInterface.hpp>
+#include <roco/controllers/adapters/FailproofControllerAdapterInterface.hpp>
 #include <roco/controllers/FailproofController.hpp>
 
-namespace rocoma {
+namespace rocoma_plugin {
 
 template<typename State_, typename Command_>
 class FailproofControllerPluginInterface: virtual public roco::FailproofControllerAdapterInterface, virtual public roco::FailproofController<State_, Command_>

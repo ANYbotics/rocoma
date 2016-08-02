@@ -40,6 +40,13 @@
 
 #pragma once
 
+#define ROCOMA_EXPORT_FAILPROOF_CONTROLLER(name, controller, state, command) 															\
+				namespace failproof_plugin_internal{																															\
+					using name = rocoma_plugin::FailproofControllerPlugin<controller , state , command>;		\
+					using PluginBase = rocoma_plugin::FailproofControllerPluginInterface<state , command>;			\
+					PLUGINLIB_EXPORT_CLASS(name, PluginBase)																						\
+				}																																												\
+
 // roco
 #include <rocoma_plugin/interfaces/FailproofControllerPluginInterface.hpp>
 #include <rocoma/controllers/FailproofControllerAdapter.hpp>
@@ -47,9 +54,9 @@
 namespace rocoma_plugin {
 
 template<typename Controller_, typename State_, typename Command_>
-class ControllerPlugin: public rocoma::FailproofControllerAdapter<Controller_, State_, Command_>, public rocoma_plugin::FailproofControllerPluginInterface<State_, Command_>
+class FailproofControllerPlugin: public rocoma::FailproofControllerAdapter<Controller_, State_, Command_>, public rocoma_plugin::FailproofControllerPluginInterface<State_, Command_>
 {
-	
+
 };
 
 } /* namespace rocoma_plugin */
