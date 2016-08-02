@@ -33,8 +33,10 @@
 
 #pragma once
 
-// Controller Interface
+// roco
 #include <roco/controllers/adapters/ControllerAdapterInterface.hpp>
+#include <roco/controllers/adapters/EmergencyControllerAdapterInterface.hpp>
+#include <roco/controllers/adapters/FailproofControllerAdapterInterface.hpp>
 
 // Boost
 #include <boost/ptr_container/ptr_unordered_map.hpp>
@@ -65,17 +67,7 @@ class ControllerManager
 
  public:
   //! Delete default constructor
-//  ControllerManager() = delete;
-  ControllerManager(){};
-
-  /**
-   * @brief Constructs a controller manager
-   * @param emergencyStopController   Controller that is active during an emergency stop
-   * @param fallbackController        Controller that is executed after the active controller (default: none(nullptr))
-   * @return the constructed ControllerManager
-   */
-  ControllerManager(std::unique_ptr<Controller> emergencyStopController,
-                    std::unique_ptr<Controller> fallbackController = std::unique_ptr<Controller>());
+  ControllerManager();
 
   //! Destructor
   virtual ~ControllerManager();
@@ -85,7 +77,17 @@ class ControllerManager
    * @param controller    Pointer to the controller (unique ptr -> ownership transfer)
    * @return true, if controller was created and added successfully
    */
-  bool addController(std::unique_ptr<Controller> controller);
+  bool addController(std::unique_ptr<roco::ControllerAdapterInterface> controller);
+
+  /**
+   * @brief Add a controller to the controllers map
+   * @param controller    Pointer to the controller (unique ptr -> ownership transfer)
+   * @return true, if controller was created and added successfully
+   */
+  bool addEmergencyController(std::unique_ptr<roco::EmergencyControllerAdapterInterface> controller);
+
+
+  bool setFailproofController(std::unique_ptr<roco::FailproofControllerAdapterInterface> controller);
 
   /**
    * @brief Advance the currently active controller
@@ -149,16 +151,18 @@ class ControllerManager
   bool isRealRobot_;
 
   //! Unordered map of all available controllers (owned by the manager)
-  std::unordered_map< std::string, std::unique_ptr<Controller> > controllers_;
+  std::unordered_map< std::string, std::unique_ptr<roco::ControllerAdapterInterface> > controllers_;
+  std::unordered_map< std::string, std::unique_ptr<roco::EmergencyControllerAdapterInterface> > emergencyControllers_;
 
   //! Emergency stop controller
-  std::unique_ptr<Controller> emergencyStopController_;
+  std::unique_ptr<roco::FailproofControllerAdapterInterface> failproofController_;
 
   //! Fallback controller ( executed after the currently active controller )
   std::unique_ptr<Controller> fallbackController_;
 
   //! Pointer to the active controller pointer
-  std::unique_ptr<Controller>* activeController_;
+  std::unique_ptr<roco::ControllerAdapterInterface>* activeController_;
+  std::unique_ptr<roco::EmergencyControllerAdapterInterface>* activeEmergencyController_;
 
   //! Mutex of the active controller
   std::recursive_mutex activeControllerMutex_;

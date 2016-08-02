@@ -36,19 +36,16 @@
 
 namespace rocoma {
 
-ControllerManager::ControllerManager(std::unique_ptr<Controller> emergencyStopController,
-                                     std::unique_ptr<Controller> fallbackController) :
-                  timeStep_(0.0),
-                  isRealRobot_(false),
-                  controllers_(),
-                  emergencyStopController_(std::move(emergencyStopController)),
-                  fallbackController_(std::move(fallbackController)),
-                  activeController_(nullptr)
+ControllerManager::ControllerManager() :
+                              timeStep_(0.1),
+                              isRealRobot_(false),
+                              controllers_(),
+                              emergencyControllers_(),
+                              failproofController_(nullptr),
+                              fallbackController_(nullptr),
+                              activeController_(nullptr)
 {
-  if(emergencyStopController_ == nullptr) {
-    MELO_ERROR("Emergency controller is nullptr!");
-    abort();
-  }
+
 }
 
 
@@ -57,7 +54,7 @@ ControllerManager::~ControllerManager()
 
 }
 
-bool ControllerManager::addController(std::unique_ptr<Controller> controller)  {
+bool ControllerManager::addController(std::unique_ptr<roco::ControllerAdapterInterface> controller)  {
 
   // controller name (controller is moved within this function, therefore not safe to access everywhere)
   std::string controllerName = controller->getControllerName();
@@ -71,8 +68,8 @@ bool ControllerManager::addController(std::unique_ptr<Controller> controller)  {
   }
 
   // insert controller (move ownership to controller / controller is set to nullptr)
-  using KV = std::pair<std::string, std::unique_ptr<Controller> >;
-  controllers_.insert( KV(controllerName,std::unique_ptr<Controller>( std::move(controller) ) ) );
+  using KV = std::pair<std::string, std::unique_ptr<roco::ControllerAdapterInterface> >;
+  controllers_.insert( KV(controllerName,std::unique_ptr<roco::ControllerAdapterInterface>( std::move(controller) ) ) );
 
   // create controller
   if (!controllers_.at(controllerName)->createController(timeStep_)) {
@@ -85,18 +82,62 @@ bool ControllerManager::addController(std::unique_ptr<Controller> controller)  {
   return true;
 }
 
-bool ControllerManager::updateController() {
-  {
-    std::lock_guard<std::recursive_mutex> lock(activeControllerMutex_);
+bool ControllerManager::addEmergencyController(std::unique_ptr<roco::EmergencyControllerAdapterInterface> controller)  {
 
-    bool success = (*activeController_)->advanceController(timeStep_);
+  // controller name (controller is moved within this function, therefore not safe to access everywhere)
+  std::string controllerName = controller->getControllerName();
+  MELO_INFO("Adding emergency controller %s ...", controllerName.c_str());
 
-    if(fallbackController_ != nullptr) {
-      success = fallbackController_->advanceController(timeStep_) && success;
-    }
-
-    return success;
+  // check if controller already exists
+  auto ctrl = emergencyControllers_.find(controllerName);
+  if(ctrl != emergencyControllers_.end()) {
+    MELO_ERROR("Could not add emergency controller %s. An emergency controller with the same name already exists.", controllerName.c_str());
+    return false;
   }
+
+  // insert controller (move ownership to controller / controller is set to nullptr)
+  using KV = std::pair<std::string, std::unique_ptr<roco::EmergencyControllerAdapterInterface> >;
+  emergencyControllers_.insert( KV(controllerName,std::unique_ptr<roco::EmergencyControllerAdapterInterface>( std::move(controller) ) ) );
+
+  // create controller
+  if (!emergencyControllers_.at(controllerName)->createController(timeStep_)) {
+    MELO_ERROR("Could not create emergency controller %s!", controllerName.c_str());
+    return false;
+  }
+
+  MELO_INFO("... finished adding emergency controller %s.", controllerName.c_str());
+
+  return true;
+}
+
+bool ControllerManager::setFailproofController(std::unique_ptr<roco::FailproofControllerAdapterInterface> controller)  {
+
+  // controller name (controller is moved within this function, therefore not safe to access everywhere)
+  std::string controllerName = controller->getControllerName();
+  MELO_INFO("Adding failproof controller %s ...", controllerName.c_str());
+
+  failproofController_ = std::unique_ptr<roco::FailproofControllerAdapterInterface>( std::move(controller) );
+
+  // create controller
+  if (!failproofController_->createController(timeStep_)) {
+    MELO_ERROR("Could not create failproof controller %s!", controllerName.c_str());
+    return false;
+  }
+
+  MELO_INFO("... finished adding failproof controller %s.", controllerName.c_str());
+
+  return true;
+}
+
+bool ControllerManager::updateController() {
+
+  if(failproofController_ != nullptr) {
+    failproofController_->advanceController(timeStep_);
+    return true;
+  }
+
+  MELO_WARN("Active controller is null!");
+  return false;
 }
 
 bool ControllerManager::emergencyStop() {
@@ -112,10 +153,10 @@ bool ControllerManager::emergencyStop() {
 bool ControllerManager::switchToEmergencyController() {
   std::lock_guard<std::recursive_mutex> lock(activeControllerMutex_);
 
-  if ( *activeController_ != emergencyStopController_) {
-    activeController_ = &emergencyStopController_;
-    return (*activeController_)->resetController(timeStep_);
-  }
+  //  if ( *activeController_ != emergencyStopController_) {
+  //    activeController_ = &emergencyStopController_;
+  //    return (*activeController_)->resetController(timeStep_);
+  //  }
 
   return true;
 }
