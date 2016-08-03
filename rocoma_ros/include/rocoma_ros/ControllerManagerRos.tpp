@@ -29,12 +29,13 @@ ControllerManagerRos<State_,Command_>::~ControllerManagerRos()
 }
 
 template<typename State_, typename Command_>
-bool ControllerManagerRos<State_,Command_>::setupController(const std::string & controllerPluginName,
-                                                            std::shared_ptr<State_> state,
-                                                            std::shared_ptr<Command_> command,
-                                                            std::shared_ptr<boost::shared_mutex> mutexState,
-                                                            std::shared_ptr<boost::shared_mutex> mutexCommand,
-                                                            std::shared_ptr<any_worker::WorkerManager> workerManager) {
+bool ControllerManagerRos<State_,Command_>::setupControllerPair(const std::string & controllerPluginName,
+                                                                const std::string & emgcyControllerPluginName,
+                                                                std::shared_ptr<State_> state,
+                                                                std::shared_ptr<Command_> command,
+                                                                std::shared_ptr<boost::shared_mutex> mutexState,
+                                                                std::shared_ptr<boost::shared_mutex> mutexCommand,
+                                                                std::shared_ptr<any_worker::WorkerManager> workerManager) {
 
   rocoma_plugin::ControllerPluginInterface<State_, Command_> * controller;
 
@@ -61,59 +62,40 @@ bool ControllerManagerRos<State_,Command_>::setupController(const std::string & 
   // Set state and command
   controller->setStateAndCommand(state, mutexState, command, mutexCommand);
 
-  // Add controller to the manager
-  if( !this->addController(std::unique_ptr< rocoma_plugin::ControllerPluginInterface<State_,Command_> >(controller)) ) {
-    MELO_WARN_STREAM("Could not add controller: " << controllerPluginName << " to controller manager!");
-    return false;
-  }
-
-  // Inform user
-  MELO_INFO_STREAM("Succesfully setup controller: " << controllerPluginName << "!");
-
-  return true;
-}
-
-template<typename State_, typename Command_>
-bool ControllerManagerRos<State_,Command_>::setupEmergencyController(const std::string & controllerPluginName,
-                                                                     std::shared_ptr<State_> state,
-                                                                     std::shared_ptr<Command_> command,
-                                                                     std::shared_ptr<boost::shared_mutex> mutexState,
-                                                                     std::shared_ptr<boost::shared_mutex> mutexCommand,
-                                                                     std::shared_ptr<any_worker::WorkerManager> workerManager) {
-
-  rocoma_plugin::EmergencyControllerPluginInterface<State_, Command_> * controller;
+  // Setup emergency controller
+  rocoma_plugin::EmergencyControllerPluginInterface<State_, Command_> * emgcyController;
   try
   {
     // Instantiate controller
-    controller = emergencyControllerLoader_.createUnmanagedInstance(controllerPluginName);
+    emgcyController = emergencyControllerLoader_.createUnmanagedInstance(emgcyControllerPluginName);
   }
   catch(pluginlib::PluginlibException& ex)
   {
     //handle the class failing to load
     MELO_ERROR("The plugin failed to load for some reason. Error: %s", ex.what());
-    MELO_WARN_STREAM("Could not setup emergency controller: " << controllerPluginName << "!");
+    MELO_WARN_STREAM("Could not setup emergency controller: " << emgcyControllerPluginName << "!");
     return false;
   }
 
   // Check for null
-  if(controller == nullptr) {
-    MELO_WARN_STREAM("Could not setup emergency controller: " << controllerPluginName << "! (nullptr)");
+  if(emgcyController == nullptr) {
+    MELO_WARN_STREAM("Could not setup emergency controller: " << emgcyControllerPluginName << "! (nullptr)");
     return false;
   }
 
   // Set state and command
-  controller->setStateAndCommand(state, mutexState, command, mutexCommand);
+  emgcyController->setStateAndCommand(state, mutexState, command, mutexCommand);
 
   // Add controller to the manager
-  if(!this->addEmergencyController(std::unique_ptr< rocoma_plugin::EmergencyControllerPluginInterface<State_,Command_> >(controller))) {
-    MELO_WARN_STREAM("Could not add emergency controller: " << controllerPluginName << " to controller manager!");
+  if(!this->addControllerPair(std::unique_ptr< rocoma_plugin::ControllerPluginInterface<State_,Command_> >(controller),
+                              std::unique_ptr< rocoma_plugin::EmergencyControllerPluginInterface<State_,Command_> >(emgcyController)) ) {
+    MELO_WARN_STREAM("Could not add controller pair ( " << controllerPluginName << " / " << emgcyControllerPluginName << " ) to controller manager!");
     return false;
   }
 
   // Inform user
-  MELO_INFO_STREAM("Succesfully setup emergency controller: " << controllerPluginName << "!");
+  MELO_INFO_STREAM("Successfully added controller pair ( " << controllerPluginName << " / " << emgcyControllerPluginName << " ) to controller manager!");
 
-  return true;
 }
 
 template<typename State_, typename Command_>
@@ -162,8 +144,7 @@ bool ControllerManagerRos<State_,Command_>::setupFailproofController(const std::
 
 template<typename State_, typename Command_>
 bool ControllerManagerRos<State_,Command_>::setupControllers(const std::string & failproofControllerName,
-                                                             const std::vector<std::string> & emergencyControllerNames,
-                                                             const std::vector<std::string> & controllerNames,
+                                                             const std::vector< std::pair<std::string, std::string> > & controllerNameMap,
                                                              std::shared_ptr<State_> state,
                                                              std::shared_ptr<Command_> command,
                                                              std::shared_ptr<boost::shared_mutex> mutexState,
@@ -177,15 +158,9 @@ bool ControllerManagerRos<State_,Command_>::setupControllers(const std::string &
   }
 
   // add emergency controllers to manager
-  for(auto controller : emergencyControllerNames)
+  for(auto& controllerPair : controllerNameMap)
   {
-    setupEmergencyController(controller, state, command, mutexState, mutexCommand, workerManager);
-  }
-
-  // setup normal controllers
-  for(auto controller : controllerNames)
-  {
-    setupController(controller, state, command, mutexState, mutexCommand, workerManager);
+    setupControllerPair(controllerPair.first, controllerPair.second, state, command, mutexState, mutexCommand, workerManager);
   }
 
 }

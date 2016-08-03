@@ -121,6 +121,25 @@ bool ControllerAdapter<Controller_, State_, Command_>::initializeController(doub
 template<typename Controller_, typename State_, typename Command_>
 bool ControllerAdapter<Controller_, State_, Command_>::advanceController(double dt)
 {
+  if (!this->isInitialized()) {
+    MELO_WARN_STREAM("Controller was not initialized!");
+    return false;
+  }
+
+  try {
+    updateState(dt);
+    if (!this->advance(dt)) {
+      MELO_WARN_STREAM("Controller::advance() returned false!");
+      stopController();
+      return true;
+    }
+    updateCommand(dt);
+
+  } catch (std::exception& e) {
+    MELO_WARN_STREAM("Exception caught: " << e.what());
+    stopController();
+    return true;
+  }
 
   return true;
 }
@@ -199,8 +218,11 @@ template<typename Controller_, typename State_, typename Command_>
 bool ControllerAdapter<Controller_, State_, Command_>::stopController()
 {
   // set flag
+  this->isStopping_ = true;
   this->isRunning_ = false;
 
+
+  sleep(5);         //make the programme waiting for 5 secondes
   // stop controller
   try {
     if(!this->stop()) {
@@ -212,6 +234,7 @@ bool ControllerAdapter<Controller_, State_, Command_>::stopController()
     return false;
   }
 
+  this->isStopping_ = false;
   return true;
 }
 

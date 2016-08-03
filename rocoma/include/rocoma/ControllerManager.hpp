@@ -24,7 +24,7 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
-*/
+ */
 /*!
  * @file    ControllerManager.hpp
  * @author  Christian Gehring, Dario Bellicoso, Gabriel Hottiger
@@ -38,6 +38,9 @@
 #include <roco/controllers/adapters/EmergencyControllerAdapterInterface.hpp>
 #include <roco/controllers/adapters/FailproofControllerAdapterInterface.hpp>
 
+// rocoma
+#include <rocoma/common/EmergencyStopObserver.hpp>
+
 // Boost
 #include <boost/ptr_container/ptr_unordered_map.hpp>
 
@@ -46,24 +49,66 @@
 #include <string>
 #include <memory>
 #include <unordered_map>
+#include <thread>
 #include <mutex>
 
 namespace rocoma {
 
+struct StopControllerThread {
+
+  StopControllerThread(roco::ControllerAdapterInterface * ctrl,
+                       std::thread thread):
+                         controller_(ctrl),
+                         thread_(std::move(thread))
+  {
+
+  }
+
+  bool done() {
+    return !controller_->isStopping();
+  }
+
+  roco::ControllerAdapterInterface* controller_;
+  std::thread thread_;
+
+};
+
+
+struct ControllerPtrPtrPair {
+
+  ControllerPtrPtrPair(std::unique_ptr<roco::ControllerAdapterInterface> * ctrl,
+                       std::unique_ptr<roco::EmergencyControllerAdapterInterface> * emgcyCtrl):
+                         controller_(ctrl),
+                         emgcyController_(emgcyCtrl)
+  {
+
+  }
+
+  std::unique_ptr<roco::ControllerAdapterInterface> * controller_;
+  std::unique_ptr<roco::EmergencyControllerAdapterInterface> * emgcyController_;
+
+};
+
 class ControllerManager
 {
  public:
-  //! Convenience typedefs
-  using Controller = roco::ControllerAdapterInterface;
-  using ControllerPtr = roco::ControllerAdapterInterface*;
-
   //! Enumeration for switch controller feedback
   enum class SwitchResponse : int {
-      NOTFOUND = -2,
-      ERROR    = -1,
-      RUNNING  =  0,
-      SWITCHED =  1
+    NOTFOUND = -2,
+        ERROR    = -1,
+        RUNNING  =  0,
+        SWITCHED =  1
   };
+
+  enum class ManagedControllerState : int {
+    FAILURE = -1,
+        EMERGENCY = 0,
+        OK = 1
+  };
+
+  using ControllerPtr = std::unique_ptr<roco::ControllerAdapterInterface>;
+  using EmgcyControllerPtr = std::unique_ptr<roco::EmergencyControllerAdapterInterface>;
+  using FailproofControllerPtr = std::unique_ptr<roco::FailproofControllerAdapterInterface>;
 
  public:
   //! Delete default constructor
@@ -77,15 +122,8 @@ class ControllerManager
    * @param controller    Pointer to the controller (unique ptr -> ownership transfer)
    * @return true, if controller was created and added successfully
    */
-  bool addController(std::unique_ptr<roco::ControllerAdapterInterface> controller);
-
-  /**
-   * @brief Add a controller to the controllers map
-   * @param controller    Pointer to the controller (unique ptr -> ownership transfer)
-   * @return true, if controller was created and added successfully
-   */
-  bool addEmergencyController(std::unique_ptr<roco::EmergencyControllerAdapterInterface> controller);
-
+  bool addControllerPair(std::unique_ptr<roco::ControllerAdapterInterface> controller,
+                         std::unique_ptr<roco::EmergencyControllerAdapterInterface> emergencyController);
 
   bool setFailproofController(std::unique_ptr<roco::FailproofControllerAdapterInterface> controller);
 
@@ -94,6 +132,9 @@ class ControllerManager
    * @return true, if controller was advanced successfully
    */
   bool updateController();
+
+  bool stopController(roco::ControllerAdapterInterface * stopController);
+  void joinStopControllerThreads();
 
   /**
    * @brief Prestop and stop controller
@@ -143,6 +184,13 @@ class ControllerManager
    */
   void setIsRealRobot(bool isRealRobot);
 
+  virtual void reactOnEmergencyStop(rocoma::EmergencyStopObserver::EmergencyStopType type) { };
+
+  void addEmergencystopObserver(EmergencyStopObserver* observer) {
+    emergencyStopObservers_.push_back(observer);
+    return;
+  }
+
  private:
   //! Controller timestep (equal for all controllers)
   double timeStep_;
@@ -151,21 +199,28 @@ class ControllerManager
   bool isRealRobot_;
 
   //! Unordered map of all available controllers (owned by the manager)
-  std::unordered_map< std::string, std::unique_ptr<roco::ControllerAdapterInterface> > controllers_;
-  std::unordered_map< std::string, std::unique_ptr<roco::EmergencyControllerAdapterInterface> > emergencyControllers_;
+  std::unordered_map< std::string, ControllerPtr > controllers_;
+  std::unordered_map< std::string, EmgcyControllerPtr > emergencyControllers_;
+
+  //! Controller Pairs
+  std::unordered_map< std::string, ControllerPtrPtrPair > controllerPairs_;
+  ControllerPtrPtrPair activeControllerPair_;
 
   //! Emergency stop controller
-  std::unique_ptr<roco::FailproofControllerAdapterInterface> failproofController_;
+  FailproofControllerPtr failproofController_;
 
-  //! Fallback controller ( executed after the currently active controller )
-  std::unique_ptr<Controller> fallbackController_;
-
-  //! Pointer to the active controller pointer
-  std::unique_ptr<roco::ControllerAdapterInterface>* activeController_;
-  std::unique_ptr<roco::EmergencyControllerAdapterInterface>* activeEmergencyController_;
+  //! Current controller state
+  ManagedControllerState activeControllerState_;
 
   //! Mutex of the active controller
-  std::recursive_mutex activeControllerMutex_;
+  std::mutex activeControllerMutex_;
+
+  //! List of emergency stop observers
+  std::list<EmergencyStopObserver*> emergencyStopObservers_;
+
+  //! Stopping controllers
+  std::mutex stopThreadsMutex_;
+  std::vector<StopControllerThread> stoppingThreads_;
 
 };
 

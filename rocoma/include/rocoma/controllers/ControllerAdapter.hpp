@@ -55,6 +55,7 @@
 #include <type_traits>
 #include <assert.h>
 #include <memory>
+#include <atomic>
 
 
 namespace rocoma {
@@ -71,7 +72,7 @@ class ControllerAdapter: virtual public roco::ControllerAdapterInterface, public
 
  public:
   //! Delete default constructor
-  ControllerAdapter() { }
+  ControllerAdapter(): isStopping_(false), isInitializing_(false) { }
 
   //! Virtual destructor
   virtual ~ControllerAdapter() { }
@@ -93,10 +94,18 @@ class ControllerAdapter: virtual public roco::ControllerAdapterInterface, public
 
   //! Indicates if the controller is initialized
   virtual bool isControllerInitialized() const          { return this->isInitialized(); }
+  //! Indicates if the controller is initializing at the moment
+  virtual bool isInitializing() const { return isInitializing_; }
+  //! Indicates if the controller is stopping at the moment
+  virtual bool isStopping() const { return isStopping_; }
 
  protected:
   bool updateState(double dt, bool checkState = true);
   bool updateCommand(double dt);
+
+  std::atomic<bool> isStopping_;
+  std::atomic<bool> isInitializing_;
+
 
 };
 

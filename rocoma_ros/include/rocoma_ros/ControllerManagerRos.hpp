@@ -32,12 +32,15 @@
 
 // stl
 #include <string>
+#include <vector>
+#include <map>
 #include <memory>
+
 
 namespace rocoma_ros {
 
 template<typename State_, typename Command_>
-class ControllerManagerRos : public rocoma::ControllerManager, public rocoma::EmergencyStopObserver{
+class ControllerManagerRos : public rocoma::ControllerManager {
 
  public:
   ControllerManagerRos(ros::NodeHandle& nodeHandle,
@@ -45,19 +48,13 @@ class ControllerManagerRos : public rocoma::ControllerManager, public rocoma::Em
                        const std::string & scopedCommandName);
   ~ControllerManagerRos();
 
-  bool setupController(const std::string & controllerPluginName,
-                       std::shared_ptr<State_> state,
-                       std::shared_ptr<Command_> command,
-                       std::shared_ptr<boost::shared_mutex> mutexState,
-                       std::shared_ptr<boost::shared_mutex> mutexCommand,
-                       std::shared_ptr<any_worker::WorkerManager> workerManager);
-
-  bool setupEmergencyController(const std::string & controllerPluginName,
-                                std::shared_ptr<State_> state,
-                                std::shared_ptr<Command_> command,
-                                std::shared_ptr<boost::shared_mutex> mutexState,
-                                std::shared_ptr<boost::shared_mutex> mutexCommand,
-                                std::shared_ptr<any_worker::WorkerManager> workerManager);
+  bool setupControllerPair(const std::string & controllerPluginName,
+                           const std::string & emgcyControllerPluginName,
+                           std::shared_ptr<State_> state,
+                           std::shared_ptr<Command_> command,
+                           std::shared_ptr<boost::shared_mutex> mutexState,
+                           std::shared_ptr<boost::shared_mutex> mutexCommand,
+                           std::shared_ptr<any_worker::WorkerManager> workerManager);
 
   bool setupFailproofController(const std::string & controllerPluginName,
                                 std::shared_ptr<State_> state,
@@ -67,8 +64,7 @@ class ControllerManagerRos : public rocoma::ControllerManager, public rocoma::Em
                                 std::shared_ptr<any_worker::WorkerManager> workerManager);
 
   bool setupControllers(const std::string & failproofControllerName,
-                        const std::vector<std::string> & emergencyControllerNames,
-                        const std::vector<std::string> & controllerNames,
+                        const std::vector< std::pair<std::string, std::string> > & controllerNameMap,
                         std::shared_ptr<State_> state,
                         std::shared_ptr<Command_> command,
                         std::shared_ptr<boost::shared_mutex> mutexState,
