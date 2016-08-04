@@ -38,13 +38,7 @@
 #include <roco/controllers/adapters/EmergencyControllerAdapterInterface.hpp>
 #include <roco/controllers/adapters/FailproofControllerAdapterInterface.hpp>
 
-// rocoma
-#include <rocoma/common/EmergencyStopObserver.hpp>
-
-// Boost
-#include <boost/ptr_container/ptr_unordered_map.hpp>
-
-// Anyworker
+// any_worker
 #include <any_worker/WorkerManager.hpp>
 
 // STL
@@ -57,57 +51,70 @@
 
 namespace rocoma {
 
-struct ControllerPtrPtrPair {
-
-  ControllerPtrPtrPair(roco::ControllerAdapterInterface * ctrl,
-                       roco::EmergencyControllerAdapterInterface * emgcyCtrl):
-                         controller_(ctrl),
-                         emgcyController_(emgcyCtrl)
-  {
-
-  }
-
-  roco::ControllerAdapterInterface * controller_;
-  roco::EmergencyControllerAdapterInterface * emgcyController_;
-
-};
-
 class ControllerManager
 {
  public:
   //! Enumeration for switch controller feedback
   enum class SwitchResponse : int {
-    NOTFOUND = -2,
-        ERROR    = -1,
-        RUNNING  =  0,
-        SWITCHED =  1
+      NOTFOUND  = -2,
+      ERROR     = -1,
+      RUNNING   =  0,
+      SWITCHING =  1
   };
 
-  enum class ManagedControllerState : int {
-    FAILURE = -1,
-        EMERGENCY = 0,
-        OK = 1
+  //! Enumeration indicating the controller manager state
+  enum class State : int {
+      FAILURE   = -1,
+      EMERGENCY =  0,
+      OK        =  1
   };
 
+  //! Enumeration indicating the emergency stop type
+  enum class EmergencyStopType : int {
+      FAILPROOF   = -1,
+      EMERGENCY   =  0
+  };
+
+  //! Set of controller pointers (normal and emergency controller)
+  struct ControllerSetPtr {
+    ControllerSetPtr(roco::ControllerAdapterInterface * controller,
+                     roco::EmergencyControllerAdapterInterface * emgcyController):
+                       controller_(controller),
+                       emgcyController_(emgcyController)
+    {
+
+    }
+
+    roco::ControllerAdapterInterface * controller_;
+    roco::EmergencyControllerAdapterInterface * emgcyController_;
+  };
+
+  //! Convenience typedef for Controller
   using ControllerPtr = std::unique_ptr<roco::ControllerAdapterInterface>;
   using EmgcyControllerPtr = std::unique_ptr<roco::EmergencyControllerAdapterInterface>;
   using FailproofControllerPtr = std::unique_ptr<roco::FailproofControllerAdapterInterface>;
 
  public:
-  //! Delete default constructor
+  //! Default constructor
   ControllerManager();
 
   //! Destructor
   virtual ~ControllerManager();
 
   /**
-   * @brief Add a controller to the controllers map
-   * @param controller    Pointer to the controller (unique ptr -> ownership transfer)
-   * @return true, if controller was created and added successfully
+   * @brief Add a controller pair to the manager
+   * @param controller             Pointer to the controller (unique ptr -> ownership transfer)
+   * @param emergencyController    Pointer to the emergency controller (unique ptr -> ownership transfer)
+   * @return true, if controllers were created and added successfully
    */
   bool addControllerPair(std::unique_ptr<roco::ControllerAdapterInterface> controller,
                          std::unique_ptr<roco::EmergencyControllerAdapterInterface> emergencyController);
 
+  /**
+   * @brief Sets the failproof controller
+   * @param controller             Pointer to the failproof controller (unique ptr -> ownership transfer)
+   * @return true, if controllers was created and added successfully
+   */
   bool setFailproofController(std::unique_ptr<roco::FailproofControllerAdapterInterface> controller);
 
   /**
@@ -116,14 +123,6 @@ class ControllerManager
    */
   bool updateController();
 
-  bool emergencyStopControllerWorker(const any_worker::WorkerEvent& e,
-                                     roco::ControllerAdapterInterface * controller,
-                                     EmergencyStopObserver::EmergencyStopType emgcyStopType);
-
-  bool switchControllerWorker(const any_worker::WorkerEvent& e,
-                                     roco::ControllerAdapterInterface * fromController,
-                                     roco::ControllerAdapterInterface * toController);
-
   /**
    * @brief Prestop and stop controller
    * @return true, if both stopping procedures where successful
@@ -131,10 +130,15 @@ class ControllerManager
   bool emergencyStop();
 
   /**
-   * @brief Cleanup all controllers
-   * @return true, if successful emergency stop and all controllers are cleaned up
+   * @brief Worker callback stopping the previous controller and notify emergency stop
+   * @param event        Worker event
+   * @param controller   Pointer to the controller that was active when the emergency stop occured
+   * @param stopType     Type of the emergency stop
+   * @return true, if controller was stopped successfully
    */
-  bool cleanup();
+  bool emergencyStopControllerWorker(const any_worker::WorkerEvent& event,
+                                     roco::ControllerAdapterInterface * controller,
+                                     EmergencyStopType stopType);
 
   /**
    * @brief Tries to switch to a desired controller
@@ -142,6 +146,19 @@ class ControllerManager
    * @return result of the switching operation
    */
   SwitchResponse switchController(const std::string & controllerName);
+
+
+
+  /**
+   * @brief Worker callback switching the controller
+   * @param event        Worker event
+   * @param oldController   Pointer to the controller that is currently active
+   * @param newController   Pointer to the controller that shall be switched to
+   * @return true, if controller switching was successful
+   */
+  bool switchControllerWorker(const any_worker::WorkerEvent& e,
+                              roco::ControllerAdapterInterface * oldController,
+                              roco::ControllerAdapterInterface * newController);
 
   /**
    * @brief Get a vector of all available controller names
@@ -156,6 +173,12 @@ class ControllerManager
   std::string getActiveControllerName();
 
   /**
+   * @brief Cleanup all controllers
+   * @return true, if successful emergency stop and all controllers are cleaned up
+   */
+  bool cleanup();
+
+  /**
    * @brief Get isRealRobot
    * @return true if real robot
    */
@@ -166,11 +189,13 @@ class ControllerManager
    */
   void setIsRealRobot(bool isRealRobot);
 
-  virtual void reactOnEmergencyStop(rocoma::EmergencyStopObserver::EmergencyStopType type) { };
+  /**
+   * @brief notify others of the emergency stop (default: do nothing)
+   * @param type     Type of the emergency stop
+   */
+  virtual void notifyEmergencyStop(EmergencyStopType type)
+  {
 
-  void addEmergencystopObserver(EmergencyStopObserver* observer) {
-    emergencyStopObservers_.push_back(observer);
-    return;
   }
 
  private:
@@ -180,31 +205,27 @@ class ControllerManager
   //! Flag to differ between simulation and real robot
   std::atomic<bool> isRealRobot_;
 
+  //! Current controller state
+  std::atomic<State> activeControllerState_;
+
+  //! Stopping controllers
+  any_worker::WorkerManager workerManager_;
+
   //! Unordered map of all available controllers (owned by the manager)
   std::unordered_map< std::string, ControllerPtr > controllers_;
   std::unordered_map< std::string, EmgcyControllerPtr > emergencyControllers_;
 
   //! Controller Pairs
-  std::unordered_map< std::string, ControllerPtrPtrPair > controllerPairs_;
-  ControllerPtrPtrPair activeControllerPair_;
+  std::unordered_map< std::string, ControllerSetPtr > controllerPairs_;
+  ControllerSetPtr activeControllerPair_;
 
   //! Emergency stop controller
   FailproofControllerPtr failproofController_;
 
-  //! Current controller state
-  std::atomic<ManagedControllerState> activeControllerState_;
-
-  //! Mutex of the active controller
+  //! Mutexes
   std::mutex controllerMutex_;
   std::mutex emergencyControllerMutex_;
   std::mutex failproofControllerMutex_;
-
-  //! List of emergency stop observers
-  std::list<EmergencyStopObserver*> emergencyStopObservers_;
-
-  //! Stopping controllers
-  any_worker::WorkerManager workerManager_;
-
 };
 
 } /* namespace rocoma */

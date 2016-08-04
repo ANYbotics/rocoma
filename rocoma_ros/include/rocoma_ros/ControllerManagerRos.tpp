@@ -189,7 +189,7 @@ bool ControllerManagerRos<State_,Command_>::switchController(rocoma_msgs::Switch
     case rocoma::ControllerManager::SwitchResponse::RUNNING:
       res.status = res.STATUS_RUNNING;
       break;
-    case rocoma::ControllerManager::SwitchResponse::SWITCHED:
+    case rocoma::ControllerManager::SwitchResponse::SWITCHING:
       res.status = res.STATUS_SWITCHED;
       break;
   }
@@ -215,7 +215,7 @@ bool ControllerManagerRos<State_,Command_>::getActiveController(rocoma_msgs::Get
                                                                 }
 
 template<typename State_, typename Command_>
-void ControllerManagerRos<State_,Command_>::reactOnEmergencyStop(rocoma::EmergencyStopObserver::EmergencyStopType type) {
+void ControllerManagerRos<State_,Command_>::notifyEmergencyStop(rocoma::ControllerManager::EmergencyStopType type) {
   // TODO react differently depending on the emergency stop type
   publishEmergencyState(false);
   publishEmergencyState(true);

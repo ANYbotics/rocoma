@@ -3,7 +3,6 @@
 // rocoma
 #include "rocoma/ControllerManager.hpp"
 #include "rocoma/controllers/ControllerAdapter.hpp"
-#include "rocoma/common/EmergencyStopObserver.hpp"
 
 // rocoma plugin
 #include "rocoma_plugin/interfaces/ControllerPluginInterface.hpp"
@@ -83,7 +82,7 @@ class ControllerManagerRos : public rocoma::ControllerManager {
   bool getActiveController(rocoma_msgs::GetActiveController::Request &req,
                            rocoma_msgs::GetActiveController::Response &res);
 
-  void reactOnEmergencyStop(rocoma::EmergencyStopObserver::EmergencyStopType type);
+  void notifyEmergencyStop(rocoma::ControllerManager::EmergencyStopType type);
 
  private:
   //! Ros services
