@@ -77,9 +77,9 @@ class ControllerExtensionImplementation: public ControllerImplementation<Control
   ControllerExtensionImplementation():
     Base(),
     workerManager_(nullptr)
-  {
+ {
 
-  }
+ }
 
   virtual ~ControllerExtensionImplementation();
 
@@ -99,7 +99,7 @@ class ControllerExtensionImplementation: public ControllerImplementation<Control
   virtual bool startWorker(const roco::WorkerHandle& workerHandle);
   virtual bool cancelWorker(const roco::WorkerHandle& workerHandle, bool block = false);
 
-protected:
+ protected:
   //! Indicates if the real robot is controller or only a simulated version.
   boost::atomic<bool> isRealRobot_;
   //! Indicates if command is checked for limits

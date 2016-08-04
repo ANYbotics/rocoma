@@ -37,13 +37,13 @@
 namespace rocoma {
 
 ControllerManager::ControllerManager() :
-                                                  timeStep_(0.1),
-                                                  isRealRobot_(false),
-                                                  controllers_(),
-                                                  emergencyControllers_(),
-                                                  failproofController_(nullptr),
-                                                  activeControllerPair_(nullptr, nullptr),
-                                                  activeControllerState_(ManagedControllerState::OK)
+                                                                              timeStep_(0.1),
+                                                                              isRealRobot_(false),
+                                                                              controllers_(),
+                                                                              emergencyControllers_(),
+                                                                              failproofController_(nullptr),
+                                                                              activeControllerPair_(nullptr, nullptr),
+                                                                              activeControllerState_(ManagedControllerState::OK)
 {
 
 }
@@ -71,6 +71,7 @@ bool ControllerManager::addControllerPair(std::unique_ptr<roco::ControllerAdapte
     MELO_ERROR_STREAM("... Could not create controller " << controllerName << "!");
     return false;
   }
+
   if (!controller->initializeController(timeStep_)) {
     MELO_ERROR_STREAM("... Could not create controller " << controllerName << "!");
     return false;
@@ -95,7 +96,7 @@ bool ControllerManager::addControllerPair(std::unique_ptr<roco::ControllerAdapte
   if (!emergencyController->createController(timeStep_)) {
     MELO_ERROR_STREAM("... Could not create emergency controller " << emgcyControllerName << "! Use failproof controller on emergency stop!");
     using KV = std::pair< std::string, ControllerPtrPtrPair >;
-    controllerPairs_.insert( KV( controllerName, ControllerPtrPtrPair(&controllers_.at(controllerName), nullptr) ) );
+    controllerPairs_.insert( KV( controllerName, ControllerPtrPtrPair(controllers_.at(controllerName).get(), nullptr) ) );
     return false;
   }
   if (!emergencyController->initializeController(timeStep_)) {
@@ -116,7 +117,7 @@ bool ControllerManager::addControllerPair(std::unique_ptr<roco::ControllerAdapte
 
   // Add controller pair and set active
   controllerPairs_.insert( std::pair< std::string, ControllerPtrPtrPair >( controllerName,
-                                                                           ControllerPtrPtrPair( &controllers_.at(controllerName), &emergencyControllers_.at(emgcyControllerName) ) ) );
+                                                                           ControllerPtrPtrPair(controllers_.at(controllerName).get(), emergencyControllers_.at(emgcyControllerName).get() ) ) );
   activeControllerPair_ = controllerPairs_.at(controllerName);
   MELO_INFO_STREAM("... sucessfully added controller pair ctrl: " << controllerName << " / emgcy ctrl: " << emgcyControllerName << " ... ");
 
@@ -143,33 +144,27 @@ bool ControllerManager::setFailproofController(std::unique_ptr<roco::FailproofCo
 }
 
 bool ControllerManager::updateController() {
-  std::unique_lock<std::mutex> ctrlLock(activeControllerMutex_);
-
-  joinStopControllerThreads();
 
   // Controller is running
   if(activeControllerState_ == ManagedControllerState::OK)
   {
     // Advance "normal" controller -> if advance return false treat as emergency stop
-    if(!(*activeControllerPair_.controller_)->advanceController(timeStep_))
+    std::unique_lock<std::mutex> lockController(controllerMutex_);
+    if(!activeControllerPair_.controller_->advanceController(timeStep_))
     {
-      if(activeControllerPair_.emgcyController_ != nullptr)
-      {
-        emergencyStop();
-      }
-      else {
-        emergencyStop();
-      }
+      lockController.unlock();
+      emergencyStop();
     }
   }
 
   // Controller is in emergency stop
   if(activeControllerState_ == ManagedControllerState::EMERGENCY)
   {
-    if(!(*activeControllerPair_.emgcyController_)->advanceController(timeStep_))
+    std::unique_lock<std::mutex> lockEmergencyController(emergencyControllerMutex_);
+    if(!activeControllerPair_.emgcyController_->advanceController(timeStep_))
     {
-      // Use failproof controller if emergency stop fails
-      activeControllerState_ = ManagedControllerState::FAILURE;
+      lockEmergencyController.unlock();
+      emergencyStop();
     }
   }
 
@@ -177,69 +172,90 @@ bool ControllerManager::updateController() {
   if(activeControllerState_ == ManagedControllerState::FAILURE)
   {
     // returns void -> can never fail!
+    std::unique_lock<std::mutex> lockFailproofController(failproofControllerMutex_);
     failproofController_->advanceController(timeStep_);
   }
 
   return true;
 }
 
-bool ControllerManager::stopController(roco::ControllerAdapterInterface * controller) {
-  std::lock_guard<std::mutex> lock(stopThreadsMutex_);
-  MELO_WARN_STREAM("Adding thread.");
-  stoppingThreads_.push_back( StopControllerThread( controller, std::thread(&roco::ControllerAdapterInterface::stopController, controller) ) );
-  return true;
+bool ControllerManager::emergencyStopControllerWorker(const any_worker::WorkerEvent& e,
+                                                      roco::ControllerAdapterInterface * controller,
+                                                      EmergencyStopObserver::EmergencyStopType emgcyStopType)
+{
+  bool success = controller->preStopController();
+  success = success && controller->stopController();
+  reactOnEmergencyStop(emgcyStopType);
+  return success;
 }
 
-void ControllerManager::joinStopControllerThreads() {
-  std::lock_guard<std::mutex> lock(stopThreadsMutex_);
+bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
+                                               roco::ControllerAdapterInterface * oldController,
+                                               roco::ControllerAdapterInterface * newController) {
+  // shutdown communication for active controller
+  // IMPORTANT: The active controller is not blocked, preStopController should cause no data races with advance
+  oldController->preStopController();
 
-  if(stoppingThreads_.size()) {
-  if(stoppingThreads_.begin()->done())
-  {
-    if(stoppingThreads_.begin()->thread_.joinable()) {
-      stoppingThreads_.begin()->thread_.join();
-      MELO_WARN_STREAM("Joined the thread stopping controller " << stoppingThreads_.begin()->controller_->getControllerName() << "!");
+  // initialize new controller
+  newController->initializeController(timeStep_);
+
+  if ( newController->isControllerInitialized() ) {
+    {
+      // set active controller
+      std::lock_guard<std::mutex> lock(controllerMutex_);
+      std::lock_guard<std::mutex> lock2(emergencyControllerMutex_);
+      activeControllerState_ = ManagedControllerState::OK;
+      activeControllerPair_ = controllerPairs_.at(newController->getControllerName());
     }
-    stoppingThreads_.erase(stoppingThreads_.begin());
+
+    // swap out old controller
+    oldController->stopController();
+
+    MELO_INFO("Switched to controller %s", activeControllerPair_.controller_->getControllerName().c_str());
   }
+  else {
+    // switch to freeze controller TODO: react if can't switch to emergency state?
+    emergencyStop();
+    ROS_INFO("Could not switch to controller %s", newController->getControllerName().c_str());
   }
-  return;
+
+  return true;
 }
 
 bool ControllerManager::emergencyStop() {
-  std::lock_guard<std::mutex> lock(activeControllerMutex_);
-
+  workerManager_.cleanDestructibleWorkers();
   if(activeControllerState_ == ManagedControllerState::OK && activeControllerPair_.emgcyController_ != nullptr) {
-    // Go to emergency state and fast initialize controller
+    // Go to emergency state
     activeControllerState_ = ManagedControllerState::EMERGENCY;
 
-    stopController(activeControllerPair_.controller_->get());
+    // Init emergency controller fast
+    {
+      std::unique_lock<std::mutex> lockEmergencyController(emergencyControllerMutex_);
+      activeControllerPair_.emgcyController_->initializeControllerFast(timeStep_);
+    }
 
-    reactOnEmergencyStop( EmergencyStopObserver::EmergencyStopType::SMART_EMERGENCY_STOP );
+    // Stop old controller in a seperate thread
+    {
+      std::unique_lock<std::mutex> lockController(controllerMutex_);
+      workerManager_.addWorker("stop_controller_" + activeControllerPair_.controller_->getControllerName(), 0.0,
+                               std::bind(&ControllerManager::emergencyStopControllerWorker, this, std::placeholders::_1,
+                                         activeControllerPair_.controller_, EmergencyStopObserver::EmergencyStopType::SMART_EMERGENCY_STOP),0,true);
+    }
+
+
   }
   else {
-    // Go to emergency state and fast initialize controller
+    // Go to failure state
     activeControllerState_ = ManagedControllerState::FAILURE;
-    stopController(activeControllerPair_.emgcyController_->get());
-    reactOnEmergencyStop( EmergencyStopObserver::EmergencyStopType::FAILPROOF_EMERGENCY_STOP );
+
+    // Stop old emergency controller in a seperate thread
+    {
+      std::unique_lock<std::mutex> lockEmergencyController(emergencyControllerMutex_);
+      workerManager_.addWorker("stop_controller_" + activeControllerPair_.emgcyController_->getControllerName(), 0.0,
+                               std::bind(&ControllerManager::emergencyStopControllerWorker, this, std::placeholders::_1,
+                                         activeControllerPair_.emgcyController_, EmergencyStopObserver::EmergencyStopType::FAILPROOF_EMERGENCY_STOP),0,true);
+    }
   }
-
-  return true;
-  //  {
-  //    std::lock_guard<std::mutex> lock(activeControllerMutex_);
-  //    bool successPrestop = (*activeControllerPair_.first)->preStopController();
-  //    bool successStop = (*activeControllerPair_.first)->stopController();
-  //    return successPrestop && successStop;
-  //  }
-}
-
-bool ControllerManager::switchToEmergencyController() {
-  std::lock_guard<std::mutex> lock(activeControllerMutex_);
-
-  //  if ( *activeController_ != emergencyStopController_) {
-  //    activeController_ = &emergencyStopController_;
-  //    return (*activeController_)->resetController(timeStep_);
-  //  }
 
   return true;
 }
@@ -247,7 +263,12 @@ bool ControllerManager::switchToEmergencyController() {
 bool ControllerManager::cleanup() {
   bool success = emergencyStop();
 
+  std::unique_lock<std::mutex> lockController(controllerMutex_);
+  std::unique_lock<std::mutex> lockEmergencyController(emergencyControllerMutex_);
+  std::unique_lock<std::mutex> lockFailproofController(failproofControllerMutex_);
+
   // cleanup all controllers
+  // TODO wait for controllers to be finished with stopping or initializing -> no active workers
   for (auto& controller : controllers_) {
     success = controller.second->cleanupController() && success;
   }
@@ -256,13 +277,13 @@ bool ControllerManager::cleanup() {
 }
 
 ControllerManager::SwitchResponse ControllerManager::switchController(const std::string & controllerName) {
+  workerManager_.cleanDestructibleWorkers();
 
   SwitchResponse response = SwitchResponse::ERROR;
   {
-    std::lock_guard<std::mutex> lock(activeControllerMutex_);
-
+    std::lock_guard<std::mutex> lockController(controllerMutex_);
     //! Check if controller is already active
-    if (controllerName == (*activeControllerPair_.controller_)->getControllerName()) {
+    if (controllerName == activeControllerPair_.controller_->getControllerName() && activeControllerState_ == ManagedControllerState::OK) {
       MELO_INFO("Controller %s is already running!", controllerName.c_str());
       return SwitchResponse::RUNNING;
     }
@@ -271,37 +292,13 @@ ControllerManager::SwitchResponse ControllerManager::switchController(const std:
   auto controllerPair = controllerPairs_.find(controllerName);
   if(controllerPair != controllerPairs_.end()) {
     // store pointers to old and new controllers
-    std::unique_ptr<roco::ControllerAdapterInterface>* newController = controllerPair->second.controller_;
-    std::unique_ptr<roco::ControllerAdapterInterface>* oldController = activeControllerPair_.controller_;
+    roco::ControllerAdapterInterface* newController = controllerPair->second.controller_;
+    roco::ControllerAdapterInterface* oldController = activeControllerPair_.controller_;
 
-    // shutdown communication for active controller
     {
-      std::lock_guard<std::mutex> lock(activeControllerMutex_);
-      (*oldController)->preStopController();
-    }
-
-    // initialize new controller
-    (*newController)->initializeController(timeStep_);
-
-    if ( (*newController)->isControllerInitialized() ) {
-      {
-        // set active controller
-        std::lock_guard<std::mutex> lock(activeControllerMutex_);
-        activeControllerPair_.controller_ = newController;
-      }
-
-      // swap out old controller
-      (*oldController)->stopController();
-
-      MELO_INFO("Switched to controller %s", (*activeControllerPair_.controller_)->getControllerName().c_str());
-      response = SwitchResponse::SWITCHED;
-
-    }
-    else {
-      // switch to freeze controller TODO: react if can't switch to emergency state?
-      switchToEmergencyController();
-      ROS_INFO("Could not switch to controller %s", (*newController)->getControllerName().c_str());
-      response = SwitchResponse::ERROR;
+      std::unique_lock<std::mutex> lockEmergencyController(emergencyControllerMutex_);
+      std::string workerName = "switch_from_controller_" + newController->getControllerName() +"_to_" +  oldController->getControllerName();
+      workerManager_.addWorker(workerName, 0.0, std::bind(&ControllerManager::switchControllerWorker, this, std::placeholders::_1, oldController, newController),0,true);
     }
   }
   else {
@@ -316,7 +313,7 @@ ControllerManager::SwitchResponse ControllerManager::switchController(const std:
 
 std::vector<std::string> ControllerManager::getAvailableControllerNames() {
   // TODO: Is this lock needed?
-  std::lock_guard<std::mutex> lock(activeControllerMutex_);
+  std::lock_guard<std::mutex> lock(controllerMutex_);
 
   // fill vector of controller names
   std::vector<std::string> controllerNames;
@@ -329,8 +326,8 @@ std::vector<std::string> ControllerManager::getAvailableControllerNames() {
 }
 
 std::string ControllerManager::getActiveControllerName() {
-  std::lock_guard<std::mutex> lock(activeControllerMutex_);
-  return (*activeControllerPair_.controller_)->getControllerName();
+  std::lock_guard<std::mutex> lock(controllerMutex_);
+  return activeControllerPair_.controller_->getControllerName();
 }
 
 bool ControllerManager::isRealRobot() const {

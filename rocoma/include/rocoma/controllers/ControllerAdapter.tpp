@@ -145,7 +145,7 @@ bool ControllerAdapter<Controller_, State_, Command_>::advanceController(double 
 }
 
 template<typename Controller_, typename State_, typename Command_>
-bool ControllerAdapter<Controller_,State_, Command_>::resetController(double dt)
+bool ControllerAdapter<Controller_, State_, Command_>::resetController(double dt)
 {
   // Check if controller was created
   if (!this->isCreated()) {
@@ -218,9 +218,7 @@ template<typename Controller_, typename State_, typename Command_>
 bool ControllerAdapter<Controller_, State_, Command_>::stopController()
 {
   // set flag
-  this->isStopping_ = true;
   this->isRunning_ = false;
-
 
   sleep(5);         //make the programme waiting for 5 secondes
   // stop controller
@@ -242,6 +240,8 @@ bool ControllerAdapter<Controller_, State_, Command_>::stopController()
 template<typename Controller_, typename State_, typename Command_>
 bool ControllerAdapter<Controller_,State_, Command_>::preStopController()
 {
+  this->isStopping_ = true;
+
   try {
     if(!this->preStop()) {
       MELO_WARN("[ControllerAdapter]: Could not prepare to stop controller %s!", this->getName().c_str());

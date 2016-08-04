@@ -50,6 +50,9 @@
 // Rocoma
 #include <rocoma/controllers/ControllerImplementation.hpp>
 
+// Boost
+#include "boost/thread.hpp"
+
 // STL
 #include <exception>
 #include <type_traits>
@@ -82,10 +85,22 @@ class FailproofControllerAdapter: virtual public roco::FailproofControllerAdapte
   virtual const std::string& getControllerName() const  { return this->getName(); }
 
   //! Implementation of the adapter interface (roco::FailproofControllerAdapterInterface)
-  virtual bool createController(double dt)    {  return this->create(dt); }
-  virtual void advanceController(double dt)   {  this->advance(dt); return; }
-  virtual bool cleanupController()            {  return this->cleanup(); }
-  // TODO is this implementation sufficient?
+  virtual bool createController(double dt)
+  {
+    return this->create(dt);
+  }
+
+  virtual void advanceController(double dt)
+  {
+    this->advance(dt);
+    return;
+  }
+
+  virtual bool cleanupController()
+  {
+    return this->cleanup();
+  }
+
 
 };
 

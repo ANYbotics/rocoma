@@ -44,6 +44,9 @@
 // Boost
 #include <boost/ptr_container/ptr_unordered_map.hpp>
 
+// Anyworker
+#include <any_worker/WorkerManager.hpp>
+
 // STL
 #include <vector>
 #include <string>
@@ -54,38 +57,18 @@
 
 namespace rocoma {
 
-struct StopControllerThread {
-
-  StopControllerThread(roco::ControllerAdapterInterface * ctrl,
-                       std::thread thread):
-                         controller_(ctrl),
-                         thread_(std::move(thread))
-  {
-
-  }
-
-  bool done() {
-    return !controller_->isStopping();
-  }
-
-  roco::ControllerAdapterInterface* controller_;
-  std::thread thread_;
-
-};
-
-
 struct ControllerPtrPtrPair {
 
-  ControllerPtrPtrPair(std::unique_ptr<roco::ControllerAdapterInterface> * ctrl,
-                       std::unique_ptr<roco::EmergencyControllerAdapterInterface> * emgcyCtrl):
+  ControllerPtrPtrPair(roco::ControllerAdapterInterface * ctrl,
+                       roco::EmergencyControllerAdapterInterface * emgcyCtrl):
                          controller_(ctrl),
                          emgcyController_(emgcyCtrl)
   {
 
   }
 
-  std::unique_ptr<roco::ControllerAdapterInterface> * controller_;
-  std::unique_ptr<roco::EmergencyControllerAdapterInterface> * emgcyController_;
+  roco::ControllerAdapterInterface * controller_;
+  roco::EmergencyControllerAdapterInterface * emgcyController_;
 
 };
 
@@ -133,20 +116,19 @@ class ControllerManager
    */
   bool updateController();
 
-  bool stopController(roco::ControllerAdapterInterface * stopController);
-  void joinStopControllerThreads();
+  bool emergencyStopControllerWorker(const any_worker::WorkerEvent& e,
+                                     roco::ControllerAdapterInterface * controller,
+                                     EmergencyStopObserver::EmergencyStopType emgcyStopType);
+
+  bool switchControllerWorker(const any_worker::WorkerEvent& e,
+                                     roco::ControllerAdapterInterface * fromController,
+                                     roco::ControllerAdapterInterface * toController);
 
   /**
    * @brief Prestop and stop controller
    * @return true, if both stopping procedures where successful
    */
   bool emergencyStop();
-
-  /**
-   * @brief Switch to emergency stop controller
-   * @return true, if emergency stop controller is already running or reset properly
-   */
-  bool switchToEmergencyController();
 
   /**
    * @brief Cleanup all controllers
@@ -193,10 +175,10 @@ class ControllerManager
 
  private:
   //! Controller timestep (equal for all controllers)
-  double timeStep_;
+  std::atomic<double> timeStep_;
 
   //! Flag to differ between simulation and real robot
-  bool isRealRobot_;
+  std::atomic<bool> isRealRobot_;
 
   //! Unordered map of all available controllers (owned by the manager)
   std::unordered_map< std::string, ControllerPtr > controllers_;
@@ -210,17 +192,18 @@ class ControllerManager
   FailproofControllerPtr failproofController_;
 
   //! Current controller state
-  ManagedControllerState activeControllerState_;
+  std::atomic<ManagedControllerState> activeControllerState_;
 
   //! Mutex of the active controller
-  std::mutex activeControllerMutex_;
+  std::mutex controllerMutex_;
+  std::mutex emergencyControllerMutex_;
+  std::mutex failproofControllerMutex_;
 
   //! List of emergency stop observers
   std::list<EmergencyStopObserver*> emergencyStopObservers_;
 
   //! Stopping controllers
-  std::mutex stopThreadsMutex_;
-  std::vector<StopControllerThread> stoppingThreads_;
+  any_worker::WorkerManager workerManager_;
 
 };
 

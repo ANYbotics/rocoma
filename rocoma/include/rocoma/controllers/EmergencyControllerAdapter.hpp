@@ -76,6 +76,7 @@ class EmergencyControllerAdapter: virtual public roco::EmergencyControllerAdapte
 
   //! Implement adapter
   virtual bool initializeControllerFast(double dt) {
+
     // Check if controller was created
     if (!this->isCreated()) {
       MELO_WARN_STREAM("[EmergencyControllerAdapter]: Controller was not created!");
@@ -87,7 +88,7 @@ class EmergencyControllerAdapter: virtual public roco::EmergencyControllerAdapte
       this->updateState(dt, false);
 
       // Initialize the controller
-      if (!this->initializeControllerFast(dt)) {
+      if (!this->initializeFast(dt)) {
         MELO_WARN_STREAM("[EmergencyControllerAdapter]: Controller could not be fast initialized!");
         return false;
       }
@@ -109,6 +110,7 @@ class EmergencyControllerAdapter: virtual public roco::EmergencyControllerAdapte
     this->isRunning_ = true;
     MELO_INFO_STREAM("[EmergencyControllerAdapter]: Initialized controller fast" << this->getName() << " successfully!");
     return true;
+
 
   }
 

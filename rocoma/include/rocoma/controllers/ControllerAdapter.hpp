@@ -50,6 +50,11 @@
 // Rocoma
 #include "rocoma/controllers/ControllerExtensionImplementation.hpp"
 
+// Boost
+#include "boost/thread/shared_lock_guard.hpp"
+#include "boost/thread/recursive_mutex.hpp"
+
+
 // STL
 #include <exception>
 #include <type_traits>
@@ -72,10 +77,18 @@ class ControllerAdapter: virtual public roco::ControllerAdapterInterface, public
 
  public:
   //! Delete default constructor
-  ControllerAdapter(): isStopping_(false), isInitializing_(false) { }
+  ControllerAdapter():
+    isStopping_(false),
+    isInitializing_(false)
+ {
+
+ }
 
   //! Virtual destructor
-  virtual ~ControllerAdapter() { }
+  virtual ~ControllerAdapter()
+  {
+
+  }
 
   //! Implementation of the adapter interface (roco::ControllerAdapterInterface)
   virtual bool createController(double dt);
@@ -87,17 +100,34 @@ class ControllerAdapter: virtual public roco::ControllerAdapterInterface, public
   virtual bool preStopController();
 
   //! Set isRealRobot is only allowed on the adapter
-  virtual void setIsRealRobot(bool isRealRobot)         { this->isRealRobot_ = isRealRobot; }
+  virtual void setIsRealRobot(bool isRealRobot)
+  {
+    this->isRealRobot_ = isRealRobot;
+  }
 
   //! Controller name adapter
-  virtual const std::string& getControllerName() const  { return this->getName(); }
+  virtual const std::string& getControllerName() const
+  {
+    return this->getName();
+  }
 
   //! Indicates if the controller is initialized
-  virtual bool isControllerInitialized() const          { return this->isInitialized(); }
+  virtual bool isControllerInitialized() const
+  {
+    return this->isInitialized();
+  }
+
   //! Indicates if the controller is initializing at the moment
-  virtual bool isInitializing() const { return isInitializing_; }
+  virtual bool isInitializing() const
+  {
+    return isInitializing_;
+  }
+
   //! Indicates if the controller is stopping at the moment
-  virtual bool isStopping() const { return isStopping_; }
+  virtual bool isStopping() const
+  {
+    return isStopping_;
+  }
 
  protected:
   bool updateState(double dt, bool checkState = true);
@@ -105,7 +135,6 @@ class ControllerAdapter: virtual public roco::ControllerAdapterInterface, public
 
   std::atomic<bool> isStopping_;
   std::atomic<bool> isInitializing_;
-
 
 };
 
