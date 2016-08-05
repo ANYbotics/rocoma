@@ -36,21 +36,22 @@
 
 namespace rocoma {
 
-ControllerManager::ControllerManager() :
-            timeStep_(0.1),
-            isRealRobot_(false),
-            activeControllerState_(State::FAILURE),
-            workerManager_(),
-            controllers_(),
-            emergencyControllers_(),
-            controllerPairs_(),
-            activeControllerPair_(nullptr, nullptr),
-            failproofController_(nullptr),
-            controllerMutex_(),
-            emergencyControllerMutex_(),
-            failproofControllerMutex_()
+ControllerManager::ControllerManager() :updating_(false),
+                                        minimalRealtimeFactor_(1.0),
+                                        timeStep_(0.1),
+                                        isRealRobot_(false),
+                                        activeControllerState_(State::FAILURE),
+                                        workerManager_(),
+                                        controllers_(),
+                                        emergencyControllers_(),
+                                        controllerPairs_(),
+                                        activeControllerPair_(nullptr, nullptr),
+                                        failproofController_(nullptr),
+                                        controllerMutex_(),
+                                        emergencyControllerMutex_(),
+                                        failproofControllerMutex_()
 {
-
+  //workerManager_.addWorker("check_timing", timeStep_, std::bind(&ControllerManager::checkTimingWorker, this, std::placeholders::_1));
 }
 
 
@@ -135,6 +136,10 @@ bool ControllerManager::setFailproofController(std::unique_ptr<roco::FailproofCo
 
 bool ControllerManager::updateController() {
 
+  // start update
+  updating_ = true;
+  timerStart_.notify_one();
+
   // Controller is running
   if(activeControllerState_ == State::OK)
   {
@@ -166,6 +171,11 @@ bool ControllerManager::updateController() {
     failproofController_->advanceController(timeStep_);
   }
 
+  sleep(1);
+
+  updating_ = false;
+  timerStop_.notify_one();
+
   return true;
 }
 
@@ -175,14 +185,15 @@ bool ControllerManager::emergencyStop() {
 
   // If state ok and emergency controller registered switch to emergency controller
   if(activeControllerState_ == State::OK && activeControllerPair_.emgcyController_ != nullptr) {
-    // Go to emergency state
-    activeControllerState_ = State::EMERGENCY;
 
     // Init emergency controller fast
     {
       std::unique_lock<std::mutex> lockEmergencyController(emergencyControllerMutex_);
       activeControllerPair_.emgcyController_->initializeControllerFast(timeStep_);
     }
+
+    // Go to emergency state
+    activeControllerState_ = State::EMERGENCY;
 
     // Stop old controller in a separate thread
     {
@@ -370,6 +381,22 @@ bool ControllerManager::isRealRobot() const {
 
 void ControllerManager::setIsRealRobot(bool isRealRobot) {
   isRealRobot_ = isRealRobot;
+}
+
+bool ControllerManager::checkTimingWorker(const any_worker::WorkerEvent& event){
+
+  static unsigned int wait_time_ms = timeStep_*minimalRealtimeFactor_*1000;
+  while(true) {
+    std::unique_lock<std::mutex> lk(updateFlagMutex_);
+    if( timerStart_.wait_for(lk, std::chrono::milliseconds(wait_time_ms)) == std::cv_status::timeout ||
+        timerStop_.wait_for(lk, std::chrono::milliseconds(wait_time_ms)) == std::cv_status::timeout) {
+      MELO_ERROR_STREAM("[CheckTiming]: Update controller took longer than: " << wait_time_ms << " ms. Emergency Stop!");
+      // Open new thread that perfoms emergency stop
+        // Print Warning
+      timerStop_.wait(lk);
+    }
+  }
+  return true;
 }
 
 } /* namespace rocoma */

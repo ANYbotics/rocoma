@@ -48,6 +48,8 @@
 #include <unordered_map>
 #include <thread>
 #include <mutex>
+#include <condition_variable>
+#include <chrono>
 
 namespace rocoma {
 
@@ -56,23 +58,23 @@ class ControllerManager
  public:
   //! Enumeration for switch controller feedback
   enum class SwitchResponse : int {
-      NOTFOUND  = -2,
-      ERROR     = -1,
-      RUNNING   =  0,
-      SWITCHING =  1
+    NOTFOUND  = -2,
+        ERROR     = -1,
+        RUNNING   =  0,
+        SWITCHING =  1
   };
 
   //! Enumeration indicating the controller manager state
   enum class State : int {
-      FAILURE   = -1,
-      EMERGENCY =  0,
-      OK        =  1
+    FAILURE   = -1,
+        EMERGENCY =  0,
+        OK        =  1
   };
 
   //! Enumeration indicating the emergency stop type
   enum class EmergencyStopType : int {
-      FAILPROOF   = -1,
-      EMERGENCY   =  0
+    FAILPROOF   = -1,
+        EMERGENCY   =  0
   };
 
   //! Set of controller pointers (normal and emergency controller)
@@ -80,13 +82,22 @@ class ControllerManager
     ControllerSetPtr(roco::ControllerAdapterInterface * controller,
                      roco::EmergencyControllerAdapterInterface * emgcyController):
                        controller_(controller),
-                       emgcyController_(emgcyController)
+                       emgcyController_(emgcyController),
+                       controllerName_("none"),
+                       emgcyControllerName_("none")
     {
-
+      if(controller != nullptr) {
+        controllerName_ = controller->getControllerName();
+      }
+      if(emgcyController != nullptr) {
+        emgcyControllerName_ = emgcyController->getControllerName();
+      }
     }
 
     roco::ControllerAdapterInterface * controller_;
     roco::EmergencyControllerAdapterInterface * emgcyController_;
+    std::string controllerName_;
+    std::string emgcyControllerName_;
   };
 
   //! Convenience typedef for Controller
@@ -156,7 +167,7 @@ class ControllerManager
    * @param newController   Pointer to the controller that shall be switched to
    * @return true, if controller switching was successful
    */
-  bool switchControllerWorker(const any_worker::WorkerEvent& e,
+  bool switchControllerWorker(const any_worker::WorkerEvent& event,
                               roco::ControllerAdapterInterface * oldController,
                               roco::ControllerAdapterInterface * newController);
 
@@ -198,7 +209,20 @@ class ControllerManager
 
   }
 
+  /**
+   * @brief Check timing and perform emergency stop on violation
+   */
+  bool checkTimingWorker(const any_worker::WorkerEvent& event);
+
+
  private:
+  //! Conditional variables for measuring execution time
+  std::atomic_bool updating_;
+  std::condition_variable timerStart_;
+  std::condition_variable timerStop_;
+
+  std::atomic<double> minimalRealtimeFactor_;
+
   //! Controller timestep (equal for all controllers)
   std::atomic<double> timeStep_;
 
@@ -226,6 +250,8 @@ class ControllerManager
   std::mutex controllerMutex_;
   std::mutex emergencyControllerMutex_;
   std::mutex failproofControllerMutex_;
+  std::mutex updateFlagMutex_;
+
 };
 
 } /* namespace rocoma */
