@@ -33,25 +33,26 @@
 #include "rocoma/ControllerManager.hpp"
 
 #include "message_logger/message_logger.hpp"
+#include <limits>
 
 namespace rocoma {
 
 ControllerManager::ControllerManager() :updating_(false),
-                                        minimalRealtimeFactor_(1.0),
-                                        timeStep_(0.1),
-                                        isRealRobot_(false),
-                                        activeControllerState_(State::FAILURE),
-                                        workerManager_(),
-                                        controllers_(),
-                                        emergencyControllers_(),
-                                        controllerPairs_(),
-                                        activeControllerPair_(nullptr, nullptr),
-                                        failproofController_(nullptr),
-                                        controllerMutex_(),
-                                        emergencyControllerMutex_(),
-                                        failproofControllerMutex_()
+    minimalRealtimeFactor_(2.0),
+    timeStep_(0.1),
+    isRealRobot_(false),
+    activeControllerState_(State::FAILURE),
+    workerManager_(),
+    controllers_(),
+    emergencyControllers_(),
+    controllerPairs_(),
+    activeControllerPair_(nullptr, nullptr),
+    failproofController_(nullptr),
+    controllerMutex_(),
+    emergencyControllerMutex_(),
+    failproofControllerMutex_()
 {
-  //workerManager_.addWorker("check_timing", timeStep_, std::bind(&ControllerManager::checkTimingWorker, this, std::placeholders::_1));
+  workerManager_.addWorker("check_timing", 0.0, std::bind(&ControllerManager::checkTimingWorker, this, std::placeholders::_1));
 }
 
 
@@ -171,7 +172,7 @@ bool ControllerManager::updateController() {
     failproofController_->advanceController(timeStep_);
   }
 
-  sleep(1);
+  //sleep(1);
 
   updating_ = false;
   timerStop_.notify_one();
@@ -198,7 +199,7 @@ bool ControllerManager::emergencyStop() {
     // Stop old controller in a separate thread
     {
       std::unique_lock<std::mutex> lockController(controllerMutex_);
-      workerManager_.addWorker("stop_controller_" + activeControllerPair_.controller_->getControllerName(), 0.0,
+      workerManager_.addWorker("stop_controller_" + activeControllerPair_.controller_->getControllerName(), std::numeric_limits<double>::infinity(),
                                std::bind(&ControllerManager::emergencyStopControllerWorker, this, std::placeholders::_1,
                                          activeControllerPair_.controller_, EmergencyStopType::EMERGENCY), 0, true);
     }
@@ -210,7 +211,7 @@ bool ControllerManager::emergencyStop() {
     // Stop old emergency controller in a separate thread
     {
       std::unique_lock<std::mutex> lockEmergencyController(emergencyControllerMutex_);
-      workerManager_.addWorker("stop_controller_" + activeControllerPair_.emgcyController_->getControllerName(), 0.0,
+      workerManager_.addWorker("stop_controller_" + activeControllerPair_.emgcyController_->getControllerName(), std::numeric_limits<double>::infinity(),
                                std::bind(&ControllerManager::emergencyStopControllerWorker, this, std::placeholders::_1,
                                          activeControllerPair_.emgcyController_, EmergencyStopType::FAILPROOF), 0, true);
     }
@@ -276,8 +277,8 @@ ControllerManager::SwitchResponse ControllerManager::switchController(const std:
 
       // Add worker to switch to new controller
       std::string workerName = "switch_from_" + oldControllerName + "_to_" +  newController->getControllerName();
-      workerManager_.addWorker(workerName, 0.0, std::bind(&ControllerManager::switchControllerWorker, this,
-                                                          std::placeholders::_1, oldController, newController), 0, true);
+      workerManager_.addWorker(workerName,  std::numeric_limits<double>::infinity(), std::bind(&ControllerManager::switchControllerWorker, this,
+                                                                                               std::placeholders::_1, oldController, newController), 0, true);
       return SwitchResponse::SWITCHING;
     }
   }
@@ -386,15 +387,14 @@ void ControllerManager::setIsRealRobot(bool isRealRobot) {
 bool ControllerManager::checkTimingWorker(const any_worker::WorkerEvent& event){
 
   static unsigned int wait_time_ms = timeStep_*minimalRealtimeFactor_*1000;
-  while(true) {
-    std::unique_lock<std::mutex> lk(updateFlagMutex_);
-    if( timerStart_.wait_for(lk, std::chrono::milliseconds(wait_time_ms)) == std::cv_status::timeout ||
-        timerStop_.wait_for(lk, std::chrono::milliseconds(wait_time_ms)) == std::cv_status::timeout) {
-      MELO_ERROR_STREAM("[CheckTiming]: Update controller took longer than: " << wait_time_ms << " ms. Emergency Stop!");
-      // Open new thread that perfoms emergency stop
-        // Print Warning
-      timerStop_.wait(lk);
-    }
+
+  std::unique_lock<std::mutex> lk(updateFlagMutex_);
+  if( timerStart_.wait_for(lk, std::chrono::milliseconds(wait_time_ms)) == std::cv_status::timeout ||
+      timerStop_.wait_for(lk, std::chrono::milliseconds(wait_time_ms)) == std::cv_status::timeout) {
+    MELO_ERROR_STREAM("[CheckTiming]: Update controller took longer than: " << wait_time_ms << " ms. Emergency Stop!");
+    // Open new thread that perfoms emergency stop
+    // Print Warning
+    timerStop_.wait(lk);
   }
   return true;
 }
