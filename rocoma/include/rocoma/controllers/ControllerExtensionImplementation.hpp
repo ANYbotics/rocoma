@@ -76,7 +76,7 @@ class ControllerExtensionImplementation: public ControllerImplementation<Control
  public:
   ControllerExtensionImplementation():
     Base(),
-    workerManager_(nullptr)
+    workerManager_()
  {
 
  }
@@ -109,7 +109,7 @@ class ControllerExtensionImplementation: public ControllerImplementation<Control
   //! Time
   roco::time::TimeStd time_;
   //! Worker Manager
-  std::shared_ptr<any_worker::WorkerManager> workerManager_;
+  any_worker::WorkerManager workerManager_;
 
 };
 

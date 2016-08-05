@@ -8,7 +8,8 @@
 #include "rocoma_plugin/interfaces/ControllerPluginInterface.hpp"
 #include "rocoma_plugin/interfaces/EmergencyControllerPluginInterface.hpp"
 #include "rocoma_plugin/interfaces/FailproofControllerPluginInterface.hpp"
-
+#include "rocoma_plugin/interfaces/ControllerRosPluginInterface.hpp"
+#include "rocoma_plugin/interfaces/EmergencyControllerRosPluginInterface.hpp"
 // rocoma msgs
 #include "rocoma_msgs/GetAvailableControllers.h"
 #include "rocoma_msgs/EmergencyStop.h"
@@ -40,6 +41,26 @@ namespace rocoma_ros {
 
 template<typename State_, typename Command_>
 class ControllerManagerRos : public rocoma::ControllerManager {
+ public:
+  struct ControllerOptions {
+    ControllerOptions(const std::string & controllerName,
+                      const std::string & emergencyControllerName,
+                      const bool & isRosController,
+                      const bool & isRosEmergencyController):
+                        controllerName_(controllerName),
+                        emergencyControllerName_(emergencyControllerName),
+                        isRosController_(isRosController),
+                        isRosEmergencyController_(isRosEmergencyController)
+    {
+
+    }
+
+    std::string controllerName_;
+    std::string emergencyControllerName_;
+    bool isRosController_;
+    bool isRosEmergencyController_;
+  };
+
 
  public:
   ControllerManagerRos(ros::NodeHandle& nodeHandle,
@@ -47,28 +68,24 @@ class ControllerManagerRos : public rocoma::ControllerManager {
                        const std::string & scopedCommandName);
   ~ControllerManagerRos();
 
-  bool setupControllerPair(const std::string & controllerPluginName,
-                           const std::string & emgcyControllerPluginName,
+  bool setupControllerPair(const ControllerOptions & options,
                            std::shared_ptr<State_> state,
                            std::shared_ptr<Command_> command,
                            std::shared_ptr<boost::shared_mutex> mutexState,
-                           std::shared_ptr<boost::shared_mutex> mutexCommand,
-                           std::shared_ptr<any_worker::WorkerManager> workerManager);
+                           std::shared_ptr<boost::shared_mutex> mutexCommand);
 
   bool setupFailproofController(const std::string & controllerPluginName,
                                 std::shared_ptr<State_> state,
                                 std::shared_ptr<Command_> command,
                                 std::shared_ptr<boost::shared_mutex> mutexState,
-                                std::shared_ptr<boost::shared_mutex> mutexCommand,
-                                std::shared_ptr<any_worker::WorkerManager> workerManager);
+                                std::shared_ptr<boost::shared_mutex> mutexCommand);
 
   bool setupControllers(const std::string & failproofControllerName,
-                        const std::vector< std::pair<std::string, std::string> > & controllerNameMap,
+                        const std::vector<ControllerOptions> & controllerOptions,
                         std::shared_ptr<State_> state,
                         std::shared_ptr<Command_> command,
                         std::shared_ptr<boost::shared_mutex> mutexState,
-                        std::shared_ptr<boost::shared_mutex> mutexCommand,
-                        std::shared_ptr<any_worker::WorkerManager> workerManager);
+                        std::shared_ptr<boost::shared_mutex> mutexCommand);
 
   bool emergencyStop(rocoma_msgs::EmergencyStop::Request  &req,
                      rocoma_msgs::EmergencyStop::Response &res);
@@ -99,7 +116,9 @@ class ControllerManagerRos : public rocoma::ControllerManager {
   //! Class loaders
   pluginlib::ClassLoader< rocoma_plugin::FailproofControllerPluginInterface<State_, Command_> > failproofControllerLoader_;
   pluginlib::ClassLoader< rocoma_plugin::EmergencyControllerPluginInterface<State_, Command_> > emergencyControllerLoader_;
+  pluginlib::ClassLoader< rocoma_plugin::EmergencyControllerRosPluginInterface<State_, Command_> > emergencyControllerRosLoader_;
   pluginlib::ClassLoader< rocoma_plugin::ControllerPluginInterface<State_, Command_> > controllerLoader_;
+  pluginlib::ClassLoader< rocoma_plugin::ControllerRosPluginInterface<State_, Command_> > controllerRosLoader_;
 
 };
 }
