@@ -58,8 +58,7 @@ ControllerManager::ControllerManager() :updating_(false),
 //  checkTimingWorkerOptions.callback_ = std::bind(&ControllerManager::checkTimingWorker, this, std::placeholders::_1);
 //  checkTimingWorkerOptions.defaultPriority_ = 0;
 //  checkTimingWorkerOptions.destructWhenDone_ = false;
-//  checkTimingWorkerOptions.autostart_ = true;
-//  workerManager_.addWorker(checkTimingWorkerOptions);
+//  workerManager_.addWorker(checkTimingWorkerOptions, true);
 }
 
 
@@ -226,8 +225,7 @@ bool ControllerManager::emergencyStop() {
                                               activeControllerPair_.emgcyController_, EmergencyStopType::EMERGENCY);
       stopWorkerOptions.defaultPriority_ = 0;
       stopWorkerOptions.destructWhenDone_ = true;
-      stopWorkerOptions.autostart_ = true;
-      workerManager_.addWorker(stopWorkerOptions);
+      workerManager_.addWorker(stopWorkerOptions, true);
     }
   }
   else {
@@ -244,8 +242,7 @@ bool ControllerManager::emergencyStop() {
                                               activeControllerPair_.emgcyController_, EmergencyStopType::FAILPROOF);
       stopWorkerOptions.defaultPriority_ = 0;
       stopWorkerOptions.destructWhenDone_ = true;
-      stopWorkerOptions.autostart_ = true;
-      workerManager_.addWorker(stopWorkerOptions);
+      workerManager_.addWorker(stopWorkerOptions, true);
 
     }
   }
@@ -316,8 +313,7 @@ ControllerManager::SwitchResponse ControllerManager::switchController(const std:
                                                           std::placeholders::_1, oldController, newController);
       switchControllerWorkerOptions.defaultPriority_ = 0;
       switchControllerWorkerOptions.destructWhenDone_ = true;
-      switchControllerWorkerOptions.autostart_ = true;
-      workerManager_.addWorker(switchControllerWorkerOptions);
+      workerManager_.addWorker(switchControllerWorkerOptions, true);
       return SwitchResponse::SWITCHING;
     }
   }
