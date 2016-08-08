@@ -41,13 +41,19 @@
 #pragma once
 
 // roco
-#include <roco/controllers/adapters/FailproofControllerAdapterInterface.hpp>
-#include <roco/controllers/FailproofController.hpp>
+#include "roco/controllers/adapters/FailproofControllerAdapterInterface.hpp"
+#include "roco/controllers/FailproofController.hpp"
 
 namespace rocoma_plugin {
 
+//!  Common interface for plugin based failproof controllers.
+/*!
+ *   FailproofController is needed for the initialization of state, command, name , ...
+ *   FailproofControllerAdapterInterface is used by the ControllerManager to interface with the failoroof controllers.
+ */
 template<typename State_, typename Command_>
-class FailproofControllerPluginInterface: virtual public roco::FailproofControllerAdapterInterface, virtual public roco::FailproofController<State_, Command_>
+class FailproofControllerPluginInterface: virtual public roco::FailproofControllerAdapterInterface,
+                                          virtual public roco::FailproofController<State_, Command_>
 {
 
 };

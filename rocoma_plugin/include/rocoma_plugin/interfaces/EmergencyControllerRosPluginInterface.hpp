@@ -33,7 +33,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 /*!
-* @file     EmergencyControllerPluginInterface.hpp
+* @file     EmergencyControllerRosPluginInterface.hpp
 * @author   Gabriel Hottiger
 * @date     Jul, 2016
 */
@@ -41,13 +41,19 @@
 #pragma once
 
 // roco
-#include <roco/controllers/adapters/EmergencyControllerAdapterInterface.hpp>
-#include <roco/controllers/ControllerRos.hpp>
+#include "roco/controllers/adapters/EmergencyControllerAdapterInterface.hpp"
+#include "roco/controllers/ControllerRos.hpp"
 
 namespace rocoma_plugin {
 
+//!  Common interface for plugin based ros controllers.
+/*!
+ *   Controller is needed for the initialization of state, command, name , ...
+ *   EmergencyControllerAdapterInterface is used by the ControllerManager to interface with the emergency controllers.
+ */
 template<typename State_, typename Command_>
-class EmergencyControllerRosPluginInterface: virtual public roco::EmergencyControllerAdapterInterface, virtual public roco::ControllerRos<State_, Command_>
+class EmergencyControllerRosPluginInterface: virtual public roco::EmergencyControllerAdapterInterface,
+                                             virtual public roco::ControllerRos<State_, Command_>
 {
 
 };

@@ -33,28 +33,40 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 /*!
-* @file     ControllerPlugin.hpp
-* @author   Gabriel Hottiger
-* @date     Jul, 2016
-*/
+ * @file     ControllerRosPlugin.hpp
+ * @author   Gabriel Hottiger
+ * @date     Jul, 2016
+ */
 
 #pragma once
 
-#define ROCOMA_EXPORT_CONTROLLER_ROS(name, controller, state, command) 															\
-				namespace plugin_##name_internal{																															\
-					using name = rocoma_plugin::ControllerRosPlugin<controller , state , command>;		\
-					using PluginBase = rocoma_plugin::ControllerRosPluginInterface<state , command>;			\
-					PLUGINLIB_EXPORT_CLASS(name, PluginBase)																						\
-				}																																												\
+/*!
+ *   Export your ros controller as a ControllerRosPlugin in order to load it as a plugin.
+ *   This macro is a wrapper to PLUGINLIB_EXPORT_CLASS, for templated classes.
+ *   Protects typedefs in internal namespace.
+ */
+#define ROCOMA_EXPORT_CONTROLLER_ROS(name, controller, state, command) 											\
+    namespace plugin_##name_internal{																												\
+      using name = rocoma_plugin::ControllerRosPlugin<controller , state , command>;		    \
+      using PluginBase = rocoma_plugin::ControllerRosPluginInterface<state , command>;			\
+      PLUGINLIB_EXPORT_CLASS(name, PluginBase)																						  \
+    }																																												\
 
-// roco
-#include <rocoma_plugin/interfaces/ControllerRosPluginInterface.hpp>
-#include <rocoma/controllers/ControllerAdapter.hpp>
+// rocoma_plugin
+#include "rocoma_plugin/interfaces/ControllerRosPluginInterface.hpp"
+
+// rocoma
+#include "rocoma/controllers/ControllerAdapter.hpp"
 
 namespace rocoma_plugin {
 
+//!  Plugin based ros controller adapter.
+/*!
+ *   Export your ros controller as a ControllerRosPlugin in order to load it as a plugin.
+ */
 template<typename Controller_, typename State_, typename Command_>
-class ControllerRosPlugin: public rocoma::ControllerAdapter<Controller_, State_, Command_>, public rocoma_plugin::ControllerRosPluginInterface<State_, Command_>
+class ControllerRosPlugin: public rocoma::ControllerAdapter<Controller_, State_, Command_>,
+                           public rocoma_plugin::ControllerRosPluginInterface<State_, Command_>
 {
 
 };

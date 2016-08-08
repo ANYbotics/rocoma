@@ -33,28 +33,40 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 /*!
-* @file     ControllerPlugin.hpp
-* @author   Gabriel Hottiger
-* @date     Jul, 2016
-*/
+ * @file     ControllerPlugin.hpp
+ * @author   Gabriel Hottiger
+ * @date     Jul, 2016
+ */
 
 #pragma once
 
-#define ROCOMA_EXPORT_CONTROLLER(name, controller, state, command) 															\
-				namespace plugin_##name_internal{																															\
-					using name = rocoma_plugin::ControllerPlugin<controller , state , command>;		\
-					using PluginBase = rocoma_plugin::ControllerPluginInterface<state , command>;			\
-					PLUGINLIB_EXPORT_CLASS(name, PluginBase)																						\
-				}																																												\
+/*!
+ *   Export your controller as a ControllerPlugin in order to load it as a plugin.
+ *   This macro is a wrapper to PLUGINLIB_EXPORT_CLASS, for templated classes.
+ *   Protects typedefs in internal namespace.
+ */
+#define ROCOMA_EXPORT_CONTROLLER(name, controller, state, command) 									\
+    namespace plugin_##name_internal {																							\
+      using name = rocoma_plugin::ControllerPlugin<controller , state , command>;		\
+      using PluginBase = rocoma_plugin::ControllerPluginInterface<state , command>;	\
+      PLUGINLIB_EXPORT_CLASS(name, PluginBase)																			\
+    }																																								\
 
-// roco
-#include <rocoma_plugin/interfaces/ControllerPluginInterface.hpp>
-#include <rocoma/controllers/ControllerAdapter.hpp>
+// rocoma_plugin
+#include "rocoma_plugin/interfaces/ControllerPluginInterface.hpp"
+
+// rocoma
+#include "rocoma/controllers/ControllerAdapter.hpp"
 
 namespace rocoma_plugin {
 
+//!  Plugin based controller adapter.
+/*!
+ *   Export your controller as a ControllerPlugin in order to load it as a plugin.
+ */
 template<typename Controller_, typename State_, typename Command_>
-class ControllerPlugin: public rocoma::ControllerAdapter<Controller_, State_, Command_>, public rocoma_plugin::ControllerPluginInterface<State_, Command_>
+class ControllerPlugin: public rocoma::ControllerAdapter<Controller_, State_, Command_>,
+                        public rocoma_plugin::ControllerPluginInterface<State_, Command_>
 {
 
 };

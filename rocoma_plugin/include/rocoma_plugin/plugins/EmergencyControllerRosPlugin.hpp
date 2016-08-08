@@ -33,13 +33,18 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 /*!
-* @file     EmergencyControllerPlugin.hpp
+* @file     EmergencyControllerRosPlugin.hpp
 * @author   Gabriel Hottiger
 * @date     Jul, 2016
 */
 
 #pragma once
 
+/*!
+ *   Export your emergency ros controller as a EmergencyControllerRosPlugin in order to load it as a plugin.
+ *   This macro is a wrapper to PLUGINLIB_EXPORT_CLASS, for templated classes.
+ *   Protects typedefs in internal namespace.
+ */
 #define ROCOMA_EXPORT_EMERGENCY_CONTROLLER_ROS(name, controller, state, command)                              \
         namespace emergency_plugin_##name_internal{                                                           \
           using name = rocoma_plugin::EmergencyControllerRosPlugin<controller , state , command>;             \
@@ -47,14 +52,21 @@
           PLUGINLIB_EXPORT_CLASS(name, PluginBase)                                                            \
         }
 
-// roco
-#include <rocoma_plugin/interfaces/EmergencyControllerPluginRosInterface.hpp>
-#include <rocoma/controllers/EmergencyControllerAdapter.hpp>
+// rocoma_plugin
+#include "rocoma_plugin/interfaces/EmergencyControllerPluginRosInterface.hpp"
+
+// rocoma
+#include "rocoma/controllers/EmergencyControllerAdapter.hpp"
 
 namespace rocoma_plugin {
 
+//!  Plugin based emergency ros controller adapter.
+/*!
+ *   Export your emergency ros controller as a EmergencyControllerRosPlugin in order to load it as a plugin.
+ */
 template<typename Controller_, typename State_, typename Command_>
-class EmergencyControllerRosPlugin: public rocoma::EmergencyControllerAdapter<Controller_, State_, Command_>, public rocoma_plugin::EmergencyControllerRosPluginInterface<State_, Command_>
+class EmergencyControllerRosPlugin: public rocoma::EmergencyControllerAdapter<Controller_, State_, Command_>,
+                                    public rocoma_plugin::EmergencyControllerRosPluginInterface<State_, Command_>
 {
 
 };

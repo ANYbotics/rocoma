@@ -41,13 +41,19 @@
 #pragma once
 
 // roco
-#include <roco/controllers/adapters/ControllerAdapterInterface.hpp>
-#include <roco/controllers/Controller.hpp>
+#include "roco/controllers/adapters/ControllerAdapterInterface.hpp"
+#include "roco/controllers/Controller.hpp"
 
 namespace rocoma_plugin {
 
+//!  Common interface for plugin based controllers.
+/*!
+ *   Controller is needed for the initialization of state, command, name , ...
+ *   ControllerAdapterInterface is used by the ControllerManager to interface with the controllers.
+ */
 template<typename State_, typename Command_>
-class ControllerPluginInterface: virtual public roco::ControllerAdapterInterface, virtual public roco::Controller<State_, Command_>
+class ControllerPluginInterface: virtual public roco::ControllerAdapterInterface,
+                                 virtual public roco::Controller<State_, Command_>
 {
 
 };

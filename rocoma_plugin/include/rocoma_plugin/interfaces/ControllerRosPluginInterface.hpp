@@ -33,7 +33,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 /*!
-* @file     ControllerPluginInterface.hpp
+* @file     ControllerRosPluginInterface.hpp
 * @author   Gabriel Hottiger
 * @date     Jul, 2016
 */
@@ -41,13 +41,19 @@
 #pragma once
 
 // roco
-#include <roco/controllers/adapters/ControllerAdapterInterface.hpp>
-#include <roco/controllers/ControllerRos.hpp>
+#include "roco/controllers/adapters/ControllerAdapterInterface.hpp"
+#include "roco/controllers/ControllerRos.hpp"
 
 namespace rocoma_plugin {
 
+//!  Common interface for plugin based ros controllers.
+/*!
+ *   ControllerRos is needed for the initialization of state, command, name , ...
+ *   ControllerAdapterInterface is used by the ControllerManager to interface with the controllers.
+ */
 template<typename State_, typename Command_>
-class ControllerRosPluginInterface: virtual public roco::ControllerAdapterInterface, virtual public roco::ControllerRos<State_, Command_>
+class ControllerRosPluginInterface: virtual public roco::ControllerAdapterInterface,
+                                    virtual public roco::ControllerRos<State_, Command_>
 {
 
 };
