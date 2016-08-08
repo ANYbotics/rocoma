@@ -40,19 +40,22 @@
 
 #pragma once
 
+// rocoma_plugin
+#include "rocoma_plugin/interfaces/EmergencyControllerPluginInterface.hpp"
+
 // roco
-#include "roco/controllers/adapters/EmergencyControllerAdapterInterface.hpp"
 #include "roco/controllers/ControllerRos.hpp"
 
 namespace rocoma_plugin {
 
 //!  Common interface for plugin based ros controllers.
 /*!
- *   Controller is needed for the initialization of state, command, name , ...
- *   EmergencyControllerAdapterInterface is used by the ControllerManager to interface with the emergency controllers.
+ *   EmergencyControllerPluginInterface is needed for the initialization of state, command, name , ...
+ *   and used by the ControllerManager to interface with the controllers.
+ *   ControllerRos is used to init the ros specific stuff.
  */
 template<typename State_, typename Command_>
-class EmergencyControllerRosPluginInterface: virtual public roco::EmergencyControllerAdapterInterface,
+class EmergencyControllerRosPluginInterface: virtual public rocoma_plugin::EmergencyControllerPluginInterface<State_, Command_>,
                                              virtual public roco::ControllerRos<State_, Command_>
 {
 

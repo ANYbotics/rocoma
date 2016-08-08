@@ -52,7 +52,7 @@ ControllerManager::ControllerManager() :updating_(false),
     emergencyControllerMutex_(),
     failproofControllerMutex_()
 {
-  workerManager_.addWorker("check_timing", 0.0, std::bind(&ControllerManager::checkTimingWorker, this, std::placeholders::_1));
+//  workerManager_.addWorker("check_timing", 0.0, std::bind(&ControllerManager::checkTimingWorker, this, std::placeholders::_1));
 }
 
 
@@ -63,9 +63,15 @@ ControllerManager::~ControllerManager()
 bool ControllerManager::addControllerPair(std::unique_ptr<roco::ControllerAdapterInterface> controller,
                                           std::unique_ptr<roco::EmergencyControllerAdapterInterface> emergencyController) {
 
+  // Check for invalid controller
+  if(controller == nullptr) {
+    MELO_ERROR_STREAM("Could not add controller pair. Controller is nullptr.");
+    return false;
+  }
+
   // Local helpers (controllers are moved and therefore not safe to access)
   const std::string controllerName = controller->getControllerName();
-  const std::string emgcyControllerName = emergencyController->getControllerName();
+  const std::string emgcyControllerName = (emergencyController == nullptr)?"FailproofController": emergencyController->getControllerName();
 
   MELO_INFO_STREAM("Adding controller pair ctrl: " << controllerName << " / emgcy ctrl: " << emgcyControllerName << " ... ");
 
@@ -90,6 +96,13 @@ bool ControllerManager::addControllerPair(std::unique_ptr<roco::ControllerAdapte
 
   //--- Add emergency controller
   MELO_INFO_STREAM(" Adding emergency controller " << emgcyControllerName << " ... ");
+
+  if(emergencyController == nullptr)
+  {
+    controllerPairs_.insert( std::pair< std::string, ControllerSetPtr >( controllerName, ControllerSetPtr(controllers_.at(controllerName).get(), nullptr ) ) );
+    MELO_INFO_STREAM("... sucessfully added controller pair ctrl: " << controllerName << " / emgcy ctrl: " << emgcyControllerName << " ... ");
+    return true;
+  }
 
   // create emergency controller
   if (!emergencyController->createController(timeStep_)) {
