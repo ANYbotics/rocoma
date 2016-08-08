@@ -53,7 +53,7 @@
         }
 
 // rocoma_plugin
-#include "rocoma_plugin/interfaces/EmergencyControllerPluginRosInterface.hpp"
+#include "rocoma_plugin/interfaces/EmergencyControllerRosPluginInterface.hpp"
 
 // rocoma
 #include "rocoma/controllers/EmergencyControllerAdapter.hpp"
