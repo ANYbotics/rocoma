@@ -34,19 +34,20 @@
  */
 
 /*!
- * @file     ControllerRos.hpp
+ * @file     EmergencyControllerAdapter.hpp
  * @author   Christian Gehring, Dario Bellicoso, Gabriel Hottiger
  * @date     Dec, 2014
- * @brief
+ * @note     Restructured, June 2016
  */
+
 #pragma once
 
 // Roco
-#include <roco/controllers/adaptees/EmergencyControllerAdapteeInterface.hpp>
-#include <roco/controllers/adapters/EmergencyControllerAdapterInterface.hpp>
+#include "roco/controllers/adaptees/EmergencyControllerAdapteeInterface.hpp"
+#include "roco/controllers/adapters/EmergencyControllerAdapterInterface.hpp"
 
 // Rocoma
-#include <rocoma/controllers/ControllerAdapter.hpp>
+#include "rocoma/controllers/ControllerAdapter.hpp"
 
 // STL
 #include <type_traits>
@@ -58,7 +59,9 @@ namespace rocoma {
 template<typename Controller_, typename State_, typename Command_>
 class EmergencyControllerAdapter: virtual public roco::EmergencyControllerAdapterInterface, public ControllerAdapter<Controller_, State_, Command_>
 {
-  static_assert(std::is_base_of<roco::EmergencyControllerAdapteeInterface, Controller_>::value, "[EmergencyControllerAdapter]: The Controller class does not implement the EmergencyControllerAdatpeeInterface.");
+  //! Check if Controller_ template parameter inherits from roco::EmergencyControllerAdapteeInterface
+  static_assert(std::is_base_of<roco::EmergencyControllerAdapteeInterface, Controller_>::value,
+                "[EmergencyControllerAdapter]: The Controller class does not implement the EmergencyControllerAdatpeeInterface.");
 
  public:
   //! Convenience typedefs
@@ -68,13 +71,16 @@ class EmergencyControllerAdapter: virtual public roco::EmergencyControllerAdapte
   using Command = Command_;
 
  public:
-  //! Delete default constructor
-  EmergencyControllerAdapter() { };
+  //! Default constructor
+  EmergencyControllerAdapter() { }
 
-  //! Virtual destructor
+  //! Default destructor
   virtual ~EmergencyControllerAdapter() { }
 
-  //! Implement adapter
+  /*! Adapts the adaptees initializeFast(dt) function.
+   * @param dt  time step [s]
+   * @returns true if successful
+   */
   virtual bool initializeControllerFast(double dt) {
 
     // Check if controller was created

@@ -46,12 +46,6 @@
 namespace rocoma {
 
 template<typename Controller_, typename State_, typename Command_>
-ControllerExtensionImplementation<Controller_, State_, Command_>::~ControllerExtensionImplementation()
-{
-
-}
-
-template<typename Controller_, typename State_, typename Command_>
 roco::WorkerHandle ControllerExtensionImplementation<Controller_, State_, Command_>::addWorker(const roco::WorkerOptions&  options) {
 
   WorkerWrapper wrapper(options);

@@ -33,17 +33,20 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 /*!
-* @file     ControllerRos.hpp
+* @file     TimeRos.hpp
 * @author   Christian Gehring
 * @date     Dec, 2014
-* @brief
 */
 
 #pragma once
 
-#include <roco/time/Time.hpp>
+// roco
+#include "roco/time/Time.hpp"
+
+// ros
 #include <ros/ros.h>
 
+//!  Wrapper for roco time using ros time.
 class TimeRos: public roco::time::Time, public ros::Time {
 
 };

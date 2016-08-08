@@ -53,18 +53,18 @@
 // any worker
 #include "any_worker/WorkerManager.hpp"
 
-// Boost
-#include <boost/thread.hpp>
-
 // STL
 #include <memory>
+#include <atomic>
 
 namespace rocoma {
 
 template<typename Controller_, typename State_, typename Command_>
 class ControllerExtensionImplementation: public ControllerImplementation<Controller_, State_, Command_> {
 
-  static_assert(std::is_base_of<roco::Controller<State_, Command_>, Controller_>::value, "[ControllerExtensionImplementation]: The Controller class does not inherit from roco::Controller<State_, Command_>!" );
+  //! Check if Controller_ template parameter inherits from roco::Controller<State_, Command_>
+  static_assert(std::is_base_of<roco::Controller<State_, Command_>, Controller_>::value,
+                "[ControllerExtensionImplementation]: The Controller class does not inherit from roco::Controller<State_, Command_>!" );
 
  public:
   //! Convenience typedefs
@@ -74,38 +74,84 @@ class ControllerExtensionImplementation: public ControllerImplementation<Control
   using Command = Command_;
 
  public:
+  //! Default Constructor
   ControllerExtensionImplementation():
     Base(),
     workerManager_()
- {
+  {
 
- }
+  }
 
-  virtual ~ControllerExtensionImplementation();
+  //! Default Destructor
+  virtual ~ControllerExtensionImplementation() { }
 
+  /*! Indicates if the real robot is controller or only a simulated version.
+   * @returns true if real robot
+   */
   virtual bool isRealRobot() const                      { return isRealRobot_; }
 
+  /*! Gets the controller time
+   * @returns controller time
+   */
   virtual const roco::time::Time& getTime() const       { return static_cast<const roco::time::Time&>(time_); }
+
+  /*! Sets the controller time
+   * @param time  controller time
+   */
   virtual void setTime(const roco::time::Time& time)    { time_ = time;}
 
+  /*! Indicates if command is checked against its limits
+   * @returns true iff command is checked
+   */
   virtual bool isCheckingCommand() const                { return isCheckingCommand_; }
+
+  /*! Set if command is checked against its limits
+   * @param isChecking  flag indicating whether command should be checked against limits
+   */
   virtual void setIsCheckingCommand(bool isChecking)    { isCheckingCommand_ = isChecking; }
 
+  /*! Indicates if state is checked against its limits
+   * @returns true iff state is checked
+   */
   virtual bool isCheckingState() const                  { return isCheckingState_; }
+
+  /*! Set if state is checked against its limits
+   * @param isChecking  flag indicating whether state should be checked against limits
+   */
   virtual void setIsCheckingState(bool isChecking)      { isCheckingState_ = isChecking; }
 
+  /*! Add a worker to the worker queue via options
+   * @param options  worker options (priority, timestep, ...)
+   * @returns worker handle for the added worker
+   */
   virtual roco::WorkerHandle addWorker(const roco::WorkerOptions& options);
+
+  /*! Add a worker to the worker queue
+   * @param worker  worker to be added
+   * @returns worker handle for the added worker
+   */
   virtual roco::WorkerHandle addWorker(roco::Worker& worker);
+
+  /*! Start a given worker
+   * @param workerHandle  handle to the worker to be started
+   * @returns true iff was started successfully
+   */
   virtual bool startWorker(const roco::WorkerHandle& workerHandle);
+
+  /*! Cancel a given worker
+   * @param workerHandle  handle to the worker to be cancelled
+   * @param block  flag indicating whether this should block until thread can be joined (default = false)
+   * @returns true iff was cancelled successfully
+   */
   virtual bool cancelWorker(const roco::WorkerHandle& workerHandle, bool block = false);
 
  protected:
   //! Indicates if the real robot is controller or only a simulated version.
-  boost::atomic<bool> isRealRobot_;
+  std::atomic<bool> isRealRobot_;
   //! Indicates if command is checked for limits
-  boost::atomic<bool> isCheckingCommand_;
+  std::atomic<bool> isCheckingCommand_;
   //! Indicates if state is checked for validity
-  boost::atomic<bool> isCheckingState_;
+  std::atomic<bool> isCheckingState_;
   //! Time
   roco::time::TimeStd time_;
   //! Worker Manager

@@ -34,27 +34,21 @@
  */
 
 /*!
- * @file     ControllerRos.hpp
- * @author   Christian Gehring, Dario Bellicoso, Gabriel Hottiger
- * @date     Dec, 2014
- * @brief
- */
+* @file     FailproofControllerAdapter.hpp
+* @author   Christian Gehring, Gabriel Hottiger
+* @date     Dec, 2014
+* @note     Restructured, June 2016
+*/
 #pragma once
 
 // Roco
 #include "roco/controllers/adapters/FailproofControllerAdapterInterface.hpp"
 #include "roco/controllers/FailproofController.hpp"
-#include "roco/model/CommandInterface.hpp"
-#include "roco/model/StateInterface.hpp"
 
 // Rocoma
 #include <rocoma/controllers/ControllerImplementation.hpp>
 
-// Boost
-#include "boost/thread.hpp"
-
 // STL
-#include <exception>
 #include <type_traits>
 #include <assert.h>
 
@@ -64,7 +58,8 @@ template<typename Controller_, typename State_, typename Command_>
 class FailproofControllerAdapter: virtual public roco::FailproofControllerAdapterInterface, public ControllerImplementation<Controller_, State_, Command_>
 {
   //! Check if template parameters implement the required interfaces
-  static_assert(std::is_base_of<roco::FailproofController<State_, Command_>, Controller_>::value, "[FailproofControllerAdapter]: The Controller class does not inherit from roco::FailproofController<State_, Command_>!" );
+  static_assert(std::is_base_of<roco::FailproofController<State_, Command_>, Controller_>::value,
+                "[FailproofControllerAdapter]: The Controller class does not inherit from roco::FailproofController<State_, Command_>!" );
 
  public:
   //! Convenience typedefs
@@ -75,30 +70,44 @@ class FailproofControllerAdapter: virtual public roco::FailproofControllerAdapte
 
 
  public:
-  //! Delete default constructor
-  FailproofControllerAdapter() { };
+  //! Default constructor
+  FailproofControllerAdapter() { }
 
-  //! Virtual destructor
-  virtual ~FailproofControllerAdapter() { };
+  //! Default destructor
+  virtual ~FailproofControllerAdapter() { }
 
-  //! Controller name adapter
-  virtual const std::string& getControllerName() const  { return this->getName(); }
-
-  //! Implementation of the adapter interface (roco::FailproofControllerAdapterInterface)
+  /*! Adapts the adaptees create(dt) function.
+   * @param dt  time step [s]
+   * @returns true if successful
+   */
   virtual bool createController(double dt)
   {
     return this->create(dt);
   }
 
+  /*! Adapts the adaptees advance(dt) function.
+   * @param dt  time step [s]
+   */
   virtual void advanceController(double dt)
   {
     this->advance(dt);
     return;
   }
 
+  /*! Adapts the adaptees cleanup() function.
+   * @returns true if successful
+   */
   virtual bool cleanupController()
   {
     return this->cleanup();
+  }
+
+  /*! This function gets the name of the controller.
+   * @returns controller name
+   */
+  virtual const std::string& getControllerName() const
+  {
+    return this->getName();
   }
 
 

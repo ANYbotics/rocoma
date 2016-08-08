@@ -34,10 +34,10 @@
  */
 
 /*!
- * @file     ControllerRos.hpp
+ * @file     ControllerAdapter.hpp
  * @author   Christian Gehring, Dario Bellicoso, Gabriel Hottiger
  * @date     Dec, 2014
- * @brief
+ * @note     Restructured, June 2016
  */
 #pragma once
 
@@ -51,9 +51,7 @@
 #include "rocoma/controllers/ControllerExtensionImplementation.hpp"
 
 // Boost
-#include "boost/thread/shared_lock_guard.hpp"
-#include "boost/thread/recursive_mutex.hpp"
-
+#include <boost/thread.hpp>
 
 // STL
 #include <exception>
@@ -76,65 +74,89 @@ class ControllerAdapter: virtual public roco::ControllerAdapterInterface, public
   using Command = Command_;
 
  public:
-  //! Delete default constructor
-  ControllerAdapter():
-    isStopping_(false),
-    isInitializing_(false)
- {
+  //! Default constructor
+  ControllerAdapter() { }
 
- }
-
-  //! Virtual destructor
-  virtual ~ControllerAdapter()
-  {
-
-  }
+  //! Default destructor
+  virtual ~ControllerAdapter() { }
 
   //! Implementation of the adapter interface (roco::ControllerAdapterInterface)
+  /*! Adapts the adaptees create(dt) function.
+   * @param dt  time step [s]
+   * @returns true if successful
+   */
   virtual bool createController(double dt);
+
+  /*! Adapts the adaptees initialize(dt) function.
+   * @param dt  time step [s]
+   * @returns true if successful
+   */
   virtual bool initializeController(double dt);
-  virtual bool resetController(double dt);
+
+  /*! Adapts the adaptees advance(dt) function.
+   * @param dt  time step [s]
+   * @returns true if successful
+   */
   virtual bool advanceController(double dt);
-  virtual bool cleanupController();
-  virtual bool stopController();
+
+  /*! Adapts the adaptees reset(dt) function.
+   * @param dt  time step [s]
+   * @returns true if successful
+   */
+  virtual bool resetController(double dt);
+
+  /*! Adapts the adaptees prestop(dt) function.
+   * @returns true if successful
+   */
   virtual bool preStopController();
 
-  //! Set isRealRobot is only allowed on the adapter
+  /*! Adapts the adaptees stop(dt) function.
+   * @returns true if successful
+   */
+  virtual bool stopController();
+
+  /*! Adapts the adaptees cleanup() function.
+   * @returns true if successful
+   */
+  virtual bool cleanupController();
+
+  /*! Sets if the real robot is controlled or only a simulated version.
+   * @param flag indicating robot type
+   */
   virtual void setIsRealRobot(bool isRealRobot)
   {
     this->isRealRobot_ = isRealRobot;
   }
 
-  //! Controller name adapter
+  /*! This function gets the name of the controller.
+   * @returns controller name
+   */
   virtual const std::string& getControllerName() const
   {
     return this->getName();
   }
 
-  //! Indicates if the controller is initialized
+  /*! This function indicates whether the controller was initialized.
+   * @returns true iff controller is initialized
+   */
   virtual bool isControllerInitialized() const
   {
     return this->isInitialized();
   }
 
-  //! Indicates if the controller is initializing at the moment
-  virtual bool isInitializing() const
-  {
-    return isInitializing_;
-  }
-
-  //! Indicates if the controller is stopping at the moment
-  virtual bool isStopping() const
-  {
-    return isStopping_;
-  }
-
  protected:
+  /*! Update the robot state. (Check for limits)
+   * @param dt          time step [s]
+   * @param checkState  indicates if state should be checked against its limits
+   * @returns true if successful
+   */
   bool updateState(double dt, bool checkState = true);
-  bool updateCommand(double dt);
 
-  std::atomic<bool> isStopping_;
-  std::atomic<bool> isInitializing_;
+  /*! Update the command. (Limit the references)
+   * @param dt          time step [s]
+   * @returns true if successful
+   */
+  bool updateCommand(double dt);
 
 };
 

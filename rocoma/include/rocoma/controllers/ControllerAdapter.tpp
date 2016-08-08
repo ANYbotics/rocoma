@@ -33,10 +33,10 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 /*!
- * @file     ControllerRos.tpp
+ * @file     ControllerAdapter.tpp
  * @author   Christian Gehring, Dario Bellicoso, Gabriel Hottiger
  * @date     Dec, 2014
- * @brief
+ * @note     Restructured, June 2016
  */
 
 // Message logger
@@ -232,7 +232,6 @@ bool ControllerAdapter<Controller_, State_, Command_>::stopController()
     return false;
   }
 
-  this->isStopping_ = false;
   return true;
 }
 
@@ -240,8 +239,6 @@ bool ControllerAdapter<Controller_, State_, Command_>::stopController()
 template<typename Controller_, typename State_, typename Command_>
 bool ControllerAdapter<Controller_,State_, Command_>::preStopController()
 {
-  this->isStopping_ = true;
-
   try {
     if(!this->preStop()) {
       MELO_WARN("[ControllerAdapter]: Could not prepare to stop controller %s!", this->getName().c_str());
