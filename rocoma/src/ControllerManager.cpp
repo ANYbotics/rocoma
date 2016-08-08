@@ -52,7 +52,14 @@ ControllerManager::ControllerManager() :updating_(false),
     emergencyControllerMutex_(),
     failproofControllerMutex_()
 {
-//  workerManager_.addWorker("check_timing", 0.0, std::bind(&ControllerManager::checkTimingWorker, this, std::placeholders::_1));
+//  any_worker::WorkerOptions checkTimingWorkerOptions;
+//  checkTimingWorkerOptions.name_ = "check_timing";
+//  checkTimingWorkerOptions.timeStep_ = 0;
+//  checkTimingWorkerOptions.callback_ = std::bind(&ControllerManager::checkTimingWorker, this, std::placeholders::_1);
+//  checkTimingWorkerOptions.defaultPriority_ = 0;
+//  checkTimingWorkerOptions.destructWhenDone_ = false;
+//  checkTimingWorkerOptions.autostart_ = true;
+//  workerManager_.addWorker(checkTimingWorkerOptions);
 }
 
 
@@ -212,9 +219,15 @@ bool ControllerManager::emergencyStop() {
     // Stop old controller in a separate thread
     {
       std::unique_lock<std::mutex> lockController(controllerMutex_);
-      workerManager_.addWorker("stop_controller_" + activeControllerPair_.controller_->getControllerName(), std::numeric_limits<double>::infinity(),
-                               std::bind(&ControllerManager::emergencyStopControllerWorker, this, std::placeholders::_1,
-                                         activeControllerPair_.controller_, EmergencyStopType::EMERGENCY), 0, true);
+      any_worker::WorkerOptions stopWorkerOptions;
+      stopWorkerOptions.name_ = "stop_controller_" + activeControllerPair_.controller_->getControllerName();
+      stopWorkerOptions.timeStep_ = std::numeric_limits<double>::infinity();
+      stopWorkerOptions.callback_ = std::bind(&ControllerManager::emergencyStopControllerWorker, this, std::placeholders::_1,
+                                              activeControllerPair_.emgcyController_, EmergencyStopType::EMERGENCY);
+      stopWorkerOptions.defaultPriority_ = 0;
+      stopWorkerOptions.destructWhenDone_ = true;
+      stopWorkerOptions.autostart_ = true;
+      workerManager_.addWorker(stopWorkerOptions);
     }
   }
   else {
@@ -224,9 +237,16 @@ bool ControllerManager::emergencyStop() {
     // Stop old emergency controller in a separate thread
     {
       std::unique_lock<std::mutex> lockEmergencyController(emergencyControllerMutex_);
-      workerManager_.addWorker("stop_controller_" + activeControllerPair_.emgcyController_->getControllerName(), std::numeric_limits<double>::infinity(),
-                               std::bind(&ControllerManager::emergencyStopControllerWorker, this, std::placeholders::_1,
-                                         activeControllerPair_.emgcyController_, EmergencyStopType::FAILPROOF), 0, true);
+      any_worker::WorkerOptions stopWorkerOptions;
+      stopWorkerOptions.name_ = "stop_controller_" + activeControllerPair_.emgcyController_->getControllerName();
+      stopWorkerOptions.timeStep_ = std::numeric_limits<double>::infinity();
+      stopWorkerOptions.callback_ = std::bind(&ControllerManager::emergencyStopControllerWorker, this, std::placeholders::_1,
+                                              activeControllerPair_.emgcyController_, EmergencyStopType::FAILPROOF);
+      stopWorkerOptions.defaultPriority_ = 0;
+      stopWorkerOptions.destructWhenDone_ = true;
+      stopWorkerOptions.autostart_ = true;
+      workerManager_.addWorker(stopWorkerOptions);
+
     }
   }
 
@@ -289,9 +309,15 @@ ControllerManager::SwitchResponse ControllerManager::switchController(const std:
       }
 
       // Add worker to switch to new controller
-      std::string workerName = "switch_from_" + oldControllerName + "_to_" +  newController->getControllerName();
-      workerManager_.addWorker(workerName,  std::numeric_limits<double>::infinity(), std::bind(&ControllerManager::switchControllerWorker, this,
-                                                                                               std::placeholders::_1, oldController, newController), 0, true);
+      any_worker::WorkerOptions switchControllerWorkerOptions;
+      switchControllerWorkerOptions.name_ = "switch_from_" + oldControllerName + "_to_" +  newController->getControllerName();
+      switchControllerWorkerOptions.timeStep_ = std::numeric_limits<double>::infinity();
+      switchControllerWorkerOptions.callback_ = std::bind(&ControllerManager::switchControllerWorker, this,
+                                                          std::placeholders::_1, oldController, newController);
+      switchControllerWorkerOptions.defaultPriority_ = 0;
+      switchControllerWorkerOptions.destructWhenDone_ = true;
+      switchControllerWorkerOptions.autostart_ = true;
+      workerManager_.addWorker(switchControllerWorkerOptions);
       return SwitchResponse::SWITCHING;
     }
   }

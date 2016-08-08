@@ -7,8 +7,9 @@ find_package(Boost REQUIRED COMPONENTS thread chrono)
 find_package(catkin REQUIRED
   COMPONENTS
     roco
-    message_logger
     any_worker
+    message_logger
+    signal_logger
 )
 
 catkin_package(
@@ -17,8 +18,9 @@ catkin_package(
   LIBRARIES ${PROJECT_NAME}
   CATKIN_DEPENDS
     roco
-    message_logger
     any_worker
+    message_logger
+    signal_logger
   DEPENDS boost
 )
 

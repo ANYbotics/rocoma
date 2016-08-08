@@ -11,5 +11,6 @@
   <depend>roco</depend>
   <depend>any_worker</depend>
   <depend>message_logger</depend>
+  <depend>signal_logger</depend>
 
 </package>

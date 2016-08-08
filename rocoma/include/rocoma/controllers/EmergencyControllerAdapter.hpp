@@ -49,6 +49,12 @@
 // Rocoma
 #include "rocoma/controllers/ControllerAdapter.hpp"
 
+// Signal logger
+#include <signal_logger/logger.hpp>
+
+// Message logger
+#include <message_logger/message_logger.hpp>
+
 // STL
 #include <type_traits>
 #include <assert.h>
@@ -83,41 +89,42 @@ class EmergencyControllerAdapter: virtual public roco::EmergencyControllerAdapte
    */
   virtual bool initializeControllerFast(double dt) {
 
-    // Check if controller was created
+    // Check if the controller was created.
     if (!this->isCreated()) {
-      MELO_WARN_STREAM("[EmergencyControllerAdapter]: Controller was not created!");
+      MELO_WARN_STREAM("Controller was not created!");
       return false;
     }
 
+    // Initialize the controller now.
     try {
-      // Update the state
+      // Update the state.
       this->updateState(dt, false);
+      signal_logger::logger->stopLogger();
 
-      // Initialize the controller
+      // Initialize controller
       if (!this->initializeFast(dt)) {
-        MELO_WARN_STREAM("[EmergencyControllerAdapter]: Controller could not be fast initialized!");
+        MELO_WARN_STREAM("Controller could not be fast initialized!");
         return false;
       }
 
-      // Update the command
+      // Update command
       this->updateCommand(dt);
 
-      // Set init flag
       this->isInitialized_ = true;
 
-    }
-    catch (std::exception& e) {
-      MELO_WARN_STREAM("[EmergencyControllerAdapter]: Exception caught:\n" << e.what());
+    } catch (std::exception& e) {
+      MELO_WARN_STREAM("Exception caught:\n" << e.what());
       this->isInitialized_ = false;
       return false;
     }
 
-    // Set running flag
+    // Start workers and logging
     this->isRunning_ = true;
-    MELO_INFO_STREAM("[EmergencyControllerAdapter]: Initialized controller fast" << this->getName() << " successfully!");
+    signal_logger::logger->startLogger();
+    this->workerManager_.startWorkers();
+    MELO_INFO_STREAM( "Fast initialized controller " << this->getControllerName() << " successfully!");
+
     return true;
-
-
   }
 
 };
