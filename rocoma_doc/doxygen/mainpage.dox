@@ -1,7 +1,7 @@
 /*!
 \mainpage Overview
 
-\section Rocoma - Robot Controller Manager
+\section Rocoma Rocoma - Robot Controller Manager
 This library provides a controller manager to switch between different controllers. Furthermore it provides a ROS implementation, where controllers can be loaded using the pluginlib provided by ROS. Moreover controllers can be switched via service, emergency stops can be triggered 
 
 \section source_code Source Code
