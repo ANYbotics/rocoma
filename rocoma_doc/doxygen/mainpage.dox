@@ -1,0 +1,31 @@
+/*!
+\mainpage Overview
+
+\section Rocoma - Robot Controller Manager
+This library provides a controller manager to switch between different controllers. Furthermore it provides a ROS implementation, where controllers can be loaded using the pluginlib provided by ROS. Moreover controllers can be switched via service, emergency stops can be triggered 
+
+\section source_code Source Code
+The source code is available at <a href="https://bitbucket.org/ethz-asl-lr/rocoma">https://bitbucket.org/ethz-asl-lr/rocoma</a>
+
+\section license License
+This library is <a href="http://www.gnu.org/philosophy/free-sw.html">Free Software</a> and is licensed under <a href="http://opensource.org/licenses/BSD-3-Clause">BSD 3-Clause</a>.
+
+\section acknowledgement Acknowledgement
+Involved people:
+ - Gabriel Hottiger
+ - C. Dario Bellicoso
+ - Christian Gehring
+ 
+Contact: 
+Christian Gehring  (gehrinch ( at ) ethz.ch)
+*/
+
+//-----------------------------------------------------------
+/*!
+\page page_users Getting Started
+
+ \section rocoma Rocoma
+  - \subpage page_rocoma 
+*/
+
+//-----------------------------------------------------------
