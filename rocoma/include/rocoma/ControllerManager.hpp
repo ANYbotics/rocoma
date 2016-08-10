@@ -66,7 +66,7 @@ class ControllerManager
 
   //! Enumeration indicating the controller manager state
   enum class State : int {
-    FAILURE   = -1,
+        FAILURE   = -1,
         EMERGENCY =  0,
         OK        =  1
   };
@@ -83,15 +83,9 @@ class ControllerManager
                      roco::EmergencyControllerAdapterInterface * emgcyController):
                        controller_(controller),
                        emgcyController_(emgcyController),
-                       controllerName_("none"),
-                       emgcyControllerName_("none")
+                       controllerName_(controller?controller->getControllerName():"none"),
+                       emgcyControllerName_(emgcyController?emgcyController->getControllerName():"none")
     {
-      if(controller != nullptr) {
-        controllerName_ = controller->getControllerName();
-      }
-      if(emgcyController != nullptr) {
-        emgcyControllerName_ = emgcyController->getControllerName();
-      }
     }
 
     roco::ControllerAdapterInterface * controller_;
@@ -209,19 +203,17 @@ class ControllerManager
 
   }
 
-  /**
-   * @brief Check timing and perform emergency stop on violation
-   */
-  bool checkTimingWorker(const any_worker::WorkerEvent& event);
-
+//  /**
+//   * @brief Check timing and perform emergency stop on violation
+//   */
+//  bool checkTimingWorker(const any_worker::WorkerEvent& event);
 
  private:
   //! Conditional variables for measuring execution time
-  std::atomic_bool updating_;
-  std::condition_variable timerStart_;
-  std::condition_variable timerStop_;
-
-  std::atomic<double> minimalRealtimeFactor_;
+//  std::atomic_bool updating_;
+//  std::condition_variable timerStart_;
+//  std::condition_variable timerStop_;
+//  std::atomic<double> minimalRealtimeFactor_;
 
   //! Controller timestep (equal for all controllers)
   std::atomic<double> timeStep_;
@@ -246,11 +238,20 @@ class ControllerManager
   //! Emergency stop controller
   FailproofControllerPtr failproofController_;
 
-  //! Mutexes
+  //! Controller Mutex
   std::mutex controllerMutex_;
+  //! Emergency Controller Mutex
   std::mutex emergencyControllerMutex_;
-  std::mutex failproofControllerMutex_;
-  std::mutex updateFlagMutex_;
+  //! Mutex protecting emergency stop function call
+  std::mutex emergencyStopMutex_;
+  //! Mutex protecting update Controller function call
+  std::mutex updateControllerMutex_;
+  //! Mutex protecting switch Controller function call
+  std::mutex switchControllerMutex_;
+  //! Mutex protecting worker manager
+  std::mutex workerManagerMutex_;
+  //! Mutex protecting active controller
+  std::mutex activeControllerMutex_;
 
 };
 

@@ -75,7 +75,7 @@ class ControllerAdapter: virtual public roco::ControllerAdapterInterface, public
 
  public:
   //! Default constructor
-  ControllerAdapter() { }
+  ControllerAdapter():isBeingStopped_(false) { }
 
   //! Default destructor
   virtual ~ControllerAdapter() { }
@@ -144,6 +144,16 @@ class ControllerAdapter: virtual public roco::ControllerAdapterInterface, public
     return this->isInitialized();
   }
 
+  virtual void setIsBeingStopped(bool isBeingStopped)
+  {
+    isBeingStopped_ = isBeingStopped;
+  }
+
+  virtual bool isBeingStopped() const
+  {
+    return isBeingStopped_;
+  }
+
  protected:
   /*! Update the robot state. (Check for limits)
    * @param dt          time step [s]
@@ -157,6 +167,9 @@ class ControllerAdapter: virtual public roco::ControllerAdapterInterface, public
    * @returns true if successful
    */
   bool updateCommand(double dt);
+
+ protected:
+  std::atomic_bool isBeingStopped_;
 
 };
 
