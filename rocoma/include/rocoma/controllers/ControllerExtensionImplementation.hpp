@@ -77,6 +77,10 @@ class ControllerExtensionImplementation: public ControllerImplementation<Control
   //! Default Constructor
   ControllerExtensionImplementation():
     Base(),
+    isRealRobot_(true),
+    isCheckingCommand_(true),
+    isCheckingState_(true),
+    time_(),
     workerManager_()
   {
 
