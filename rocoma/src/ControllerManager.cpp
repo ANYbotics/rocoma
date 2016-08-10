@@ -42,7 +42,7 @@ ControllerManager::ControllerManager() :
                                                             //    timerStart_(),
                                                             //    timerStop_(),
                                                             //    minimalRealtimeFactor_(2.0),
-                                                                timeStep_(0.1),
+                                                                timeStep_(1),
                                                                 isRealRobot_(false),
                                                                 activeControllerState_(State::FAILURE),
                                                                 workerManager_(),
@@ -209,7 +209,7 @@ bool ControllerManager::updateController() {
 }
 
 bool ControllerManager::emergencyStop() {
-
+  MELO_ERROR("Emergency Stop!")
   // Cannot call emergency stop twice simultaniously
   std::unique_lock<std::mutex> lockEmergencyStop(emergencyStopMutex_);
 
@@ -399,6 +399,9 @@ bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
    * 2. newController can not be and emergency controller of the currently running controller
    * 3. newController could be being stopped by a different thread at the moment (wait for completion)
    */
+  if(newController->isBeingStopped()) {
+    MELO_WARN("Controller is currently beeing stopped. Wait for completion before switching.")
+  }
   while(newController->isBeingStopped()){}
 
   //! initialize new controller
@@ -478,6 +481,12 @@ bool ControllerManager::cleanup() {
   {
     std::unique_lock<std::mutex> lockController(controllerMutex_);
     std::unique_lock<std::mutex> lockEmergencyController(emergencyControllerMutex_);
+
+    // stop all workers
+    {
+      std::unique_lock<std::mutex> lockWorkerManager(workerManagerMutex_);
+      workerManager_.stopWorkers(true);
+    }
 
     // cleanup all controllers
     // TODO wait for controllers to be finished initializing
