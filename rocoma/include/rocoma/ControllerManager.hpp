@@ -242,6 +242,8 @@ class ControllerManager
   std::mutex controllerMutex_;
   //! Emergency Controller Mutex
   std::mutex emergencyControllerMutex_;
+  //! Failproof Controller Mutex
+  std::mutex failproofControllerMutex_;
   //! Mutex protecting emergency stop function call
   std::mutex emergencyStopMutex_;
   //! Mutex protecting update Controller function call

@@ -38,26 +38,27 @@
 namespace rocoma {
 
 ControllerManager::ControllerManager() :
-                                                //    updating_(false),
-                                                //    timerStart_(),
-                                                //    timerStop_(),
-                                                //    minimalRealtimeFactor_(2.0),
-                                                    timeStep_(0.1),
-                                                    isRealRobot_(false),
-                                                    activeControllerState_(State::FAILURE),
-                                                    workerManager_(),
-                                                    controllers_(),
-                                                    emergencyControllers_(),
-                                                    controllerPairs_(),
-                                                    activeControllerPair_(nullptr, nullptr),
-                                                    failproofController_(nullptr),
-                                                    controllerMutex_(),
-                                                    emergencyControllerMutex_(),
-                                                    emergencyStopMutex_(),
-                                                    updateControllerMutex_(),
-                                                    switchControllerMutex_(),
-                                                    workerManagerMutex_(),
-                                                    activeControllerMutex_()
+                                                            //    updating_(false),
+                                                            //    timerStart_(),
+                                                            //    timerStop_(),
+                                                            //    minimalRealtimeFactor_(2.0),
+                                                                timeStep_(0.1),
+                                                                isRealRobot_(false),
+                                                                activeControllerState_(State::FAILURE),
+                                                                workerManager_(),
+                                                                controllers_(),
+                                                                emergencyControllers_(),
+                                                                controllerPairs_(),
+                                                                activeControllerPair_(nullptr, nullptr),
+                                                                failproofController_(nullptr),
+                                                                controllerMutex_(),
+                                                                emergencyControllerMutex_(),
+                                                                failproofControllerMutex_(),
+                                                                emergencyStopMutex_(),
+                                                                updateControllerMutex_(),
+                                                                switchControllerMutex_(),
+                                                                workerManagerMutex_(),
+                                                                activeControllerMutex_()
 {
   //  any_worker::WorkerOptions checkTimingWorkerOptions;
   //  checkTimingWorkerOptions.name_ = "check_timing";
@@ -177,7 +178,7 @@ bool ControllerManager::updateController() {
     if(!activeControllerPair_.controller_->advanceController(timeStep_))
     {
       lockController.unlock();
-      emergencyStop();
+      return emergencyStop();
     }
   }
 
@@ -188,7 +189,7 @@ bool ControllerManager::updateController() {
     if(!activeControllerPair_.emgcyController_->advanceController(timeStep_))
     {
       lockEmergencyController.unlock();
-      emergencyStop();
+      return emergencyStop();
     }
   }
 
@@ -196,6 +197,7 @@ bool ControllerManager::updateController() {
   if(activeControllerState_ == State::FAILURE)
   {
     // returns void -> can never fail!
+    std::unique_lock<std::mutex> lockFailproofCOntroller(failproofControllerMutex_);
     failproofController_->advanceController(timeStep_);
   }
 
@@ -232,35 +234,53 @@ bool ControllerManager::emergencyStop() {
 
   // If state ok and emergency controller registered -> switch to emergency controller
   if(activeControllerState_ == State::OK &&
-     activeControllerPair_.emgcyController_ != nullptr &&
-     !activeControllerPair_.emgcyController_->isBeingStopped() )
+      activeControllerPair_.emgcyController_ != nullptr &&
+      !activeControllerPair_.emgcyController_->isBeingStopped() )
   {
-    // Init emergency controller fast
+    bool success = true;
+
     {
       std::unique_lock<std::mutex> lockEmergencyController(emergencyControllerMutex_);
-      activeControllerPair_.emgcyController_->initializeControllerFast(timeStep_);
+      // Init emergency controller fast
+      success = activeControllerPair_.emgcyController_->initializeControllerFast(timeStep_);
+      // only advance if correctly initialized
+      success = success && activeControllerPair_.emgcyController_->advanceController(timeStep_);
     }
-
-    // Switch to emergency state
-    activeControllerState_ = State::EMERGENCY;
 
     // stop controller in a different thread
     stopWorkerOptions.name_ = "stop_controller_" + activeControllerPair_.controller_->getControllerName();
     stopWorkerOptions.callback_ = std::bind(&ControllerManager::emergencyStopControllerWorker, this, std::placeholders::_1,
                                             activeControllerPair_.controller_, EmergencyStopType::EMERGENCY);
+    {
+      std::unique_lock<std::mutex> lockWorkerManager(workerManagerMutex_);
+      workerManager_.addWorker(stopWorkerOptions, true);
+    }
+
+
+    if(success)
+    {
+      // Switch to emergency state
+      activeControllerState_ = State::EMERGENCY;
+
+      // Return here -> do not move on to failproof controller
+      return true;
+    }
+
   }
-  else {
-    // Switch to failure state
-    activeControllerState_ = State::FAILURE;
 
-    // stop emergency controller in a different thread
-    stopWorkerOptions.name_ = "stop_controller_" + activeControllerPair_.emgcyController_->getControllerName();
-    stopWorkerOptions.callback_ = std::bind(&ControllerManager::emergencyStopControllerWorker, this, std::placeholders::_1,
-                                            activeControllerPair_.emgcyController_, EmergencyStopType::FAILPROOF);
-
+  // Advance failproof controller
+  {
+    std::unique_lock<std::mutex> lockFailproofCOntroller(failproofControllerMutex_);
+    failproofController_->advanceController(timeStep_);
   }
 
-  // Stop old controller in a separate thread
+  // Switch to failure state
+  activeControllerState_ = State::FAILURE;
+
+  // stop emergency controller in a different thread
+  stopWorkerOptions.name_ = "stop_controller_" + activeControllerPair_.emgcyController_->getControllerName();
+  stopWorkerOptions.callback_ = std::bind(&ControllerManager::emergencyStopControllerWorker, this, std::placeholders::_1,
+                                          activeControllerPair_.emgcyController_, EmergencyStopType::FAILPROOF);
   {
     std::unique_lock<std::mutex> lockWorkerManager(workerManagerMutex_);
     workerManager_.addWorker(stopWorkerOptions, true);
@@ -448,21 +468,30 @@ std::string ControllerManager::getActiveControllerName() {
 }
 
 bool ControllerManager::cleanup() {
-  bool success = emergencyStop();
+  bool success = true;
 
-  std::unique_lock<std::mutex> lockController(controllerMutex_);
-  std::unique_lock<std::mutex> lockEmergencyController(emergencyControllerMutex_);
+  while(activeControllerState_ != State::FAILURE)
+  {
+    success = emergencyStop() && success;
+  }
 
-  // cleanup all controllers
-  // TODO wait for controllers to be finished with stopping or initializing -> no active workers
   {
     std::unique_lock<std::mutex> lockController(controllerMutex_);
+    std::unique_lock<std::mutex> lockEmergencyController(emergencyControllerMutex_);
+
+    // cleanup all controllers
+    // TODO wait for controllers to be finished initializing
+
     for (auto& controller : controllers_) {
+      while(controller.second->isBeingStopped()) { }
       success = controller.second->cleanupController() && success;
     }
-  }
-  for (auto& emergency_controller : emergencyControllers_ ) {
-    success = emergency_controller.second->cleanupController() && success;
+
+
+    for (auto& emergency_controller : emergencyControllers_ ) {
+      while(emergency_controller.second->isBeingStopped()) { }
+      success = emergency_controller.second->cleanupController() && success;
+    }
   }
 
   return success;
