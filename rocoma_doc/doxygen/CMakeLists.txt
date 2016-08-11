@@ -34,11 +34,19 @@ FIND_PACKAGE(Doxygen)
 IF(DOXYGEN)
 
   FIND_PACKAGE(catkin REQUIRED COMPONENTS
+    roco
     rocoma
     rocoma_ros
     rocoma_plugin
     rocoma_msgs
   )
+
+  find_path (SOURCE_ROCO_DIR NAMES roco/controllers/Controller.hpp PATHS ${roco_INCLUDE_DIRS}... NO_DEFAULT_PATH)
+  if(EXISTS "${SOURCE_ROCO_DIR}")
+    message (STATUS "Found roco at: ${SOURCE_ROCO_DIR}")
+  else()
+    message (FATAL_ERROR "Couldn't find roco! ${SOURCE_ROCO_DIR}")
+  endif()
 
   find_path (SOURCE_ROCOMA_DIR NAMES rocoma/ControllerManager.hpp PATHS ${rocoma_INCLUDE_DIRS}... NO_DEFAULT_PATH)
   if(EXISTS "${SOURCE_ROCOMA_DIR}")
@@ -63,7 +71,7 @@ IF(DOXYGEN)
 
   Set(DOCSOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/doc)
   SET(DOXYGEN_IMAGE_DIRS "\"${CMAKE_CURRENT_SOURCE_DIR}/figures/\"" )
-  SET(DOXYGEN_SOURCE_DIRS "${DOXYGEN_SOURCE_DIRS} \"${SOURCE_ROCOMA_DIR}/../\" \"${SOURCE_ROCOMA_ROS_DIR}/../\" \"${SOURCE_ROCOMA_PLUGIN_DIR}/../\" \"${CMAKE_CURRENT_SOURCE_DIR}/\" ")
+  SET(DOXYGEN_SOURCE_DIRS "${DOXYGEN_SOURCE_DIRS} \"${SOURCE_ROCO_DIR}/../\" \"${SOURCE_ROCOMA_DIR}/../\" \"${SOURCE_ROCOMA_ROS_DIR}/../\" \"${SOURCE_ROCOMA_PLUGIN_DIR}/../\" \"${CMAKE_CURRENT_SOURCE_DIR}/\" ")
 
   #SET(HTML_EXTRA_FILES "${CMAKE_CURRENT_SOURCE_DIR}/../cheatsheet/cheatsheet_latest.pdf")
   Set(HTML_DIR ${CMAKE_CURRENT_SOURCE_DIR}/doc/html)
