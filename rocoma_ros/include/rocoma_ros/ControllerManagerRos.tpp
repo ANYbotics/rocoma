@@ -1,4 +1,5 @@
 #include <rocoma_ros/ControllerManagerRos.hpp>
+#include <ros/package.h>
 
 namespace rocoma_ros {
 
@@ -32,7 +33,7 @@ ControllerManagerRos<State_,Command_>::~ControllerManagerRos() {
 }
 
 template<typename State_, typename Command_>
-bool ControllerManagerRos<State_,Command_>::setupControllerPair(const ControllerPairOptions & options,
+bool ControllerManagerRos<State_,Command_>::setupControllerPair(const ControllerOptionsPair & options,
                                                                 std::shared_ptr<State_> state,
                                                                 std::shared_ptr<Command_> command,
                                                                 std::shared_ptr<boost::shared_mutex> mutexState,
@@ -43,15 +44,15 @@ bool ControllerManagerRos<State_,Command_>::setupControllerPair(const Controller
 
   try
   {
-    if(options.isRosController_) {
+    if(options.first.isRos_) {
       // Instantiate controller
-      rocoma_plugin::ControllerRosPluginInterface<State_, Command_> * rosController = controllerRosLoader_.createUnmanagedInstance(options.controllerName_);
+      rocoma_plugin::ControllerRosPluginInterface<State_, Command_> * rosController = controllerRosLoader_.createUnmanagedInstance(options.first.name_);
       // Set node handle
       rosController->setNodeHandle(nodeHandle_);
       controller = rosController;
     }
     else {
-      controller = controllerLoader_.createUnmanagedInstance(options.controllerName_);
+      controller = controllerLoader_.createUnmanagedInstance(options.first.name_);
     }
 
     // Set state and command
@@ -62,7 +63,7 @@ bool ControllerManagerRos<State_,Command_>::setupControllerPair(const Controller
   {
     //handle the class failing to load
     MELO_ERROR("The plugin failed to load for some reason. Error: %s", ex.what());
-    MELO_WARN_STREAM("Could not setup controller: " << options.controllerName_ << "!");
+    MELO_WARN_STREAM("Could not setup controller: " << options.first.name_ << "!");
 
     return false;
   }
@@ -71,20 +72,20 @@ bool ControllerManagerRos<State_,Command_>::setupControllerPair(const Controller
   //--- Add emergency controller
   rocoma_plugin::EmergencyControllerPluginInterface<State_, Command_> * emgcyController = nullptr;
 
-  if(!options.emergencyControllerName_.empty())
+  if(!options.second.name_.empty())
   {
     try
     {
-      if(options.isRosEmergencyController_) {
+      if(options.second.isRos_) {
         // Instantiate controller
         rocoma_plugin::EmergencyControllerRosPluginInterface<State_, Command_> * rosEmergencyController =
-            emergencyControllerRosLoader_.createUnmanagedInstance(options.emergencyControllerName_);
+            emergencyControllerRosLoader_.createUnmanagedInstance(options.second.name_);
         // Set node handle
         rosEmergencyController->setNodeHandle(nodeHandle_);
         emgcyController = rosEmergencyController;
       }
       else {
-        emgcyController = emergencyControllerLoader_.createUnmanagedInstance(options.emergencyControllerName_);
+        emgcyController = emergencyControllerLoader_.createUnmanagedInstance(options.second.name_);
       }
 
       // Set state and command
@@ -95,25 +96,25 @@ bool ControllerManagerRos<State_,Command_>::setupControllerPair(const Controller
     {
       //handle the class failing to load
       MELO_WARN("The plugin failed to load for some reason. Error: %s", ex.what());
-      MELO_WARN_STREAM("Could not setup emergency controller: " << options.emergencyControllerName_ << "! Using failproof controller instead");
+      MELO_WARN_STREAM("Could not setup emergency controller: " << options.second.name_ << "! Using failproof controller instead");
       emgcyController = nullptr;
     }
   } // endif
 
   // Set name to failproof if nullptr
-  std::string emergencyControllerName = (emgcyController == nullptr)? "FailproofController" : options.emergencyControllerName_;
+  std::string emergencyControllerName = (emgcyController == nullptr)? "FailproofController" : options.second.name_;
 
   // Add controller to the manager
   if(!this->addControllerPair(std::unique_ptr< roco::ControllerAdapterInterface >(controller),
                               std::unique_ptr< roco::EmergencyControllerAdapterInterface >(emgcyController)))
   {
-    MELO_WARN_STREAM("Could not add controller pair ( " << options.controllerName_ << " / "
+    MELO_WARN_STREAM("Could not add controller pair ( " << options.first.name_ << " / "
                      << emergencyControllerName << " ) to controller manager!");
     return false;
   }
 
   // Inform user
-  MELO_INFO_STREAM("Successfully added controller pair ( " << options.controllerName_ << " / "
+  MELO_INFO_STREAM("Successfully added controller pair ( " << options.first.name_ << " / "
                    << emergencyControllerName << " ) to controller manager!");
 
 }
@@ -157,7 +158,7 @@ bool ControllerManagerRos<State_,Command_>::setupFailproofController(const std::
 
 template<typename State_, typename Command_>
 bool ControllerManagerRos<State_,Command_>::setupControllers(const std::string & failproofControllerName,
-                                                             const std::vector< ControllerPairOptions > & controllerNameMap,
+                                                             const std::vector< ControllerOptionsPair > & controllerNameMap,
                                                              std::shared_ptr<State_> state,
                                                              std::shared_ptr<Command_> command,
                                                              std::shared_ptr<boost::shared_mutex> mutexState,
@@ -175,10 +176,98 @@ bool ControllerManagerRos<State_,Command_>::setupControllers(const std::string &
   // add emergency controllers to manager
   for(auto& controllerPair : controllerNameMap)
   {
-    success = success && setupControllerPair(controllerPair, state, command, mutexState, mutexCommand);
+    success = setupControllerPair(controllerPair, state, command, mutexState, mutexCommand) && success;
   }
 
   return success;
+
+}
+
+template<typename State_, typename Command_>
+bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(std::shared_ptr<State_> state,
+                                                                                std::shared_ptr<Command_> command,
+                                                                                std::shared_ptr<boost::shared_mutex> mutexState,
+                                                                                std::shared_ptr<boost::shared_mutex> mutexCommand) {
+  // Parse failproof controller name
+  std::string failproofControllerName;
+  MELO_WARN_STREAM("Has param: "<<nodeHandle_.hasParam("controller_manager/failproof_controller"));
+
+  nodeHandle_.getParam("controller_manager/failproof_controller", failproofControllerName);
+  MELO_WARN_STREAM("Failproof name: "<<failproofControllerName);
+  MELO_WARN_STREAM("namespace: "<<nodeHandle_.getNamespace());
+
+  // Parse controller list
+  std::vector<ControllerOptionsPair> controller_option_pairs;
+  ControllerOptionsPair controller_option_pair;
+
+  XmlRpc::XmlRpcValue controller_pair_list;
+  XmlRpc::XmlRpcValue controller;
+
+  nodeHandle_.getParam("controller_manager/controller_pairs", controller_pair_list);
+  ROS_ASSERT(controller_pair_list.getType() == XmlRpc::XmlRpcValue::TypeArray);
+
+  for (unsigned int i = 0; i < controller_pair_list.size(); ++i)
+  {
+    // Check that every entry is itself an array
+    ROS_ASSERT(controller_pair_list[i].getType() == XmlRpc::XmlRpcValue::TypeArray);
+
+    // Check that controller subentry exists and has type array
+    ROS_ASSERT(controller_pair_list[i].hasMember("controller_pair"));
+    ROS_ASSERT(controller_pair_list[i]["controller_pair"].getType() == XmlRpc::XmlRpcValue::TypeArray);
+    ROS_ASSERT(controller_pair_list[i]["controller_pair"].hasMember("controller"));
+    ROS_ASSERT(controller_pair_list[i]["controller_pair"]["controller"].getType() == XmlRpc::XmlRpcValue::TypeArray);
+
+    controller = controller_pair_list[i]["controller_pair"]["controller"];
+
+    // First assert everything
+    ROS_ASSERT(controller.hasMember("name"));
+    ROS_ASSERT(controller["name"].getType() == XmlRpc::XmlRpcValue::TypeString);
+    ROS_ASSERT(controller.hasMember("is_ros"));
+    ROS_ASSERT(controller["is_ros"].getType() == XmlRpc::XmlRpcValue::TypeBoolean);
+    ROS_ASSERT(controller.hasMember("parameter_package"));
+    ROS_ASSERT(controller["parameter_package"].getType() == XmlRpc::XmlRpcValue::TypeString);
+    ROS_ASSERT(controller.hasMember("parameter_path"));
+    ROS_ASSERT(controller["parameter_path"].getType() == XmlRpc::XmlRpcValue::TypeString);
+
+    MELO_INFO_STREAM("Controller name: " << controller_pair_list[i]["controller"]["name"] << " isRos: " << controller.hasMember("is_ros") << " path: " <<controller.hasMember("parameter_package"));
+
+    controller_option_pair.first.name_ = static_cast<std::string>(controller["name"]);
+    controller_option_pair.first.isRos_ = static_cast<bool>(controller["is_ros"]);
+    controller_option_pair.first.parameterPath_ = ros::package::getPath( static_cast<std::string>(controller["parameter_package"]) ) +
+        static_cast<std::string>(controller["parameter_path"]);
+
+    // Check if emergency controller is at all specified
+    if(controller_pair_list[i].hasMember("emergency_controller") &&
+        controller_pair_list[i]["controller_pair"]["emergency_controller"].getType() == XmlRpc::XmlRpcValue::TypeArray &&
+        controller_pair_list[i]["controller_pair"]["emergency_controller"].hasMember("name") &&
+        controller_pair_list[i]["controller_pair"]["emergency_controller"]["name"].getType() == XmlRpc::XmlRpcValue::TypeString &&
+        controller_pair_list[i]["controller_pair"]["emergency_controller"].hasMember("is_ros") &&
+        controller_pair_list[i]["controller_pair"]["emergency_controller"]["is_ros"].getType() == XmlRpc::XmlRpcValue::TypeBoolean &&
+        controller_pair_list[i]["controller_pair"]["emergency_controller"].hasMember("parameter_package") &&
+        controller_pair_list[i]["controller_pair"]["emergency_controller"]["parameter_package"].getType() == XmlRpc::XmlRpcValue::TypeString &&
+        controller_pair_list[i]["controller_pair"]["emergency_controller"].hasMember("parameter_path") &&
+        controller_pair_list[i]["controller_pair"]["emergency_controller"]["parameter_path"].getType() == XmlRpc::XmlRpcValue::TypeString)
+    {
+      controller_option_pair.second.name_ = static_cast<std::string>(controller_pair_list[i]["controller_pair"]["emergency_controller"]["name"]);
+      controller_option_pair.second.isRos_ = static_cast<bool>(controller_pair_list[i]["controller_pair"]["emergency_controller"]["is_ros"]);
+      controller_option_pair.second.parameterPath_ = ros::package::getPath(
+          static_cast<std::string>(controller_pair_list[i]["controller_pair"]["emergency_controller"]["parameter_package"]) ) +
+              static_cast<std::string>(controller_pair_list[i]["controller_pair"]["emergency_controller"]["parameter_path"]);
+    }
+    else {
+      controller_option_pair.second = ControllerOptions();
+    }
+
+    controller_option_pairs.push_back(controller_option_pair);
+  }
+
+
+  return setupControllers(failproofControllerName,
+                          controller_option_pairs,
+                          state,
+                          command,
+                          mutexState,
+                          mutexCommand);
 
 }
 

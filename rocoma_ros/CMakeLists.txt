@@ -9,6 +9,7 @@ find_package(catkin REQUIRED
   rocoma_plugin
   any_msgs
   pluginlib
+  roslib
 )
 
 catkin_package(
@@ -22,4 +23,5 @@ CATKIN_DEPENDS
   rocoma_plugin
   any_msgs
   pluginlib
+  roslib
 )

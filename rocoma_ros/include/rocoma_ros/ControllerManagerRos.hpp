@@ -51,32 +51,37 @@ class ControllerManagerRos : public rocoma::ControllerManager {
  public:
 
   //! Struct to simplify the adding of a controller pair
-  struct ControllerPairOptions {
+  struct ControllerOptions {
 
+    ControllerOptions():
+      name_(""),
+      parameterPath_(""),
+      isRos_("")
+    {
+
+    }
     /*! Constructor
-     * @param controllerName            Name of the controller
-     * @param emergencyControllerName   Name of the corresponding emergency controller
-     * @param isRosController           True if the controller is of type ControllerRosPlugin
-     * @param isRosEmergencyController  True if the emergency controller is of type EmergencyControllerRosPlugin
-     * @returns object of type ControllerPairOptions
+     * @param name            Name of the controller
+     * @param parameterPath   Path from which controller loads parameters
+     * @param isRos           True if the controller is of type ControllerRosPlugin
+     * @returns object of type ControllerOptions
      */
-    ControllerPairOptions(const std::string & controllerName,
-                          const std::string & emergencyControllerName,
-                          const bool & isRosController,
-                          const bool & isRosEmergencyController):
-                            controllerName_(controllerName),
-                            emergencyControllerName_(emergencyControllerName),
-                            isRosController_(isRosController),
-                            isRosEmergencyController_(isRosEmergencyController)
+    ControllerOptions(const std::string & name,
+                      const std::string & parameterPath,
+                      const bool isRos):
+                        name_(name),
+                        parameterPath_(parameterPath),
+                        isRos_(isRos)
     {
 
     }
 
-    std::string controllerName_;
-    std::string emergencyControllerName_;
-    bool isRosController_;
-    bool isRosEmergencyController_;
+    std::string name_;
+    std::string parameterPath_;
+    bool isRos_;
   };
+
+  using ControllerOptionsPair = std::pair<ControllerOptions, ControllerOptions>;
 
  public:
 
@@ -94,6 +99,8 @@ class ControllerManagerRos : public rocoma::ControllerManager {
   virtual ~ControllerManagerRos();
 
 
+
+
   /*! Add a single controller pair to the manager
    * @param options         options containing names and ros flags
    * @param state           robot state pointer
@@ -102,7 +109,7 @@ class ControllerManagerRos : public rocoma::ControllerManager {
    * @param mutexCommand    mutex protecting robot command pointer
    * @returns true iff added controller pair successfully
    */
-  bool setupControllerPair(const ControllerPairOptions & options,
+  bool setupControllerPair(const ControllerOptionsPair & options,
                            std::shared_ptr<State_> state,
                            std::shared_ptr<Command_> command,
                            std::shared_ptr<boost::shared_mutex> mutexState,
@@ -132,11 +139,43 @@ class ControllerManagerRos : public rocoma::ControllerManager {
    * @returns true iff all controllers were added successfully
    */
   bool setupControllers(const std::string & failproofControllerName,
-                        const std::vector<ControllerPairOptions> & controllerOptions,
+                        const std::vector<ControllerOptionsPair> & controllerOptions,
                         std::shared_ptr<State_> state,
                         std::shared_ptr<Command_> command,
                         std::shared_ptr<boost::shared_mutex> mutexState,
                         std::shared_ptr<boost::shared_mutex> mutexCommand);
+
+  /*! Loads the names of the controllers from the ros parameter server.
+   * Pattern in yaml:
+   * controller_manager:
+   *  failproof_controller: "MyFailProofController"
+   *    controller_pairs:
+   *      - controller_pair:
+   *          controller:
+   *            name:                     "MyController"
+   *            is_ros:                   true
+   *            parameter_package:        "my_controller_package"
+   *            parameter_path:           "my_param_folder/my_param_file.xml"
+   *          emergency_controller:
+   *            name:                     "MyEmergencyController "
+   *            is_ros:                   false
+   *            package:                  "my_emergency_controller_package"
+   *            parameter_path:           "my_emergency_param_folder/my_emergency_param_file.xml"
+   *      - controller_pair:
+   *          controller:
+   *           .... and so on
+   *
+   *
+   * @param state                   robot state pointer
+   * @param command                 robot command pointer
+   * @param mutexState              mutex protecting robot state pointer
+   * @param mutexCommand            mutex protecting robot command pointer
+   * @returns true iff all controllers were added successfully
+   */
+  bool setupControllersFromParameterServer(std::shared_ptr<State_> state,
+                                           std::shared_ptr<Command_> command,
+                                           std::shared_ptr<boost::shared_mutex> mutexState,
+                                           std::shared_ptr<boost::shared_mutex> mutexCommand);
 
   /*! Emergency stop service callback, triggers an emergency stop of the current controller
    * @param req   empty request

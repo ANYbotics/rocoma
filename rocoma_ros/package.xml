@@ -14,5 +14,6 @@
   <depend>rocoma_plugin</depend>
   <depend>any_msgs</depend>
   <depend>pluginlib</depend>
+  <depend>roslib</depend>
 
 </package>
