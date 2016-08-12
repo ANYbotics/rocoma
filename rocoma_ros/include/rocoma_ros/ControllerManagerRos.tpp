@@ -57,6 +57,7 @@ bool ControllerManagerRos<State_,Command_>::setupControllerPair(const Controller
 
     // Set state and command
     controller->setStateAndCommand(state, mutexState, command, mutexCommand);
+    controller->setParameterPath(options.first.parameterPath_);
 
   }
   catch(pluginlib::PluginlibException& ex)
@@ -90,7 +91,7 @@ bool ControllerManagerRos<State_,Command_>::setupControllerPair(const Controller
 
       // Set state and command
       emgcyController->setStateAndCommand(state, mutexState, command, mutexCommand);
-
+      emgcyController->setParameterPath(options.second.parameterPath_);
     }
     catch(pluginlib::PluginlibException& ex)
     {
@@ -190,75 +191,112 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
                                                                                 std::shared_ptr<boost::shared_mutex> mutexCommand) {
   // Parse failproof controller name
   std::string failproofControllerName;
-  MELO_WARN_STREAM("Has param: "<<nodeHandle_.hasParam("controller_manager/failproof_controller"));
-
-  nodeHandle_.getParam("controller_manager/failproof_controller", failproofControllerName);
-  MELO_WARN_STREAM("Failproof name: "<<failproofControllerName);
-  MELO_WARN_STREAM("namespace: "<<nodeHandle_.getNamespace());
+  if(!nodeHandle_.getParam("controller_manager/failproof_controller", failproofControllerName)) {
+    MELO_ERROR("Could not load parameter 'controller_manager/failproof_controller' from parameter server. Abort.");
+    return false;
+  }
 
   // Parse controller list
   std::vector<ControllerOptionsPair> controller_option_pairs;
   ControllerOptionsPair controller_option_pair;
-
   XmlRpc::XmlRpcValue controller_pair_list;
   XmlRpc::XmlRpcValue controller;
 
-  nodeHandle_.getParam("controller_manager/controller_pairs", controller_pair_list);
-  ROS_ASSERT(controller_pair_list.getType() == XmlRpc::XmlRpcValue::TypeArray);
-
-  for (unsigned int i = 0; i < controller_pair_list.size(); ++i)
-  {
-    // Check that every entry is itself an array
-    ROS_ASSERT(controller_pair_list[i].getType() == XmlRpc::XmlRpcValue::TypeArray);
-
-    // Check that controller subentry exists and has type array
-    ROS_ASSERT(controller_pair_list[i].hasMember("controller_pair"));
-    ROS_ASSERT(controller_pair_list[i]["controller_pair"].getType() == XmlRpc::XmlRpcValue::TypeArray);
-    ROS_ASSERT(controller_pair_list[i]["controller_pair"].hasMember("controller"));
-    ROS_ASSERT(controller_pair_list[i]["controller_pair"]["controller"].getType() == XmlRpc::XmlRpcValue::TypeArray);
-
-    controller = controller_pair_list[i]["controller_pair"]["controller"];
-
-    // First assert everything
-    ROS_ASSERT(controller.hasMember("name"));
-    ROS_ASSERT(controller["name"].getType() == XmlRpc::XmlRpcValue::TypeString);
-    ROS_ASSERT(controller.hasMember("is_ros"));
-    ROS_ASSERT(controller["is_ros"].getType() == XmlRpc::XmlRpcValue::TypeBoolean);
-    ROS_ASSERT(controller.hasMember("parameter_package"));
-    ROS_ASSERT(controller["parameter_package"].getType() == XmlRpc::XmlRpcValue::TypeString);
-    ROS_ASSERT(controller.hasMember("parameter_path"));
-    ROS_ASSERT(controller["parameter_path"].getType() == XmlRpc::XmlRpcValue::TypeString);
-
-    MELO_INFO_STREAM("Controller name: " << controller_pair_list[i]["controller"]["name"] << " isRos: " << controller.hasMember("is_ros") << " path: " <<controller.hasMember("parameter_package"));
-
-    controller_option_pair.first.name_ = static_cast<std::string>(controller["name"]);
-    controller_option_pair.first.isRos_ = static_cast<bool>(controller["is_ros"]);
-    controller_option_pair.first.parameterPath_ = ros::package::getPath( static_cast<std::string>(controller["parameter_package"]) ) +
-        static_cast<std::string>(controller["parameter_path"]);
-
-    // Check if emergency controller is at all specified
-    if(controller_pair_list[i].hasMember("emergency_controller") &&
-        controller_pair_list[i]["controller_pair"]["emergency_controller"].getType() == XmlRpc::XmlRpcValue::TypeArray &&
-        controller_pair_list[i]["controller_pair"]["emergency_controller"].hasMember("name") &&
-        controller_pair_list[i]["controller_pair"]["emergency_controller"]["name"].getType() == XmlRpc::XmlRpcValue::TypeString &&
-        controller_pair_list[i]["controller_pair"]["emergency_controller"].hasMember("is_ros") &&
-        controller_pair_list[i]["controller_pair"]["emergency_controller"]["is_ros"].getType() == XmlRpc::XmlRpcValue::TypeBoolean &&
-        controller_pair_list[i]["controller_pair"]["emergency_controller"].hasMember("parameter_package") &&
-        controller_pair_list[i]["controller_pair"]["emergency_controller"]["parameter_package"].getType() == XmlRpc::XmlRpcValue::TypeString &&
-        controller_pair_list[i]["controller_pair"]["emergency_controller"].hasMember("parameter_path") &&
-        controller_pair_list[i]["controller_pair"]["emergency_controller"]["parameter_path"].getType() == XmlRpc::XmlRpcValue::TypeString)
+  if(!nodeHandle_.getParam("controller_manager/controller_pairs", controller_pair_list)) {
+    MELO_WARN("Could not load parameter 'controller_manager/controller_pairs'. Add only failproof controller.");
+  }
+  else {
+    if(controller_pair_list.getType() == XmlRpc::XmlRpcValue::TypeArray)
     {
-      controller_option_pair.second.name_ = static_cast<std::string>(controller_pair_list[i]["controller_pair"]["emergency_controller"]["name"]);
-      controller_option_pair.second.isRos_ = static_cast<bool>(controller_pair_list[i]["controller_pair"]["emergency_controller"]["is_ros"]);
-      controller_option_pair.second.parameterPath_ = ros::package::getPath(
-          static_cast<std::string>(controller_pair_list[i]["controller_pair"]["emergency_controller"]["parameter_package"]) ) +
-              static_cast<std::string>(controller_pair_list[i]["controller_pair"]["emergency_controller"]["parameter_path"]);
+      for (unsigned int i = 0; i < controller_pair_list.size(); ++i)
+      {
+        // Check that controller_pair exists
+        if(controller_pair_list[i].getType() != XmlRpc::XmlRpcValue::TypeStruct ||
+           !controller_pair_list[i].hasMember("controller_pair") ||
+           controller_pair_list[i]["controller_pair"].getType() != XmlRpc::XmlRpcValue::TypeStruct )
+        {
+          MELO_WARN("Controllerpair nr %d can not be obtained. Skip controller pair.", i);
+          continue;
+        }
+
+        // Check if controller exists
+        if(controller_pair_list[i]["controller_pair"].hasMember("controller") &&
+            controller_pair_list[i]["controller_pair"]["controller"].getType() == XmlRpc::XmlRpcValue::TypeStruct)
+        {
+          controller = controller_pair_list[i]["controller_pair"]["controller"];
+        }
+        else
+        {
+          MELO_WARN("Controllerpair nr %d has no or wrong-typed member controller. Skip controller pair.", i);
+          continue;
+        }
+
+        // Check for data members
+        if(controller.hasMember("name") &&
+            controller["name"].getType() == XmlRpc::XmlRpcValue::TypeString &&
+            controller.hasMember("is_ros") &&
+            controller["is_ros"].getType() == XmlRpc::XmlRpcValue::TypeBoolean &&
+            controller.hasMember("parameter_package") &&
+            controller["parameter_package"].getType() == XmlRpc::XmlRpcValue::TypeString &&
+            controller.hasMember("parameter_path") &&
+            controller["parameter_path"].getType() == XmlRpc::XmlRpcValue::TypeString)
+        {
+          controller_option_pair.first.name_ = static_cast<std::string>(controller["name"]);
+          controller_option_pair.first.isRos_ = static_cast<bool>(controller["is_ros"]);
+          controller_option_pair.first.parameterPath_ = ros::package::getPath( static_cast<std::string>(controller["parameter_package"]) ) + "/" +
+              static_cast<std::string>(controller["parameter_path"]);
+          MELO_INFO("Got controller %s successfully from the parameter server. (is_ros: %s, complete parameter_path: %s!",
+                    controller_option_pair.first.name_.c_str(), controller_option_pair.first.isRos_?"true":"false", controller_option_pair.first.parameterPath_.c_str());
+        }
+        else
+        {
+          MELO_WARN("Subentry 'controller' of controllerpair nr %d has missing or wrong-type entries. Skip controller.", i);
+          continue;
+        }
+
+        // Parse emergency stop controller
+        if(controller_pair_list[i]["controller_pair"].hasMember("emergency_controller") &&
+            controller_pair_list[i]["controller_pair"]["emergency_controller"].getType() == XmlRpc::XmlRpcValue::TypeStruct)
+        {
+          controller = controller_pair_list[i]["controller_pair"]["emergency_controller"];
+        }
+        else
+        {
+          MELO_WARN("Controllerpair nr %d has no member emergency_controller. Add failproof controller instead.", i);
+          controller_option_pair.second = ControllerOptions();
+          controller_option_pairs.push_back(controller_option_pair);
+          continue;
+        }
+
+        if( controller.hasMember("name") &&
+            controller["name"].getType() == XmlRpc::XmlRpcValue::TypeString &&
+            controller.hasMember("is_ros") &&
+            controller["is_ros"].getType() == XmlRpc::XmlRpcValue::TypeBoolean &&
+            controller.hasMember("parameter_package") &&
+            controller["parameter_package"].getType() == XmlRpc::XmlRpcValue::TypeString &&
+            controller.hasMember("parameter_path") &&
+            controller["parameter_path"].getType() == XmlRpc::XmlRpcValue::TypeString)
+        {
+          controller_option_pair.second.name_ = static_cast<std::string>(controller["name"]);
+          controller_option_pair.second.isRos_ = static_cast<bool>(controller["is_ros"]);
+          controller_option_pair.second.parameterPath_ = ros::package::getPath( static_cast<std::string>(controller["parameter_package"]) ) + "/" +
+              static_cast<std::string>(controller["parameter_path"]);
+          MELO_INFO("Got controller %s successfully from the parameter server. (is_ros: %s, complete parameter_path: %s!",
+                    controller_option_pair.first.name_.c_str(), controller_option_pair.first.isRos_?"true":"false", controller_option_pair.first.parameterPath_.c_str());
+        }
+        else
+        {
+          MELO_WARN("Subentry 'emergency_controller' of controllerpair nr %d has missing or wrong-type entries. Add failproof controller instead.", i);
+          controller_option_pair.second = ControllerOptions();
+        }
+
+        controller_option_pairs.push_back(controller_option_pair);
+      }
     }
     else {
-      controller_option_pair.second = ControllerOptions();
+      MELO_WARN("Parameter 'controller_manager/controller_pairs' is not of array type. Add only failproof controller.");
+      controller_option_pairs.clear();
     }
-
-    controller_option_pairs.push_back(controller_option_pair);
   }
 
 
