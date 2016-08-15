@@ -98,7 +98,9 @@ class EmergencyControllerAdapter: virtual public roco::EmergencyControllerAdapte
     // Initialize the controller now.
     try {
       // Update the state.
-      this->updateState(dt, false);
+      if(!this->updateState(dt, false)) {
+        return false;
+      }
       signal_logger::logger->stopLogger();
 
       // Initialize controller
@@ -108,7 +110,9 @@ class EmergencyControllerAdapter: virtual public roco::EmergencyControllerAdapte
       }
 
       // Update command
-      this->updateCommand(dt);
+      if(!this->updateCommand(dt)) {
+        return false;
+      }
 
       this->isInitialized_ = true;
 

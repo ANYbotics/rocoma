@@ -93,7 +93,9 @@ bool ControllerAdapter<Controller_, State_, Command_>::initializeController(doub
   // Initialize the controller now.
   try {
     // Update the state.
-    this->updateState(dt, false);
+    if(!this->updateState(dt, false)) {
+   	  return false;
+   	}
     signal_logger::logger->stopLogger();
 
     // Initialize controller
@@ -103,7 +105,9 @@ bool ControllerAdapter<Controller_, State_, Command_>::initializeController(doub
     }
 
     // Update command
-    this->updateCommand(dt);
+    if(!this->updateCommand(dt)) {
+      return false;
+    }
 
     this->isInitialized_ = true;
 
@@ -136,7 +140,9 @@ bool ControllerAdapter<Controller_, State_, Command_>::advanceController(double 
 
   try {
     // Advance controller
-    this->updateState(dt);
+    if(!this->updateState(dt)) {
+      return false;
+    }
 
     if (!this->advance(dt)) {
       MELO_WARN_STREAM("Controller::advance() returned false!");
@@ -144,7 +150,9 @@ bool ControllerAdapter<Controller_, State_, Command_>::advanceController(double 
     }
 
     // Update commands
-    this->updateCommand(dt);
+    if(!this->updateCommand(dt)) {
+      return false;
+    }
 
     // Collect logger data
     signal_logger::logger->collectLoggerData();
@@ -173,7 +181,9 @@ bool ControllerAdapter<Controller_, State_, Command_>::resetController(double dt
 
   try {
     // Update state
-    updateState(dt, false);
+    if(!updateState(dt, false) ) {
+      return false;
+    }
     signal_logger::logger->stopLogger();
 
     // Reset controller
@@ -183,7 +193,9 @@ bool ControllerAdapter<Controller_, State_, Command_>::resetController(double dt
     }
 
     // Update command
-    updateCommand(dt);
+    if(!updateCommand(dt)) {
+      return false;
+    }
 
   } catch (std::exception& e) {
     MELO_WARN_STREAM("Exception caught: " << e.what());

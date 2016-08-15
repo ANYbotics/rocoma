@@ -233,22 +233,9 @@ bool ControllerManager::emergencyStop() {
   stopWorkerOptions.destructWhenDone_ = true;
 
   // If state ok and emergency controller registered -> switch to emergency controller
-  if(activeControllerState_ == State::OK &&
-      activeControllerPair_.emgcyController_ != nullptr &&
-      !activeControllerPair_.emgcyController_->isBeingStopped() )
-  {
-    bool success = true;
-
-    {
-      std::unique_lock<std::mutex> lockEmergencyController(emergencyControllerMutex_);
-      // Init emergency controller fast
-      success = activeControllerPair_.emgcyController_->initializeControllerFast(timeStep_);
-      // only advance if correctly initialized
-      success = success && activeControllerPair_.emgcyController_->advanceController(timeStep_);
-    }
-
+  if(activeControllerState_ == State::OK) {
     // stop controller in a different thread
-    stopWorkerOptions.name_ = "stop_controller_" + activeControllerPair_.controller_->getControllerName();
+    stopWorkerOptions.name_ = "stop_controller_" + activeControllerPair_.controllerName_;
     stopWorkerOptions.callback_ = std::bind(&ControllerManager::emergencyStopControllerWorker, this, std::placeholders::_1,
                                             activeControllerPair_.controller_, EmergencyStopType::EMERGENCY);
     {
@@ -256,16 +243,39 @@ bool ControllerManager::emergencyStop() {
       workerManager_.addWorker(stopWorkerOptions, true);
     }
 
+    if(activeControllerPair_.emgcyController_ != nullptr &&
+        !activeControllerPair_.emgcyController_->isBeingStopped()) {
 
-    if(success)
-    {
-      // Switch to emergency state
-      activeControllerState_ = State::EMERGENCY;
+      bool success = true;
 
-      // Return here -> do not move on to failproof controller
-      return true;
+      {
+        std::unique_lock<std::mutex> lockEmergencyController(emergencyControllerMutex_);
+        // Init emergency controller fast
+        success = activeControllerPair_.emgcyController_->initializeControllerFast(timeStep_);
+        // only advance if correctly initialized
+        success = success && activeControllerPair_.emgcyController_->advanceController(timeStep_);
+      }
+
+      if(success)
+      {
+        // Switch to emergency state
+        activeControllerState_ = State::EMERGENCY;
+
+        // Return here -> do not move on to failproof controller
+        return true;
+      }
     }
 
+  }
+  else {
+    // stop emergency controller in a different thread
+    stopWorkerOptions.name_ = "stop_controller_" + activeControllerPair_.emgcyControllerName_;
+    stopWorkerOptions.callback_ = std::bind(&ControllerManager::emergencyStopControllerWorker, this, std::placeholders::_1,
+                                            activeControllerPair_.emgcyController_, EmergencyStopType::FAILPROOF);
+    {
+      std::unique_lock<std::mutex> lockWorkerManager(workerManagerMutex_);
+      workerManager_.addWorker(stopWorkerOptions, true);
+    }
   }
 
   // Advance failproof controller
@@ -276,15 +286,6 @@ bool ControllerManager::emergencyStop() {
 
   // Switch to failure state
   activeControllerState_ = State::FAILURE;
-
-  // stop emergency controller in a different thread
-  stopWorkerOptions.name_ = "stop_controller_" + activeControllerPair_.emgcyController_->getControllerName();
-  stopWorkerOptions.callback_ = std::bind(&ControllerManager::emergencyStopControllerWorker, this, std::placeholders::_1,
-                                          activeControllerPair_.emgcyController_, EmergencyStopType::FAILPROOF);
-  {
-    std::unique_lock<std::mutex> lockWorkerManager(workerManagerMutex_);
-    workerManager_.addWorker(stopWorkerOptions, true);
-  }
 
   return true;
 }
@@ -323,7 +324,7 @@ ControllerManager::SwitchResponse ControllerManager::switchController(const std:
   // Check if controller is already active
   {
     std::unique_lock<std::mutex> lockActiveController(activeControllerMutex_);
-    if (activeControllerState_ == State::OK && controllerName == activeControllerPair_.controller_->getControllerName()) {
+    if (activeControllerState_ == State::OK && controllerName == activeControllerPair_.controllerName_) {
       MELO_INFO("Controller %s is already running!", controllerName.c_str());
       return SwitchResponse::RUNNING;
     }
@@ -428,7 +429,7 @@ bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
       oldController->setIsBeingStopped(false);
     }
 
-    MELO_INFO("Switched to controller %s", activeControllerPair_.controller_->getControllerName().c_str());
+    MELO_INFO("Switched to controller %s", activeControllerPair_.controllerName_.c_str());
   }
   else {
     // switch to freeze controller
@@ -457,12 +458,12 @@ std::string ControllerManager::getActiveControllerName() {
   switch(activeControllerState_) {
     case State::OK:
     {
-      controllerName = activeControllerPair_.controller_->getControllerName();
+      controllerName = activeControllerPair_.controllerName_;
       break;
     }
     case State::EMERGENCY:
     {
-      controllerName = activeControllerPair_.emgcyController_->getControllerName();
+      controllerName = activeControllerPair_.emgcyControllerName_;
       break;
     }
   }
