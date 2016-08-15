@@ -298,7 +298,6 @@ bool ControllerManager::emergencyStopControllerWorker(const any_worker::WorkerEv
 
   {
     // Stop controller and block -> switch controller can not happen while controller is stopped
-    std::unique_lock<std::mutex> lockController(controllerMutex_);
     controller->setIsBeingStopped(true);
     success = controller->preStopController();
     success = controller->stopController() && success;
