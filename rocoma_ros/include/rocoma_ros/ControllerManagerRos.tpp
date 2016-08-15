@@ -4,9 +4,11 @@
 namespace rocoma_ros {
 
 template<typename State_, typename Command_>
-ControllerManagerRos<State_,Command_>::ControllerManagerRos(ros::NodeHandle& nodeHandle, const std::string & scopedStateName,
-                                                            const std::string & scopedCommandName):
-                                                            rocoma::ControllerManager(),
+ControllerManagerRos<State_,Command_>::ControllerManagerRos(const std::string & scopedStateName,
+                                                            const std::string & scopedCommandName,
+                                                            const double timeStep,
+                                                            ros::NodeHandle nodeHandle):
+                                                            rocoma::ControllerManager(timeStep),
                                                             nodeHandle_(nodeHandle),
                                                             failproofControllerLoader_("rocoma_plugin", "rocoma_plugin::FailproofControllerPluginInterface<" + scopedStateName + ", " + scopedCommandName + ">"),
                                                             emergencyControllerLoader_("rocoma_plugin", "rocoma_plugin::EmergencyControllerPluginInterface<" + scopedStateName + ", " + scopedCommandName + ">"),
@@ -16,10 +18,10 @@ ControllerManagerRos<State_,Command_>::ControllerManagerRos(ros::NodeHandle& nod
 
 {
   // initialize services
-  switchControllerService_ = nodeHandle.advertiseService("switch_controller", &ControllerManagerRos::switchController, this);
-  getAvailableControllersService_ = nodeHandle.advertiseService("get_available_controllers", &ControllerManagerRos::getAvailableControllers, this);
-  getActiveControllerService_ = nodeHandle.advertiseService("get_active_controller", &ControllerManagerRos::getActiveController, this);
-  emergencyStopService_ = nodeHandle.advertiseService("emergency_stop", &ControllerManagerRos::emergencyStop, this);
+  switchControllerService_ = nodeHandle.advertiseService("controller_manager/switch_controller", &ControllerManagerRos::switchController, this);
+  getAvailableControllersService_ = nodeHandle.advertiseService("controller_manager/get_available_controllers", &ControllerManagerRos::getAvailableControllers, this);
+  getActiveControllerService_ = nodeHandle.advertiseService("controller_manager/get_active_controller", &ControllerManagerRos::getActiveController, this);
+  emergencyStopService_ = nodeHandle.advertiseService("controller_manager/emergency_stop", &ControllerManagerRos::emergencyStop, this);
 
   // initialize publishers
   emergencyStopStatePublisher_.shutdown();
@@ -193,6 +195,7 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
   std::string failproofControllerName;
   if(!nodeHandle_.getParam("controller_manager/failproof_controller", failproofControllerName)) {
     MELO_ERROR("Could not load parameter 'controller_manager/failproof_controller' from parameter server. Abort.");
+    exit(-1);
     return false;
   }
 

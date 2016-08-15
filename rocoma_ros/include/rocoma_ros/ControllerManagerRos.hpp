@@ -84,22 +84,25 @@ class ControllerManagerRos : public rocoma::ControllerManager {
   using ControllerOptionsPair = std::pair<ControllerOptions, ControllerOptions>;
 
  public:
-
   /*! Constructor
-   * @param nodeHandle              Ros nodehandle (register services, set to ros controllers)
    * @param scopedStateName         Name of the robot state class, including namespaces  (e.g. "myStatePkg::State")
    * @param scopedCommandName       Name of the robot command class, including namespaces  (e.g. "myCommandPkg::Command")
+   * @param timestep                Controller timestep (default: 0.01s)
+   * @param nodeHandle              Ros nodehandle (default: default constructed handle)
    * @returns object of type ControllerManagerRos
    */
-  ControllerManagerRos(ros::NodeHandle& nodeHandle,
-                       const std::string & scopedStateName,
-                       const std::string & scopedCommandName);
+  ControllerManagerRos(const std::string & scopedStateName,
+                       const std::string & scopedCommandName,
+                       const double timestep = 0.01,
+                       ros::NodeHandle nodeHandle = ros::NodeHandle());
 
   //! Default destructor
   virtual ~ControllerManagerRos();
 
-
-
+  /*! Set ros nodehandle
+   * @param nh   the nodehandle to be set
+   */
+  void setNodeHandle(ros::NodeHandle & nh) { nodeHandle_ = nh; }
 
   /*! Add a single controller pair to the manager
    * @param options         options containing names and ros flags

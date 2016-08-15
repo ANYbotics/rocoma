@@ -37,12 +37,12 @@
 
 namespace rocoma {
 
-ControllerManager::ControllerManager() :
+ControllerManager::ControllerManager(const double timeStep) :
                                                             //    updating_(false),
                                                             //    timerStart_(),
                                                             //    timerStop_(),
                                                             //    minimalRealtimeFactor_(2.0),
-                                                                timeStep_(1),
+                                                                timeStep_(timeStep),
                                                                 isRealRobot_(false),
                                                                 activeControllerState_(State::FAILURE),
                                                                 workerManager_(),

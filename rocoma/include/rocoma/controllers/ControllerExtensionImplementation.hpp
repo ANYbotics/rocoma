@@ -160,6 +160,8 @@ class ControllerExtensionImplementation: public ControllerImplementation<Control
   roco::time::TimeStd time_;
   //! Worker Manager
   any_worker::WorkerManager workerManager_;
+  //! Worker Manager Mutex
+  std::mutex mutexWorkerManager_;
 
 };
 

@@ -100,11 +100,23 @@ class ControllerManager
   using FailproofControllerPtr = std::unique_ptr<roco::FailproofControllerAdapterInterface>;
 
  public:
-  //! Default constructor
-  ControllerManager();
+  /**
+   * @brief Constructor
+   * @param timestep controller timestep (default = 0.01s)
+   */
+  ControllerManager(const double timestep = 0.01);
 
   //! Destructor
   virtual ~ControllerManager();
+
+  /**
+   * @brief Sets the controller timestep
+   * @param timestep  controller timestep
+   */
+  void setTimestep(const double timestep)
+  {
+    timeStep_ = timestep;
+  }
 
   /**
    * @brief Add a controller pair to the manager
