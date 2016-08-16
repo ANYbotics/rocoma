@@ -40,6 +40,8 @@
 
 #pragma once
 
+#include "rocoma_plugin/plugins/ControllerPlugin.hpp"
+#include "rocoma_plugin/plugins/ControllerRosPlugin.hpp"
 #include "rocoma/controllers/ControllerTuple.hpp"
 
 /*!
@@ -47,14 +49,16 @@
  *   This macro is a wrapper to PLUGINLIB_EXPORT_CLASS, for templated classes.
  *   Protects typedefs in internal namespace.
  */
-#define ROCOMA_EXPORT_CONTROLLER_TUPLE(state, command, name, ...)                                                  \
-  namespace plugin_##name_internal {                                                                               \
-    class ControllerTuple: public rocoma::ControllerTuple<state, command, __VA_ARGS__ > {                          \
-     public:                                                                                                       \
-         ControllerTuple() {                                                                                       \
-             this->name_ = #name;                                                                                  \
-         }                                                                                                         \
-        virtual ~ControllerTuple() {}                                                                              \
-    };                                                                                                             \
-  }                                                                                                                \
-  ROCOMA_EXPORT_CONTROLLER(name, plugin_##name_internal::ControllerTuple, state, command)
+#define ROCOMA_EXPORT_CONTROLLER_TUPLE(name, state, command, ...)                                                               \
+  namespace plugin_##name_internal {                                                                                            \
+      using name = rocoma_plugin::ControllerPlugin< rocoma::ControllerTuple<state, command, __VA_ARGS__ > , state , command>;   \
+      using PluginBase = rocoma_plugin::ControllerPluginInterface<state , command>;                                             \
+      PLUGINLIB_EXPORT_CLASS(name, PluginBase)                                                                                  \
+  }
+
+#define ROCOMA_EXPORT_CONTROLLER_TUPLE_ROS(name, state, command, ...)                                                                  \
+  namespace plugin_##name_internal {                                                                                                   \
+      using name = rocoma_plugin::ControllerRosPlugin< rocoma::ControllerTupleRos<state, command, __VA_ARGS__ > , state , command>;    \
+      using PluginBase = rocoma_plugin::ControllerRosPluginInterface<state , command>;                                                 \
+      PLUGINLIB_EXPORT_CLASS(name, PluginBase)                                                                                         \
+  }

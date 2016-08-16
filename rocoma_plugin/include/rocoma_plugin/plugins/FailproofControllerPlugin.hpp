@@ -45,7 +45,7 @@
  *   This macro is a wrapper to PLUGINLIB_EXPORT_CLASS, for templated classes.
  *   Protects typedefs in internal namespace.
  */
-#define ROCOMA_EXPORT_FAILPROOF_CONTROLLER(name, controller, state, command) 															\
+#define ROCOMA_EXPORT_FAILPROOF_CONTROLLER(name, state, command, controller) 															\
 				namespace failproof_plugin_internal{																															\
 					using name = rocoma_plugin::FailproofControllerPlugin<controller , state , command>;	  	      \
 					using PluginBase = rocoma_plugin::FailproofControllerPluginInterface<state , command>;			    \

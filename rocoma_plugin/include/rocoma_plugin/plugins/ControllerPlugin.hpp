@@ -45,7 +45,7 @@
  *   This macro is a wrapper to PLUGINLIB_EXPORT_CLASS, for templated classes.
  *   Protects typedefs in internal namespace.
  */
-#define ROCOMA_EXPORT_CONTROLLER(name, controller, state, command) 									\
+#define ROCOMA_EXPORT_CONTROLLER(name, state, command, controller) 									\
     namespace plugin_##name_internal {																							\
       using name = rocoma_plugin::ControllerPlugin<controller , state , command>;		\
       using PluginBase = rocoma_plugin::ControllerPluginInterface<state , command>;	\

@@ -43,62 +43,121 @@
 
 // roco
 #include "roco/controllers/Controller.hpp"
+#include "roco/controllers/ControllerRos.hpp"
 
 // STL
 #include <algorithm>
+#include <exception>
 
 namespace rocoma {
 
-template <typename State_, typename Command_, typename... Controllers_>
-class ControllerTuple: virtual public roco::Controller<State_, Command_>, public Controllers_ ...
+template <typename Base_, typename State_, typename Command_, typename... Controllers_>
+class ControllerTupleBase: virtual public Base_, public Controllers_ ...
 {
  public:
-  ControllerTuple() { }
-  virtual ~ControllerTuple() { }
 
+  // This allows returning directly when one of the controllers returns false
+  class ControllerTupleException: public std::exception
+  {
+    virtual const char* what() const throw()
+    {
+      return "Controller tuple exception!";
+    }
+  } myex;
+
+  ControllerTupleBase():
+    Base_(),
+    Controllers_()...
+  {
+  }
+
+  virtual ~ControllerTupleBase() { }
+
+ protected:
   //! Roco implementation
   virtual bool create(double dt)
   {
-    std::initializer_list<bool> list = {(Controllers_::create(dt))...};
-    return std::find(list.begin(), list.end(), false) == list.end();
+    try {
+      std::initializer_list<bool> list = {(Controllers_::create(dt)?true:throw(myex))...};
+    }
+    catch(ControllerTupleException& e) {
+      return false;
+    }
+    return true;
   }
 
   virtual bool initialize(double dt)
   {
-    std::initializer_list<bool> list = {(Controllers_::initialize(dt))...};
-    return std::find(list.begin(), list.end(), false) == list.end();
+    try {
+      std::initializer_list<bool> list = {(Controllers_::initialize(dt)?true:throw(myex))...};
+    }
+    catch(ControllerTupleException& e) {
+      return false;
+    }
+    return true;
   }
 
   virtual bool reset(double dt)
   {
-    std::initializer_list<bool> list = {(Controllers_::reset(dt))...};
-    return std::find(list.begin(), list.end(), false) == list.end();
+    try {
+      std::initializer_list<bool> list = {(Controllers_::reset(dt)?true:throw(myex))...};
+    }
+    catch(ControllerTupleException& e) {
+      return false;
+    }
+    return true;
   }
 
   virtual bool advance(double dt)
   {
-    std::initializer_list<bool> list = {(Controllers_::advance(dt))...};
-    return std::find(list.begin(), list.end(), false) == list.end();
+    try {
+      std::initializer_list<bool> list = {(Controllers_::advance(dt)?true:throw(myex))...};
+    }
+    catch(ControllerTupleException& e) {
+      return false;
+    }
+    return true;
   }
 
   virtual bool preStop()
   {
-    std::initializer_list<bool> list = {(Controllers_::preStop())...};
-    return std::find(list.begin(), list.end(), false) == list.end();
+    try {
+      std::initializer_list<bool> list = {(Controllers_::preStop()?true:throw(myex))...};
+    }
+    catch(ControllerTupleException& e) {
+      return false;
+    }
+    return true;
   }
 
   virtual bool stop()
   {
-    std::initializer_list<bool> list = {(Controllers_::stop())...};
-    return std::find(list.begin(), list.end(), false) == list.end();
+    try {
+      std::initializer_list<bool> list = {(Controllers_::stop()?true:throw(myex))...};
+    }
+    catch(ControllerTupleException& e) {
+      return false;
+    }
+    return true;
   }
 
   virtual bool cleanup()
   {
-    std::initializer_list<bool> list = {(Controllers_::cleanup())...};
-    return std::find(list.begin(), list.end(), false) == list.end();
+    try {
+      std::initializer_list<bool> list = {(Controllers_::cleanup()?true:throw(myex))...};
+    }
+    catch(ControllerTupleException& e) {
+      return false;
+    }
+    return true;
   }
 
 };
+
+template <typename State_, typename Command_, typename... Controllers_>
+using ControllerTuple = ControllerTupleBase< roco::Controller<State_, Command_>, State_, Command_, Controllers_... >;
+
+template <typename State_, typename Command_, typename... Controllers_>
+using ControllerTupleRos = ControllerTupleBase< roco::ControllerRos<State_, Command_>, State_, Command_, Controllers_... >;
 
 } /* namespace rocoma */

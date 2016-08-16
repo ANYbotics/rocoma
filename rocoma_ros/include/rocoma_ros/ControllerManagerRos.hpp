@@ -54,6 +54,7 @@ class ControllerManagerRos : public rocoma::ControllerManager {
   struct ControllerOptions {
 
     ControllerOptions():
+      pluginName_(""),
       name_(""),
       parameterPath_(""),
       isRos_("")
@@ -66,9 +67,11 @@ class ControllerManagerRos : public rocoma::ControllerManager {
      * @param isRos           True if the controller is of type ControllerRosPlugin
      * @returns object of type ControllerOptions
      */
-    ControllerOptions(const std::string & name,
+    ControllerOptions(const std::string & pluginName,
+                      const std::string & name,
                       const std::string & parameterPath,
                       const bool isRos):
+                        pluginName_(pluginName),
                         name_(name),
                         parameterPath_(parameterPath),
                         isRos_(isRos)
@@ -76,6 +79,7 @@ class ControllerManagerRos : public rocoma::ControllerManager {
 
     }
 
+    std::string pluginName_;
     std::string name_;
     std::string parameterPath_;
     bool isRos_;

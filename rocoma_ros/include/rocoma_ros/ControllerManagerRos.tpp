@@ -48,16 +48,17 @@ bool ControllerManagerRos<State_,Command_>::setupControllerPair(const Controller
   {
     if(options.first.isRos_) {
       // Instantiate controller
-      rocoma_plugin::ControllerRosPluginInterface<State_, Command_> * rosController = controllerRosLoader_.createUnmanagedInstance(options.first.name_);
+      rocoma_plugin::ControllerRosPluginInterface<State_, Command_> * rosController = controllerRosLoader_.createUnmanagedInstance(options.first.pluginName_);
       // Set node handle
       rosController->setNodeHandle(nodeHandle_);
       controller = rosController;
     }
     else {
-      controller = controllerLoader_.createUnmanagedInstance(options.first.name_);
+      controller = controllerLoader_.createUnmanagedInstance(options.first.pluginName_);
     }
 
     // Set state and command
+    controller->setName( options.first.name_ );
     controller->setStateAndCommand(state, mutexState, command, mutexCommand);
     controller->setParameterPath(options.first.parameterPath_);
 
@@ -82,16 +83,17 @@ bool ControllerManagerRos<State_,Command_>::setupControllerPair(const Controller
       if(options.second.isRos_) {
         // Instantiate controller
         rocoma_plugin::EmergencyControllerRosPluginInterface<State_, Command_> * rosEmergencyController =
-            emergencyControllerRosLoader_.createUnmanagedInstance(options.second.name_);
+            emergencyControllerRosLoader_.createUnmanagedInstance(options.second.pluginName_);
         // Set node handle
         rosEmergencyController->setNodeHandle(nodeHandle_);
         emgcyController = rosEmergencyController;
       }
       else {
-        emgcyController = emergencyControllerLoader_.createUnmanagedInstance(options.second.name_);
+        emgcyController = emergencyControllerLoader_.createUnmanagedInstance(options.second.pluginName_);
       }
 
       // Set state and command
+      emgcyController->setName( options.second.name_ );
       emgcyController->setStateAndCommand(state, mutexState, command, mutexCommand);
       emgcyController->setParameterPath(options.second.parameterPath_);
     }
@@ -235,7 +237,9 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
         }
 
         // Check for data members
-        if(controller.hasMember("name") &&
+        if( controller.hasMember("plugin_name") &&
+            controller["plugin_name"].getType() == XmlRpc::XmlRpcValue::TypeString &&
+            controller.hasMember("name") &&
             controller["name"].getType() == XmlRpc::XmlRpcValue::TypeString &&
             controller.hasMember("is_ros") &&
             controller["is_ros"].getType() == XmlRpc::XmlRpcValue::TypeBoolean &&
@@ -244,12 +248,13 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
             controller.hasMember("parameter_path") &&
             controller["parameter_path"].getType() == XmlRpc::XmlRpcValue::TypeString)
         {
+          controller_option_pair.first.pluginName_ = static_cast<std::string>(controller["plugin_name"]);
           controller_option_pair.first.name_ = static_cast<std::string>(controller["name"]);
           controller_option_pair.first.isRos_ = static_cast<bool>(controller["is_ros"]);
           controller_option_pair.first.parameterPath_ = ros::package::getPath( static_cast<std::string>(controller["parameter_package"]) ) + "/" +
               static_cast<std::string>(controller["parameter_path"]);
-          MELO_INFO("Got controller %s successfully from the parameter server. (is_ros: %s, complete parameter_path: %s!",
-                    controller_option_pair.first.name_.c_str(), controller_option_pair.first.isRos_?"true":"false", controller_option_pair.first.parameterPath_.c_str());
+          MELO_INFO("Got controller plugin %s with controller name %s successfully from the parameter server. (is_ros: %s, complete parameter_path: %s!",
+                    controller_option_pair.first.pluginName_.c_str(), controller_option_pair.first.name_.c_str(), controller_option_pair.first.isRos_?"true":"false", controller_option_pair.first.parameterPath_.c_str());
         }
         else
         {
@@ -271,7 +276,9 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
           continue;
         }
 
-        if( controller.hasMember("name") &&
+        if( controller.hasMember("plugin_name") &&
+            controller["plugin_name"].getType() == XmlRpc::XmlRpcValue::TypeString &&
+            controller.hasMember("name") &&
             controller["name"].getType() == XmlRpc::XmlRpcValue::TypeString &&
             controller.hasMember("is_ros") &&
             controller["is_ros"].getType() == XmlRpc::XmlRpcValue::TypeBoolean &&
@@ -280,12 +287,13 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
             controller.hasMember("parameter_path") &&
             controller["parameter_path"].getType() == XmlRpc::XmlRpcValue::TypeString)
         {
+          controller_option_pair.second.pluginName_ = static_cast<std::string>(controller["plugin_name"]);
           controller_option_pair.second.name_ = static_cast<std::string>(controller["name"]);
           controller_option_pair.second.isRos_ = static_cast<bool>(controller["is_ros"]);
           controller_option_pair.second.parameterPath_ = ros::package::getPath( static_cast<std::string>(controller["parameter_package"]) ) + "/" +
               static_cast<std::string>(controller["parameter_path"]);
-          MELO_INFO("Got controller %s successfully from the parameter server. (is_ros: %s, complete parameter_path: %s!",
-                    controller_option_pair.first.name_.c_str(), controller_option_pair.first.isRos_?"true":"false", controller_option_pair.first.parameterPath_.c_str());
+          MELO_INFO("Got controller plugin %s with controller name %s successfully from the parameter server. (is_ros: %s, complete parameter_path: %s!",
+                    controller_option_pair.second.name_.c_str(), controller_option_pair.second.name_.c_str(), controller_option_pair.second.isRos_?"true":"false", controller_option_pair.second.parameterPath_.c_str());
         }
         else
         {
