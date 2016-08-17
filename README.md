@@ -4,7 +4,6 @@
 * absolute path for parameter files, or relative to path of program execution
 * build documentation using catkin
 * add/correct license headers
-* provide a single header file for plugins / make rocoma_plugin pluginlib dependent
 * extend doxygen documentation
 
      * add helpers (rospack command)
