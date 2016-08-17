@@ -40,6 +40,15 @@
 
 #pragma once
 
+// rocoma_plugin
+#include "rocoma_plugin/interfaces/EmergencyControllerPluginInterface.hpp"
+
+// rocoma
+#include "rocoma/controllers/EmergencyControllerAdapter.hpp"
+
+// pluginlib
+#include <pluginlib/class_list_macros.h>
+
 /*!
  *   Export your emergency controller as a EmergencyControllerPlugin in order to load it as a plugin.
  *   This macro is a wrapper to PLUGINLIB_EXPORT_CLASS, for templated classes.
@@ -52,11 +61,6 @@
           PLUGINLIB_EXPORT_CLASS(name, PluginBase)                                                        \
         }
 
-// rocoma_plugin
-#include "rocoma_plugin/interfaces/EmergencyControllerPluginInterface.hpp"
-
-// rocoma
-#include "rocoma/controllers/EmergencyControllerAdapter.hpp"
 
 namespace rocoma_plugin {
 

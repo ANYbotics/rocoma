@@ -40,6 +40,15 @@
 
 #pragma once
 
+// pluginlib
+#include <pluginlib/class_list_macros.h>
+
+// rocoma_plugin
+#include "rocoma_plugin/interfaces/ControllerPluginInterface.hpp"
+
+// rocoma
+#include "rocoma/controllers/ControllerAdapter.hpp"
+
 /*!
  *   Export your controller as a ControllerPlugin in order to load it as a plugin.
  *   This macro is a wrapper to PLUGINLIB_EXPORT_CLASS, for templated classes.
@@ -51,13 +60,7 @@
       using PluginBase = rocoma_plugin::ControllerPluginInterface<state , command>;	\
       PLUGINLIB_EXPORT_CLASS(name, PluginBase)																			\
     }																																								\
-
-// rocoma_plugin
-#include "rocoma_plugin/interfaces/ControllerPluginInterface.hpp"
-
-// rocoma
-#include "rocoma/controllers/ControllerAdapter.hpp"
-
+    
 namespace rocoma_plugin {
 
 //!  Plugin based controller adapter.

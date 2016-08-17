@@ -40,6 +40,15 @@
 
 #pragma once
 
+// rocoma_plugin
+#include "rocoma_plugin/interfaces/FailproofControllerPluginInterface.hpp"
+
+// rocoma
+#include "rocoma/controllers/FailproofControllerAdapter.hpp"
+
+// pluginlib
+#include <pluginlib/class_list_macros.h>
+
 /*!
  *   Export your failproof controller as a FailproofControllerPlugin in order to load it as a plugin.
  *   This macro is a wrapper to PLUGINLIB_EXPORT_CLASS, for templated classes.
@@ -51,12 +60,6 @@
 					using PluginBase = rocoma_plugin::FailproofControllerPluginInterface<state , command>;			    \
 					PLUGINLIB_EXPORT_CLASS(name, PluginBase)																						            \
 				}																																												          \
-
-// rocoma_plugin
-#include "rocoma_plugin/interfaces/FailproofControllerPluginInterface.hpp"
-
-// rocoma
-#include "rocoma/controllers/FailproofControllerAdapter.hpp"
 
 namespace rocoma_plugin {
 

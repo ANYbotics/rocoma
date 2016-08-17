@@ -117,13 +117,9 @@ bool ControllerAdapter<Controller_, State_, Command_>::initializeController(doub
     return false;
   }
 
-  // Start workers and logging
+  // Start logging
   this->isRunning_ = true;
   signal_logger::logger->startLogger();
-  {
-    std::unique_lock<std::mutex> lockWorkerManager(this->mutexWorkerManager_);
-    this->workerManager_.startWorkers();
-  }
   MELO_INFO_STREAM( "Initialized controller " << this->getControllerName() << " successfully!");
 
   return true;
@@ -202,13 +198,9 @@ bool ControllerAdapter<Controller_, State_, Command_>::resetController(double dt
     return false;
   }
 
-  // Start workers and logging
+  // Start logging
   this->isRunning_ = true;
   signal_logger::logger->startLogger();
-  {
-    std::unique_lock<std::mutex> lockWorkerManager(this->mutexWorkerManager_);
-    this->workerManager_.startWorkers();
-  }
   MELO_INFO_STREAM("Reset controller " << this->getControllerName() << " successfully!");
 
   return true;
@@ -231,10 +223,6 @@ bool ControllerAdapter<Controller_,State_, Command_>::cleanupController()
       MELO_WARN_STREAM("Could not clean up the controller!");
       return false;
     }
-    {
-      std::unique_lock<std::mutex> lockWorkerManager(this->mutexWorkerManager_);
-      this->workerManager_.stopWorkers();
-    }
 
   } catch (std::exception& e) {
     MELO_WARN_STREAM("Exception caught: " << e.what());
@@ -251,12 +239,6 @@ bool ControllerAdapter<Controller_,State_, Command_>::cleanupController()
 template<typename Controller_, typename State_, typename Command_>
 bool ControllerAdapter<Controller_, State_, Command_>::stopController()
 {
-  // Cancel workers
-  {
-    std::unique_lock<std::mutex> lockWorkerManager(this->mutexWorkerManager_);
-    this->workerManager_.stopWorkers();
-  }
-
   // Set flag
   this->isRunning_ = false;
 

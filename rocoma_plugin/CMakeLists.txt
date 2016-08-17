@@ -7,6 +7,7 @@ find_package(catkin REQUIRED
   COMPONENTS
     roco
     rocoma
+    pluginlib
 )
 
 catkin_package(
@@ -15,5 +16,6 @@ catkin_package(
   CATKIN_DEPENDS
     roco
     rocoma
+    pluginlib
   DEPENDS
 )

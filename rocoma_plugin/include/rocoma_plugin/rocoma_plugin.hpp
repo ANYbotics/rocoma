@@ -1,7 +1,7 @@
 /**********************************************************************
  * Software License Agreement (BSD License)
  *
- * Copyright (c) 2016, Gabriel Hottiger
+ * Copyright (c) 2016, Christian Gehring, Gabriel Hottiger
  * All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -14,7 +14,7 @@
  *     copyright notice, this list of conditions and the following
  *     disclaimer in the documentation and/or other materials provided
  *     with the distribution.
- *   * Neither the name of Autonomous Systems Lab nor ETH Zurich
+ *   * Neither the name of ETH Zurich
  *     nor the names of its contributors may be used to endorse or
  *     promote products derived from this software without specific
  *     prior written permission.
@@ -33,45 +33,14 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 /*!
- * @file     ControllerRosPlugin.hpp
+ * @file     rocoma_plugin.hpp
  * @author   Gabriel Hottiger
- * @date     Jul, 2016
+ * @date     Aug, 2016
  */
 
-#pragma once
-
-// rocoma_plugin
-#include "rocoma_plugin/interfaces/ControllerRosPluginInterface.hpp"
-
-// rocoma
-#include "rocoma/controllers/ControllerAdapter.hpp"
-
-// pluginlib
-#include <pluginlib/class_list_macros.h>
-
-/*!
- *   Export your ros controller as a ControllerRosPlugin in order to load it as a plugin.
- *   This macro is a wrapper to PLUGINLIB_EXPORT_CLASS, for templated classes.
- *   Protects typedefs in internal namespace.
- */
-#define ROCOMA_EXPORT_CONTROLLER_ROS(name, state, command, controller) 											\
-    namespace plugin_##name_internal{																												\
-      using name = rocoma_plugin::ControllerRosPlugin<controller , state , command>;		    \
-      using PluginBase = rocoma_plugin::ControllerRosPluginInterface<state , command>;			\
-      PLUGINLIB_EXPORT_CLASS(name, PluginBase)																						  \
-    }																																												\
-
-namespace rocoma_plugin {
-
-//!  Plugin based ros controller adapter.
-/*!
- *   Export your ros controller as a ControllerRosPlugin in order to load it as a plugin.
- */
-template<typename Controller_, typename State_, typename Command_>
-class ControllerRosPlugin: public rocoma::ControllerAdapter<Controller_, State_, Command_>,
-                           public rocoma_plugin::ControllerRosPluginInterface<State_, Command_>
-{
-
-};
-
-} /* namespace rocoma_plugin */
+#include "rocoma_plugin/plugins/ControllerPlugin.hpp"
+#include "rocoma_plugin/plugins/ControllerRosPlugin.hpp"
+#include "rocoma_plugin/plugins/ControllerTuplePlugin.hpp"
+#include "rocoma_plugin/plugins/EmergencyControllerPlugin.hpp"
+#include "rocoma_plugin/plugins/EmergencyControllerRosPlugin.hpp"
+#include "rocoma_plugin/plugins/FailproofControllerPlugin.hpp"

@@ -122,13 +122,9 @@ class EmergencyControllerAdapter: virtual public roco::EmergencyControllerAdapte
       return false;
     }
 
-    // Start workers and logging
+    // Start logging
     this->isRunning_ = true;
     signal_logger::logger->startLogger();
-    {
-      std::unique_lock<std::mutex> lockWorkerManager(this->mutexWorkerManager_);
-      this->workerManager_.startWorkers();
-    }
     MELO_INFO_STREAM( "Fast initialized controller " << this->getControllerName() << " successfully!");
 
     return true;

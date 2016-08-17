@@ -11,5 +11,6 @@
   <buildtool_depend>catkin</buildtool_depend>
   <depend>roco</depend>
   <depend>rocoma</depend>
+  <depend>pluginlib</depend>
 
 </package>

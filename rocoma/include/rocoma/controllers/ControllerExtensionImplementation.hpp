@@ -142,6 +142,13 @@ class ControllerExtensionImplementation: public ControllerImplementation<Control
    */
   virtual bool startWorker(const roco::WorkerHandle& workerHandle);
 
+  /*! Stop a given worker
+   * @param workerHandle  handle to the worker to be stopped
+   * @param block  flag indicating whether this should block until thread can be joined (default = false)
+   * @returns true iff was stopped successfully
+   */
+  virtual bool stopWorker(const roco::WorkerHandle& workerHandle, bool block = false);
+
   /*! Cancel a given worker
    * @param workerHandle  handle to the worker to be cancelled
    * @param block  flag indicating whether this should block until thread can be joined (default = false)

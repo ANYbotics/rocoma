@@ -40,9 +40,15 @@
 
 #pragma once
 
+// rocoma_plugin
 #include "rocoma_plugin/plugins/ControllerPlugin.hpp"
 #include "rocoma_plugin/plugins/ControllerRosPlugin.hpp"
+
+// rocoma
 #include "rocoma/controllers/ControllerTuple.hpp"
+
+// pluginlib
+#include <pluginlib/class_list_macros.h>
 
 /*!
  *   Export your controller as a ControllerTuplePlugin in order to load it as a plugin.

@@ -79,10 +79,18 @@ bool ControllerExtensionImplementation<Controller_, State_, Command_>::startWork
 }
 
 template<typename Controller_, typename State_, typename Command_>
+bool ControllerExtensionImplementation<Controller_, State_, Command_>::stopWorker(const roco::WorkerHandle& workerHandle, bool block) {
+  std::unique_lock<std::mutex> lockWorkerManager(mutexWorkerManager_);
+  MELO_INFO_STREAM("ControllerExtensionImplementation::stopWorker: stop  " << workerHandle.name_);
+  workerManager_.stopWorker(workerHandle.name_, block);
+  return true;
+}
+
+template<typename Controller_, typename State_, typename Command_>
 bool ControllerExtensionImplementation<Controller_, State_, Command_>::cancelWorker(const roco::WorkerHandle& workerHandle, bool block) {
   std::unique_lock<std::mutex> lockWorkerManager(mutexWorkerManager_);
   MELO_INFO_STREAM("ControllerExtensionImplementation::cancelWorker: cancel  " << workerHandle.name_);
-  workerManager_.stopWorker(workerHandle.name_, block);
+  workerManager_.cancelWorker(workerHandle.name_, block);
   return true;
 }
 
