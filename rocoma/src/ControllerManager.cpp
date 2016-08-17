@@ -222,7 +222,7 @@ bool ControllerManager::emergencyStop() {
   // Check if controller is in failproof state already
   if(activeControllerState_ == State::FAILURE)
   {
-    MELO_WARN("Can not emergency stop! Failproof controller is already running!");
+    MELO_WARN("Failproof controller is already running!");
     return false;
   }
 
@@ -280,6 +280,7 @@ bool ControllerManager::emergencyStop() {
 
   // Advance failproof controller
   {
+    MELO_INFO("Switched to failproof controller!")
     std::unique_lock<std::mutex> lockFailproofCOntroller(failproofControllerMutex_);
     failproofController_->advanceController(timeStep_);
   }
