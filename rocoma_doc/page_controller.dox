@@ -60,19 +60,19 @@ Thus following functions have to be implemented.
 \endcode
 
 <H3>Export Controller as a Plugin</H3>
-In order to use the plugin mechanism of the following three steps are required.
+In order to use the plugin mechanism of rocoma the following three steps are required.
 
 <H4>1. Export controller via macro </H4>
 Add the following to the source file of the controller. This macro is a wrapper of PLUGINLIB_EXPORT_CLASS(...) for templated classes.
 \code{c}
 #include "rocoma_plugin/rocoma_plugin.hpp"
-ROCOMA_EXPORT_CONTROLLER(MyControllerPlugin, my_controller::MyController, my_model::State, my_model::Command)
+ROCOMA_EXPORT_CONTROLLER(MyControllerPlugin, my_model::State, my_model::Command, my_controller::MyController)
 \endcode
 NOTE:
  - The first entry is the name of the controller plugin. (This name is used in the ros plugin context to refer to this controller)
- - The second entry is the controller that we want to export
- - The third entry is the State class
- - The fourth entry is the Command class
+ - The second entry is the State class
+ - The third entry is the Command class
+ - The fourth entry is the controller that we want to export
 
 <H4>2. Add a plugin description file </H4>
 The ros plugin lib requires that the controller package contains a plugin description file. Assume the controller package is named my_controller,
