@@ -81,11 +81,8 @@ catkin build rocoma
 <a href="http://www.stack.nl/~dimitri/doxygen/" >Doxygen</a> needs to be installed to create this documentation.
 
 \code{.sh}
-cd ~/catkin_ws/src/rocoma/rocoma_doc/doxygen/
-mkdir build
-cd build
-cmake ..
-make doc
+cd ~/catkin_ws
+catkin build rocoma_doc
 \endcode
 The doxygen documentation can be found here:
 doc/doxygen/doc/html/index.html
