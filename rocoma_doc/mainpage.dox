@@ -97,8 +97,9 @@ See \ref page_how_to "How-To" to learn how to use this library.
 /*!
 \page page_how_to How To
 
-\subpage page_write_controllers <BR>
-\subpage page_use_managers
+ - \subpage page_write_controllers <BR>
+ - \subpage page_use_managers <BR>
+ - \subpage page_tools
 
 */
 

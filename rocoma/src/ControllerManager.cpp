@@ -135,7 +135,7 @@ bool ControllerManager::addControllerPair(std::unique_ptr<roco::ControllerAdapte
     MELO_INFO_STREAM("... successfully added emergency controller " << emgcyControllerName << "!");
   }
 
-  // Add controller pair and set active
+  // Add controller pair
   controllerPairs_.insert( std::pair< std::string, ControllerSetPtr >( controllerName,
                                                                        ControllerSetPtr(controllers_.at(controllerName).get(), emergencyControllers_.at(emgcyControllerName).get() ) ) );
   MELO_INFO_STREAM("... sucessfully added controller pair ctrl: " << controllerName << " / emgcy ctrl: " << emgcyControllerName << " ... ");
@@ -145,6 +145,12 @@ bool ControllerManager::addControllerPair(std::unique_ptr<roco::ControllerAdapte
 
 bool ControllerManager::setFailproofController(std::unique_ptr<roco::FailproofControllerAdapterInterface> controller)  {
 
+  // If nullptr abort
+  if(controller == nullptr) {
+    MELO_ERROR_STREAM("Could not add failproof controller. Failproof controller is nullptr.");
+    exit(-1);
+  }
+
   // controller name (controller is moved within this function, therefore not safe to access everywhere)
   std::string controllerName = controller->getControllerName();
   MELO_INFO("Adding failproof controller %s ...", controllerName.c_str());
@@ -152,7 +158,7 @@ bool ControllerManager::setFailproofController(std::unique_ptr<roco::FailproofCo
   // create controller
   if (!controller->createController(timeStep_)) {
     MELO_ERROR("Could not create failproof controller %s!", controllerName.c_str());
-    return false;
+    exit(-1);
   }
 
   // move controller
@@ -297,6 +303,9 @@ bool ControllerManager::emergencyStopControllerWorker(const any_worker::WorkerEv
 {
   bool success = true;
 
+  // notify emergency stop
+  notifyEmergencyStop(emgcyStopType);
+
   {
     // Stop controller and block -> switch controller can not happen while controller is stopped
     controller->setIsBeingStopped(true);
@@ -304,9 +313,6 @@ bool ControllerManager::emergencyStopControllerWorker(const any_worker::WorkerEv
     success = controller->stopController() && success;
     controller->setIsBeingStopped(false);
   }
-
-  // notify emergency stop
-  notifyEmergencyStop(emgcyStopType);
 
   return success;
 }

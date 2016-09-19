@@ -171,13 +171,6 @@ bool ControllerManagerRos<State_,Command_>::setupControllers(const std::string &
   // add failproof controller to manager
   bool success = setupFailproofController(failproofControllerName, state, command, mutexState, mutexCommand);
 
-  // if failproof controller can not be added abort immediately
-  if( !success )
-  {
-    MELO_FATAL("Failproof controller could not be added! ABORT!");
-    exit(-1);
-  }
-
   // add emergency controllers to manager
   for(auto& controllerPair : controllerNameMap)
   {
