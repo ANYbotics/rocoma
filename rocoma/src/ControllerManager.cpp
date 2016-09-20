@@ -317,7 +317,8 @@ bool ControllerManager::emergencyStopControllerWorker(const any_worker::WorkerEv
   return success;
 }
 
-ControllerManager::SwitchResponse ControllerManager::switchController(const std::string & controllerName) {
+void ControllerManager::switchController(const std::string & controllerName,
+										 std::promise<SwitchResponse> & response_promise) {
 
   // Allow only sequential calls to switch controller
   std::unique_lock<std::mutex> lockSwitchController(switchControllerMutex_);
@@ -332,7 +333,8 @@ ControllerManager::SwitchResponse ControllerManager::switchController(const std:
     std::unique_lock<std::mutex> lockActiveController(activeControllerMutex_);
     if (activeControllerState_ == State::OK && controllerName == activeControllerPair_.controllerName_) {
       MELO_INFO("Controller %s is already running!", controllerName.c_str());
-      return SwitchResponse::RUNNING;
+      response_promise.set_value(SwitchResponse::RUNNING);
+      return;
     }
   }
 
@@ -351,21 +353,21 @@ ControllerManager::SwitchResponse ControllerManager::switchController(const std:
       {
         switchControllerWorkerOptions.name_ = "switch_from_" + activeControllerPair_.controllerName_ + "_to_" + controllerPair->second.controllerName_;
         switchControllerWorkerOptions.callback_ = std::bind(&ControllerManager::switchControllerWorker, this,
-                                                            std::placeholders::_1, activeControllerPair_.controller_, controllerPair->second.controller_);
+                                                            std::placeholders::_1, activeControllerPair_.controller_, controllerPair->second.controller_, std::ref(response_promise));
         break;
       }
       case State::EMERGENCY:
       {
         switchControllerWorkerOptions.name_ = "switch_from_" + activeControllerPair_.emgcyControllerName_ + "_to_" + controllerPair->second.controllerName_;
         switchControllerWorkerOptions.callback_ = std::bind(&ControllerManager::switchControllerWorker, this,
-                                                            std::placeholders::_1, activeControllerPair_.emgcyController_, controllerPair->second.controller_);
+                                                            std::placeholders::_1, activeControllerPair_.emgcyController_, controllerPair->second.controller_, std::ref(response_promise));
         break;
       }
       case State::FAILURE:
       {
         switchControllerWorkerOptions.name_ = "switch_from_failproof_to_" + controllerPair->second.controller_->getControllerName();
         switchControllerWorkerOptions.callback_ = std::bind(&ControllerManager::switchControllerWorker, this,
-                                                            std::placeholders::_1, nullptr, controllerPair->second.controller_);
+                                                            std::placeholders::_1, nullptr, controllerPair->second.controller_, std::ref(response_promise));
         break;
       }
     }
@@ -377,20 +379,23 @@ ControllerManager::SwitchResponse ControllerManager::switchController(const std:
       workerManager_.addWorker(switchControllerWorkerOptions, true);
     }
 
-    return SwitchResponse::SWITCHING;
+    return;
   }
   else {
     // controller is not part of controller map
     MELO_INFO("Controller %s not found!", controllerName.c_str());
-    return SwitchResponse::NOTFOUND;
+    response_promise.set_value(SwitchResponse::NOTFOUND);
+    return;
   }
 
-  return SwitchResponse::ERROR;
+  response_promise.set_value(SwitchResponse::ERROR);
+  return;
 }
 
 bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
                                                roco::ControllerAdapterInterface * oldController,
-                                               roco::ControllerAdapterInterface * newController) {
+                                               roco::ControllerAdapterInterface * newController,
+                                               std::promise<SwitchResponse> & response_promise) {
   /** NOTE:
    * 1. The active controller is not blocked -> by definition there can be no data races between advance and preStop
    * 2. Set this oldController to beeing stopped to prevent a switch to it
@@ -407,12 +412,16 @@ bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
    * 3. newController could be being stopped by a different thread at the moment (wait for completion)
    */
   if(newController->isBeingStopped()) {
-    MELO_WARN("Controller is currently beeing stopped. Wait for completion before switching.")
+    MELO_WARN("Controller is currently being stopped. Wait for completion before switching.")
   }
   while(newController->isBeingStopped()){}
 
   //! initialize new controller
-  newController->initializeController(timeStep_);
+  if(!newController->initializeController(timeStep_)) {
+	  MELO_ERROR("Could not ínitialize controller %s. Not switching.", newController->getControllerName().c_str());
+	  response_promise.set_value(SwitchResponse::ERROR);
+	  return false;
+  }
 
   // Set the newController as active controller as soon as the controller is initialized
   if ( newController->isControllerInitialized() ) {
@@ -436,11 +445,15 @@ bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
     }
 
     MELO_INFO("Switched to controller %s", activeControllerPair_.controllerName_.c_str());
+	response_promise.set_value(SwitchResponse::SWITCHING);
+	return true;
   }
   else {
     // switch to freeze controller
     emergencyStop();
-    ROS_INFO("Could not switch to controller %s", newController->getControllerName().c_str());
+    MELO_ERROR("Controller initialization was unsuccessful. Could not switch to controller %s", newController->getControllerName().c_str());
+	response_promise.set_value(SwitchResponse::ERROR);
+	return false;
   }
 
   return true;
