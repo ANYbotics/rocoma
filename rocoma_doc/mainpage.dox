@@ -19,6 +19,10 @@ Furthermore a ROS implementation is available, that features:
 \section source_code Source Code
 The source code is available at <a href="https://bitbucket.org/ethz-asl-lr/rocoma">https://bitbucket.org/ethz-asl-lr/rocoma</a>.
 
+\section example_code Example Code
+A simple example of a controller manager implementation can be found at <a href="https://bitbucket.org/ethz-asl-lr/rocoma_example">https://bitbucket.org/ethz-asl-lr/rocoma_example</a>.
+
+
 \section license License
 This library is <a href="http://www.gnu.org/philosophy/free-sw.html">Free Software</a> and is licensed under <a href="http://opensource.org/licenses/BSD-3-Clause">BSD 3-Clause</a>.
 
