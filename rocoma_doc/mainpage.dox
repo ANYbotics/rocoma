@@ -16,6 +16,8 @@ Furthermore a ROS implementation is available, that features:
   <li>Notify other nodes of an emergency stop</li>
 </ul>
 
+More detailed information can be found <a href="page_features.html">here</a>.
+
 \section source_code Source Code
 The source code is available at <a href="https://bitbucket.org/ethz-asl-lr/rocoma">https://bitbucket.org/ethz-asl-lr/rocoma</a>.
 
@@ -92,7 +94,7 @@ The doxygen documentation can be found here:
 doc/doxygen/doc/html/index.html
 
 \section sec_continue How to Continue
-See \ref page_how_to "How-To" to learn how to use this library.
+\ref page_how_to "How-To" use this library.
 
 */
 
@@ -100,7 +102,6 @@ See \ref page_how_to "How-To" to learn how to use this library.
 
 /*!
 \page page_how_to How To
-
  - \subpage page_write_controllers <BR>
  - \subpage page_use_managers <BR>
  - \subpage page_tools
