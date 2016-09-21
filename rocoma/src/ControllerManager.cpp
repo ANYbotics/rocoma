@@ -317,6 +317,20 @@ bool ControllerManager::emergencyStopControllerWorker(const any_worker::WorkerEv
   return success;
 }
 
+ControllerManager::SwitchResponse ControllerManager::switchController(const std::string & controllerName) {
+  // init promise and future
+  std::promise<SwitchResponse> switch_promise;
+  std::future<SwitchResponse> switch_future = switch_promise.get_future();
+
+  // switch controller
+  this->switchController(controllerName, std::ref(switch_promise));
+
+  // wait for future result
+  switch_future.wait();
+
+  return switch_future.get();
+}
+
 void ControllerManager::switchController(const std::string & controllerName,
 										 std::promise<SwitchResponse> & response_promise) {
 

@@ -325,13 +325,8 @@ template<typename State_, typename Command_>
 bool ControllerManagerRos<State_,Command_>::switchController(rocoma_msgs::SwitchController::Request& req,
                                                              rocoma_msgs::SwitchController::Response& res) {
 
-  std::promise<rocoma::ControllerManager::SwitchResponse> switch_promise;
-  std::future<rocoma::ControllerManager::SwitchResponse> switch_future = switch_promise.get_future();
-
-  rocoma::ControllerManager::switchController(req.name, std::ref(switch_promise));
-  switch_future.wait();
-
-  switch(switch_future.get()) {
+  // This is another ros-thread anyway so this operation can be blocking until controller switched
+  switch(  rocoma::ControllerManager::switchController(req.name) ) {
     case rocoma::ControllerManager::SwitchResponse::ERROR:
       res.status = res.STATUS_ERROR;
       break;
