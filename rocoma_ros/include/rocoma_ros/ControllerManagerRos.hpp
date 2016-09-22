@@ -98,7 +98,7 @@ class ControllerManagerRos : public rocoma::ControllerManager {
   ControllerManagerRos(const std::string & scopedStateName,
                        const std::string & scopedCommandName,
                        const double timestep = 0.01,
-                       ros::NodeHandle nodeHandle = ros::NodeHandle());
+                       const ros::NodeHandle& nodeHandle = ros::NodeHandle());
 
   //! Default destructor
   virtual ~ControllerManagerRos();
@@ -107,6 +107,11 @@ class ControllerManagerRos : public rocoma::ControllerManager {
    * @param nh   the nodehandle to be set
    */
   void setNodeHandle(ros::NodeHandle & nh) { nodeHandle_ = nh; }
+
+  /*! Inits ROS publishers and services.
+   *
+   */
+  void initPublishersAndServices();
 
   /*! Add a single controller pair to the manager
    * @param options         options containing names and ros flags

@@ -7,7 +7,7 @@ template<typename State_, typename Command_>
 ControllerManagerRos<State_,Command_>::ControllerManagerRos(const std::string & scopedStateName,
                                                             const std::string & scopedCommandName,
                                                             const double timeStep,
-                                                            ros::NodeHandle nodeHandle):
+                                                            const ros::NodeHandle& nodeHandle):
                                                             rocoma::ControllerManager(timeStep),
                                                             nodeHandle_(nodeHandle),
                                                             failproofControllerLoader_("rocoma_plugin", "rocoma_plugin::FailproofControllerPluginInterface<" + scopedStateName + ", " + scopedCommandName + ">"),
@@ -17,21 +17,28 @@ ControllerManagerRos<State_,Command_>::ControllerManagerRos(const std::string & 
                                                             controllerRosLoader_("rocoma_plugin", "rocoma_plugin::ControllerRosPluginInterface<" + scopedStateName + ", " + scopedCommandName + ">")
 
 {
-  // initialize services
-  switchControllerService_ = nodeHandle.advertiseService("controller_manager/switch_controller", &ControllerManagerRos::switchController, this);
-  getAvailableControllersService_ = nodeHandle.advertiseService("controller_manager/get_available_controllers", &ControllerManagerRos::getAvailableControllers, this);
-  getActiveControllerService_ = nodeHandle.advertiseService("controller_manager/get_active_controller", &ControllerManagerRos::getActiveController, this);
-  emergencyStopService_ = nodeHandle.advertiseService("controller_manager/emergency_stop", &ControllerManagerRos::emergencyStop, this);
 
-  // initialize publishers
-  emergencyStopStatePublisher_.shutdown();
-  emergencyStopStatePublisher_ = nodeHandle.advertise<any_msgs::State>("notify_emergency_stop", 1, true);
-  publishEmergencyState(true);
 }
 
 template<typename State_, typename Command_>
 ControllerManagerRos<State_,Command_>::~ControllerManagerRos() {
 
+}
+
+
+template<typename State_, typename Command_>
+void ControllerManagerRos<State_,Command_>::initPublishersAndServices() {
+
+  // initialize services
+  switchControllerService_ = nodeHandle_.advertiseService("controller_manager/switch_controller", &ControllerManagerRos::switchController, this);
+  getAvailableControllersService_ = nodeHandle_.advertiseService("controller_manager/get_available_controllers", &ControllerManagerRos::getAvailableControllers, this);
+  getActiveControllerService_ = nodeHandle_.advertiseService("controller_manager/get_active_controller", &ControllerManagerRos::getActiveController, this);
+  emergencyStopService_ = nodeHandle_.advertiseService("controller_manager/emergency_stop", &ControllerManagerRos::emergencyStop, this);
+
+  // initialize publishers
+  emergencyStopStatePublisher_.shutdown();
+  emergencyStopStatePublisher_ = nodeHandle_.advertise<any_msgs::State>("notify_emergency_stop", 1, true);
+  publishEmergencyState(true);
 }
 
 template<typename State_, typename Command_>
