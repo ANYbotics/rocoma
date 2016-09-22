@@ -62,6 +62,7 @@ class ControllerManagerRos : public rocoma::ControllerManager {
 
     }
     /*! Constructor
+    * @param pluginName       Name of the controller plugin
      * @param name            Name of the controller
      * @param parameterPath   Path from which controller loads parameters
      * @param isRos           True if the controller is of type ControllerRosPlugin
@@ -164,11 +165,13 @@ class ControllerManagerRos : public rocoma::ControllerManager {
    *    controller_pairs:
    *      - controller_pair:
    *          controller:
+   *            plugin_name:              "MyControllerPlugin"
    *            name:                     "MyController"
    *            is_ros:                   true
    *            parameter_package:        "my_controller_package"
    *            parameter_path:           "my_param_folder/my_param_file.xml"
    *          emergency_controller:
+   *            plugin_name:              "MyEmergencyControllerPlugin"
    *            name:                     "MyEmergencyController "
    *            is_ros:                   false
    *            package:                  "my_emergency_controller_package"

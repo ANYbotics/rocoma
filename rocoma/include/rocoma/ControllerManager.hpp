@@ -50,6 +50,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <chrono>
+#include <future>
 
 namespace rocoma {
 
@@ -164,6 +165,14 @@ class ControllerManager
    */
   SwitchResponse switchController(const std::string & controllerName);
 
+  /**
+   * @brief Tries to switch to a desired controller
+   * @param controllerName    Name of the desired controller
+   * @param response_promise  Reference to a promise in which the result will be stored in (Lifetime of response_promise must be taken care of)
+   */
+  void switchController(const std::string & controllerName,
+		  	  	  	  	std::promise<SwitchResponse> & response_promise);
+
 
 
   /**
@@ -175,7 +184,8 @@ class ControllerManager
    */
   bool switchControllerWorker(const any_worker::WorkerEvent& event,
                               roco::ControllerAdapterInterface * oldController,
-                              roco::ControllerAdapterInterface * newController);
+                              roco::ControllerAdapterInterface * newController,
+                              std::promise<SwitchResponse> & response_promise);
 
   /**
    * @brief Get a vector of all available controller names

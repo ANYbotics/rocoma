@@ -16,8 +16,14 @@ Furthermore a ROS implementation is available, that features:
   <li>Notify other nodes of an emergency stop</li>
 </ul>
 
+More detailed information can be found <a href="page_features.html">here</a>.
+
 \section source_code Source Code
 The source code is available at <a href="https://bitbucket.org/ethz-asl-lr/rocoma">https://bitbucket.org/ethz-asl-lr/rocoma</a>.
+
+\section example_code Example Code
+A simple example of a controller manager implementation can be found at <a href="https://bitbucket.org/ethz-asl-lr/rocoma_example">https://bitbucket.org/ethz-asl-lr/rocoma_example</a>.
+
 
 \section license License
 This library is <a href="http://www.gnu.org/philosophy/free-sw.html">Free Software</a> and is licensed under <a href="http://opensource.org/licenses/BSD-3-Clause">BSD 3-Clause</a>.
@@ -81,17 +87,14 @@ catkin build rocoma
 <a href="http://www.stack.nl/~dimitri/doxygen/" >Doxygen</a> needs to be installed to create this documentation.
 
 \code{.sh}
-cd ~/catkin_ws/src/rocoma/rocoma_doc/doxygen/
-mkdir build
-cd build
-cmake ..
-make doc
+cd ~/catkin_ws
+catkin build rocoma_doc
 \endcode
 The doxygen documentation can be found here:
 doc/doxygen/doc/html/index.html
 
 \section sec_continue How to Continue
-See \ref page_how_to "How-To" to learn how to use this library.
+\ref page_how_to "How-To" use this library.
 
 */
 
@@ -99,9 +102,9 @@ See \ref page_how_to "How-To" to learn how to use this library.
 
 /*!
 \page page_how_to How To
-
-\subpage page_write_controllers <BR>
-\subpage page_use_managers
+ - \subpage page_write_controllers <BR>
+ - \subpage page_use_managers <BR>
+ - \subpage page_tools
 
 */
 

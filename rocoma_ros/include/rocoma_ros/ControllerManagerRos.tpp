@@ -1,5 +1,7 @@
 #include <rocoma_ros/ControllerManagerRos.hpp>
+#include <rocoma/ControllerManager.hpp>
 #include <ros/package.h>
+#include <future>
 
 namespace rocoma_ros {
 
@@ -178,13 +180,6 @@ bool ControllerManagerRos<State_,Command_>::setupControllers(const std::string &
   // add failproof controller to manager
   bool success = setupFailproofController(failproofControllerName, state, command, mutexState, mutexCommand);
 
-  // if failproof controller can not be added abort immediately
-  if( !success )
-  {
-    MELO_FATAL("Failproof controller could not be added! ABORT!");
-    exit(-1);
-  }
-
   // add emergency controllers to manager
   for(auto& controllerPair : controllerNameMap)
   {
@@ -337,7 +332,8 @@ template<typename State_, typename Command_>
 bool ControllerManagerRos<State_,Command_>::switchController(rocoma_msgs::SwitchController::Request& req,
                                                              rocoma_msgs::SwitchController::Response& res) {
 
-  switch(rocoma::ControllerManager::switchController(req.name)) {
+  // This is another ros-thread anyway so this operation can be blocking until controller switched
+  switch(  rocoma::ControllerManager::switchController(req.name) ) {
     case rocoma::ControllerManager::SwitchResponse::ERROR:
       res.status = res.STATUS_ERROR;
       break;
