@@ -32,10 +32,21 @@ template<typename State_, typename Command_>
 void ControllerManagerRos<State_,Command_>::initPublishersAndServices() {
 
   // initialize services
-  switchControllerService_ = nodeHandle_.advertiseService("controller_manager/switch_controller", &ControllerManagerRos::switchController, this);
-  getAvailableControllersService_ = nodeHandle_.advertiseService("controller_manager/get_available_controllers", &ControllerManagerRos::getAvailableControllers, this);
-  getActiveControllerService_ = nodeHandle_.advertiseService("controller_manager/get_active_controller", &ControllerManagerRos::getActiveController, this);
-  emergencyStopService_ = nodeHandle_.advertiseService("controller_manager/emergency_stop", &ControllerManagerRos::emergencyStop, this);
+  std::string service_name_switch_controller{"controller_manager/switch_controller"};
+  nodeHandle_.getParam("servers/switch_controller/service", service_name_switch_controller);
+  switchControllerService_ = nodeHandle_.advertiseService(service_name_switch_controller, &ControllerManagerRos::switchController, this);
+
+  std::string service_name_get_available_controllers{"controller_manager/get_available_controllers"};
+  nodeHandle_.getParam("servers/get_available_controllers/service", service_name_get_available_controllers);
+  getAvailableControllersService_ = nodeHandle_.advertiseService(service_name_get_available_controllers, &ControllerManagerRos::getAvailableControllers, this);
+
+  std::string service_name_get_active_controller{"controller_manager/get_active_controller"};
+  nodeHandle_.getParam("servers/get_active_controller/service", service_name_get_active_controller);
+  getActiveControllerService_ = nodeHandle_.advertiseService(service_name_get_active_controller, &ControllerManagerRos::getActiveController, this);
+
+  std::string service_name_emergency_stop{"controller_manager/emergency_stop"};
+  nodeHandle_.getParam("servers/emergency_stop/service", service_name_emergency_stop);
+  emergencyStopService_ = nodeHandle_.advertiseService(service_name_emergency_stop, &ControllerManagerRos::emergencyStop, this);
 
   // initialize publishers
   emergencyStopStatePublisher_.shutdown();
