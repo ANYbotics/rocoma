@@ -31,6 +31,8 @@ ControllerManagerRos<State_,Command_>::~ControllerManagerRos() {
 template<typename State_, typename Command_>
 void ControllerManagerRos<State_,Command_>::initPublishersAndServices() {
 
+  shutdown();
+
   // initialize services
   std::string service_name_switch_controller{"controller_manager/switch_controller"};
   nodeHandle_.getParam("servers/switch_controller/service", service_name_switch_controller);
@@ -49,9 +51,23 @@ void ControllerManagerRos<State_,Command_>::initPublishersAndServices() {
   emergencyStopService_ = nodeHandle_.advertiseService(service_name_emergency_stop, &ControllerManagerRos::emergencyStop, this);
 
   // initialize publishers
-  emergencyStopStatePublisher_.shutdown();
   emergencyStopStatePublisher_ = nodeHandle_.advertise<any_msgs::State>("notify_emergency_stop", 1, true);
   publishEmergencyState(true);
+}
+
+template<typename State_, typename Command_>
+void ControllerManagerRos<State_,Command_>::shutdown() {
+  switchControllerService_.shutdown();
+  getAvailableControllersService_.shutdown();
+  getActiveControllerService_.shutdown();
+  emergencyStopService_.shutdown();
+  emergencyStopStatePublisher_.shutdown();
+}
+
+template<typename State_, typename Command_>
+bool ControllerManagerRos<State_,Command_>::cleanup() {
+  shutdown();
+  return rocoma::ControllerManager::cleanup();
 }
 
 template<typename State_, typename Command_>
@@ -334,9 +350,10 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
 }
 
 template<typename State_, typename Command_>
-bool ControllerManagerRos<State_,Command_>::emergencyStop(rocoma_msgs::EmergencyStop::Request& req,
-                                                          rocoma_msgs::EmergencyStop::Response& res) {
-  return rocoma::ControllerManager::emergencyStop();
+bool ControllerManagerRos<State_,Command_>::emergencyStop(std_srvs::Trigger::Request& req,
+                                                          std_srvs::Trigger::Response& res) {
+   res.success = rocoma::ControllerManager::emergencyStop();
+   return true;
 }
 
 template<typename State_, typename Command_>

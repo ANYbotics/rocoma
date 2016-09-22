@@ -13,7 +13,6 @@ add_message_files(
 
 add_service_files(
   FILES
-  EmergencyStop.srv
   GetActiveController.srv
   GetAvailableControllers.srv
   SwitchController.srv

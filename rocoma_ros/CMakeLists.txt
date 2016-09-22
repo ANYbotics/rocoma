@@ -10,6 +10,7 @@ find_package(catkin REQUIRED
   any_msgs
   pluginlib
   roslib
+  std_srvs
 )
 
 catkin_package(
@@ -24,4 +25,5 @@ CATKIN_DEPENDS
   any_msgs
   pluginlib
   roslib
+  std_srvs
 )

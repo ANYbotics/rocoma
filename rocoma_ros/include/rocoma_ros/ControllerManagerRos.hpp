@@ -13,7 +13,6 @@
 
 // rocoma msgs
 #include "rocoma_msgs/GetAvailableControllers.h"
-#include "rocoma_msgs/EmergencyStop.h"
 #include "rocoma_msgs/SwitchController.h"
 #include "rocoma_msgs/GetActiveController.h"
 
@@ -30,6 +29,7 @@
 #include <pluginlib/class_loader.h>
 #include <ros/ros.h>
 #include <ros/console.h>
+#include <std_srvs/Trigger.h>
 
 // stl
 #include <string>
@@ -114,6 +114,11 @@ class ControllerManagerRos : public rocoma::ControllerManager {
    */
   void initPublishersAndServices();
 
+  /*! Shuts down ROS publishers and services.
+   *
+   */
+  void shutdown();
+
   /*! Add a single controller pair to the manager
    * @param options         options containing names and ros flags
    * @param state           robot state pointer
@@ -197,8 +202,8 @@ class ControllerManagerRos : public rocoma::ControllerManager {
    * @param res   empty response
    * @return true iff successful
    */
-  bool emergencyStop(rocoma_msgs::EmergencyStop::Request  &req,
-                     rocoma_msgs::EmergencyStop::Response &res);
+  bool emergencyStop(std_srvs::Trigger::Request  &req,
+                     std_srvs::Trigger::Response &res);
 
   /*! Switch controller service callback, switches to a new controller
    * @param req   contains name of the new controller
@@ -229,6 +234,12 @@ class ControllerManagerRos : public rocoma::ControllerManager {
    */
   void notifyEmergencyStop(rocoma::ControllerManager::EmergencyStopType type);
 
+
+  /**
+   * @brief Cleanup all controllers and ROS services and publishers.
+   * @return true, if successful emergency stop and all controllers are cleaned up
+   */
+  virtual bool cleanup();
  private:
   /*! Publish on the emergency stop topic
    * @param isOk   publish isOk on topic

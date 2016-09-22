@@ -203,7 +203,7 @@ class ControllerManager
    * @brief Cleanup all controllers
    * @return true, if successful emergency stop and all controllers are cleaned up
    */
-  bool cleanup();
+  virtual bool cleanup();
 
   /**
    * @brief Get isRealRobot

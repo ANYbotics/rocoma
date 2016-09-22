@@ -15,5 +15,5 @@
   <depend>any_msgs</depend>
   <depend>pluginlib</depend>
   <depend>roslib</depend>
-
+  <depend>std_srvs</depend>
 </package>

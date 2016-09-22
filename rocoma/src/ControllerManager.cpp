@@ -507,6 +507,7 @@ std::string ControllerManager::getActiveControllerName() {
 bool ControllerManager::cleanup() {
   bool success = true;
 
+
   while(activeControllerState_ != State::FAILURE)
   {
     success = emergencyStop() && success;
