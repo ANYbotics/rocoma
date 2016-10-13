@@ -43,7 +43,7 @@
 #include <message_logger/message_logger.hpp>
 
 // Signal logger
-#include <signal_logger/logger.hpp>
+#include <signal_logger/signal_logger.hpp>
 
 namespace rocoma {
 
