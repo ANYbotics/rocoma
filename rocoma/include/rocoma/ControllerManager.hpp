@@ -125,15 +125,15 @@ class ControllerManager
    * @param emergencyController    Pointer to the emergency controller (unique ptr -> ownership transfer)
    * @return true, if controllers were created and added successfully
    */
-  bool addControllerPair(std::unique_ptr<roco::ControllerAdapterInterface> controller,
-                         std::unique_ptr<roco::EmergencyControllerAdapterInterface> emergencyController);
+  bool addControllerPair(ControllerPtr&& controller,
+                         EmgcyControllerPtr&& emergencyController);
 
   /**
    * @brief Sets the failproof controller
    * @param controller             Pointer to the failproof controller (unique ptr -> ownership transfer)
    * @return true, if controllers was created and added successfully
    */
-  bool setFailproofController(std::unique_ptr<roco::FailproofControllerAdapterInterface> controller);
+  bool setFailproofController(FailproofControllerPtr&& controller);
 
   /**
    * @brief Advance the currently active controller

@@ -74,8 +74,8 @@ ControllerManager::~ControllerManager()
 {
 }
 
-bool ControllerManager::addControllerPair(std::unique_ptr<roco::ControllerAdapterInterface> controller,
-                                          std::unique_ptr<roco::EmergencyControllerAdapterInterface> emergencyController) {
+bool ControllerManager::addControllerPair(ControllerPtr&& controller,
+                                          EmgcyControllerPtr&& emergencyController) {
 
   // Check for invalid controller
   if(controller == nullptr) {
@@ -105,7 +105,7 @@ bool ControllerManager::addControllerPair(std::unique_ptr<roco::ControllerAdapte
   }
 
   // insert controller (move ownership to controller / controller is set to nullptr)
-  controllers_.insert( std::pair<std::string, ControllerPtr >(controllerName, ControllerPtr( std::move(controller) ) ) );
+  controllers_.insert( std::pair<std::string, ControllerPtr >(controllerName, std::move(controller) ) );
   MELO_INFO_STREAM("... successfully added controller " << controllerName << "!");
 
   //--- Add emergency controller
@@ -131,7 +131,7 @@ bool ControllerManager::addControllerPair(std::unique_ptr<roco::ControllerAdapte
   }
   else {
     // insert emergency controller (move ownership to controller / controller is set to nullptr)
-    emergencyControllers_.insert( std::pair<std::string, EmgcyControllerPtr>(emgcyControllerName, EmgcyControllerPtr( std::move(emergencyController) ) ) );
+    emergencyControllers_.insert( std::pair<std::string, EmgcyControllerPtr>(emgcyControllerName, std::move(emergencyController) ) );
     MELO_INFO_STREAM("... successfully added emergency controller " << emgcyControllerName << "!");
   }
 
@@ -143,7 +143,7 @@ bool ControllerManager::addControllerPair(std::unique_ptr<roco::ControllerAdapte
   return true;
 }
 
-bool ControllerManager::setFailproofController(std::unique_ptr<roco::FailproofControllerAdapterInterface> controller)  {
+bool ControllerManager::setFailproofController(FailproofControllerPtr&& controller)  {
 
   // If nullptr abort
   if(controller == nullptr) {
@@ -162,7 +162,7 @@ bool ControllerManager::setFailproofController(std::unique_ptr<roco::FailproofCo
   }
 
   // move controller
-  failproofController_ = std::unique_ptr<roco::FailproofControllerAdapterInterface>( std::move(controller) );
+  failproofController_ = std::move(controller);
   MELO_INFO("... finished adding failproof controller %s.", controllerName.c_str());
 
   return true;
