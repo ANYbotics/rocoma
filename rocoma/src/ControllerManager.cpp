@@ -529,14 +529,22 @@ bool ControllerManager::cleanup() {
     for (auto& controller : controllers_) {
       while(controller.second->isBeingStopped()) { }
       success = controller.second->cleanupController() && success;
+      // clean up unique ptrs here.
+      // They are managed by ControllerManager and are pointing to instances classes found in dynamically loaded libraries.
+      // The libraries are loaded and managed by the child class ControllerManagerRos. The destructor of ControllerManagerRos is called before
+      // the destructor of ControllerManager, cleaning up the loaded libraries. This leaves these unique_ptrs pointing to an instance of an unknown class.
+      controller.second.reset(nullptr);
     }
 
 
     for (auto& emergency_controller : emergencyControllers_ ) {
       while(emergency_controller.second->isBeingStopped()) { }
       success = emergency_controller.second->cleanupController() && success;
+      emergency_controller.second.reset(nullptr); // clean up unique ptrs here, see above
     }
   }
+
+  failproofController_.reset(nullptr); // clean up unique ptrs here, see above
 
   return success;
 }
