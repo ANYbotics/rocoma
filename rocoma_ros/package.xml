@@ -16,4 +16,5 @@
   <depend>pluginlib</depend>
   <depend>roslib</depend>
   <depend>std_srvs</depend>
+  <depend>std_msgs</depend>
 </package>
