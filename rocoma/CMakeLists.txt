@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(rocoma)
 
-set(CMAKE_CXX_FLAGS "-std=c++11")
-
 find_package(Boost REQUIRED COMPONENTS thread chrono)
 find_package(catkin REQUIRED
   COMPONENTS
@@ -27,6 +25,8 @@ catkin_package(
 ###########
 ## Build ##
 ###########
+
+add_definitions(-std=c++11)
 
 include_directories(
   include
