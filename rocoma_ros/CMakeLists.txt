@@ -27,3 +27,12 @@ CATKIN_DEPENDS
   roslib
   std_srvs
 )
+
+#############
+## Install ##
+#############
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+  PATTERN ".svn" EXCLUDE
+)
+
