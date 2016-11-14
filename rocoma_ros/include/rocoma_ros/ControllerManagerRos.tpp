@@ -51,6 +51,8 @@ void ControllerManagerRos<State_,Command_>::initPublishersAndServices() {
   emergencyStopService_ = nodeHandle_.advertiseService(service_name_emergency_stop, &ControllerManagerRos::emergencyStop, this);
 
   // initialize publishers
+  activeControllerPublisher_ = nodeHandle_.advertise<std_msgs::String>("notify_active_controller", 1, true);
+  publishActiveController(this->getActiveControllerName());
   emergencyStopStatePublisher_ = nodeHandle_.advertise<any_msgs::State>("notify_emergency_stop", 1, true);
   publishEmergencyState(true);
 }
@@ -62,6 +64,7 @@ void ControllerManagerRos<State_,Command_>::shutdown() {
   getActiveControllerService_.shutdown();
   emergencyStopService_.shutdown();
   emergencyStopStatePublisher_.shutdown();
+  activeControllerPublisher_.shutdown();
 }
 
 template<typename State_, typename Command_>
@@ -376,6 +379,8 @@ bool ControllerManagerRos<State_,Command_>::switchController(rocoma_msgs::Switch
       break;
   }
 
+  publishActiveController(this->getActiveControllerName());
+
   return true;
 }
 
@@ -399,6 +404,16 @@ void ControllerManagerRos<State_,Command_>::notifyEmergencyStop(rocoma::Controll
   publishEmergencyState(false);
   publishEmergencyState(true);
 }
+
+template<typename State_, typename Command_>
+void ControllerManagerRos<State_,Command_>::publishActiveController(
+    std::string activeController) {
+  // Fill msg
+  activeControllerMsg_.data = activeController;
+
+  // Publish message
+  activeControllerPublisher_.publish(activeController);
+};
 
 template<typename State_, typename Command_>
 void ControllerManagerRos<State_,Command_>::publishEmergencyState(bool isOk) {

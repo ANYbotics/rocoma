@@ -19,6 +19,9 @@
 // any msgs
 #include "any_msgs/State.h"
 
+// std msgs
+#include "std_msgs/String.h"
+
 // roco
 #include "roco/controllers/adapters/ControllerAdapterInterface.hpp"
 
@@ -241,6 +244,11 @@ class ControllerManagerRos : public rocoma::ControllerManager {
    */
   virtual bool cleanup();
  private:
+  /*! Publish the active controller.
+   * @param activeController   active controller name
+   */
+  void publishActiveController(std::string activeController);
+
   /*! Publish on the emergency stop topic
    * @param isOk   publish isOk on topic
    */
@@ -258,6 +266,11 @@ class ControllerManagerRos : public rocoma::ControllerManager {
   ros::ServiceServer getAvailableControllersService_;
   //! Get active controller service
   ros::ServiceServer getActiveControllerService_;
+
+  //! Active controller publisher
+  ros::Publisher activeControllerPublisher_;
+  //! Active controller message
+  std_msgs::String activeControllerMsg_;
 
   //! Emergency stop publisher
   ros::Publisher emergencyStopStatePublisher_;
