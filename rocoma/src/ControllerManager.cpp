@@ -518,6 +518,7 @@ bool ControllerManager::cleanup() {
     std::unique_lock<std::mutex> lockEmergencyController(emergencyControllerMutex_);
 
     // stop all workers
+    MELO_DEBUG("[ControllerManager] Stopping all workers.");
     {
       std::unique_lock<std::mutex> lockWorkerManager(workerManagerMutex_);
       workerManager_.stopWorkers(true);
@@ -525,9 +526,9 @@ bool ControllerManager::cleanup() {
 
     // cleanup all controllers
     // TODO wait for controllers to be finished initializing
-
+    MELO_DEBUG("[ControllerManager] Cleaning all controllers up.");
     for (auto& controller : controllers_) {
-      while(controller.second->isBeingStopped()) { }
+      while(controller.second->isBeingStopped()) { MELO_INFO_THROTTLE_STREAM(1.0, "Stopping controller " << controller.first ); }
       success = controller.second->cleanupController() && success;
       // clean up unique ptrs here.
       // They are managed by ControllerManager and are pointing to instances classes found in dynamically loaded libraries.
@@ -536,14 +537,14 @@ bool ControllerManager::cleanup() {
       controller.second.reset(nullptr);
     }
 
-
+    MELO_DEBUG("[ControllerManager] Cleaning all emergency controllers up.");
     for (auto& emergency_controller : emergencyControllers_ ) {
       while(emergency_controller.second->isBeingStopped()) { }
       success = emergency_controller.second->cleanupController() && success;
       emergency_controller.second.reset(nullptr); // clean up unique ptrs here, see above
     }
   }
-
+  MELO_DEBUG("[ControllerManager] Reset fail proof controller.");
   failproofController_.reset(nullptr); // clean up unique ptrs here, see above
 
   return success;
