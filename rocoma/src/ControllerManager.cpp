@@ -228,7 +228,7 @@ bool ControllerManager::emergencyStop() {
   // Check if controller is in failproof state already
   if(activeControllerState_ == State::FAILURE)
   {
-    MELO_WARN("Failproof controller is already running!");
+    MELO_DEBUG("Failproof controller is already running!");
     return false;
   }
 
