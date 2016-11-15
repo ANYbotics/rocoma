@@ -412,7 +412,7 @@ void ControllerManagerRos<State_,Command_>::publishActiveController(
   activeControllerMsg_.data = activeController;
 
   // Publish message
-  activeControllerPublisher_.publish(activeController);
+  activeControllerPublisher_.publish(activeControllerMsg_);
 };
 
 template<typename State_, typename Command_>
