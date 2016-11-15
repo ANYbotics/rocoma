@@ -481,6 +481,9 @@ std::vector<std::string> ControllerManager::getAvailableControllerNames() {
     controllerNames.push_back(controller.first);
   }
 
+  // Sort them alphabetically
+  std::sort(controllerNames.begin(), controllerNames.end(), std::less<std::string>());
+
   return controllerNames;
 }
 
