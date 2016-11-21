@@ -100,7 +100,7 @@ bool ControllerManagerRos<State_,Command_>::setupControllerPair(const Controller
     controller->setName( options.first.name_ );
     controller->setStateAndCommand(state, mutexState, command, mutexCommand);
     controller->setParameterPath(options.first.parameterPath_);
-    controller->setIsRealRobot(isRealRobot_);
+    controller->setIsRealRobot(isRealRobot());
   }
   catch(pluginlib::PluginlibException& ex)
   {
