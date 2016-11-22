@@ -252,7 +252,7 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
            !controller_pair_list[i].hasMember("controller_pair") ||
            controller_pair_list[i]["controller_pair"].getType() != XmlRpc::XmlRpcValue::TypeStruct )
         {
-          MELO_WARN("Controllerpair nr %d can not be obtained. Skip controller pair.", i);
+          MELO_WARN("Controllerpair no %d can not be obtained. Skip controller pair.", i);
           continue;
         }
 
@@ -264,7 +264,7 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
         }
         else
         {
-          MELO_WARN("Controllerpair nr %d has no or wrong-typed member controller. Skip controller pair.", i);
+          MELO_WARN("Controllerpair no %d has no or wrong-typed member controller. Skip controller pair.", i);
           continue;
         }
 
@@ -290,7 +290,7 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
         }
         else
         {
-          MELO_WARN("Subentry 'controller' of controllerpair nr %d has missing or wrong-type entries. Skip controller.", i);
+          MELO_WARN("Subentry 'controller' of controllerpair no %d has missing or wrong-type entries. Skip controller.", i);
           continue;
         }
 
@@ -302,7 +302,7 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
         }
         else
         {
-          MELO_WARN("Controllerpair nr %d has no member emergency_controller. Add failproof controller instead.", i);
+          MELO_WARN("Controllerpair no %d has no member emergency_controller. Add failproof controller instead.", i);
           controller_option_pair.second = ControllerOptions();
           controller_option_pairs.push_back(controller_option_pair);
           continue;
@@ -329,7 +329,7 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
         }
         else
         {
-          MELO_WARN("Subentry 'emergency_controller' of controllerpair nr %d has missing or wrong-type entries. Add failproof controller instead.", i);
+          MELO_WARN("Subentry 'emergency_controller' of controllerpair no %d has missing or wrong-type entries. Add failproof controller instead.", i);
           controller_option_pair.second = ControllerOptions();
         }
 
