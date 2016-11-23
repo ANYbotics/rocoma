@@ -60,7 +60,7 @@ class ControllerManagerRos : public rocoma::ControllerManager {
       pluginName_(""),
       name_(""),
       parameterPath_(""),
-      isRos_("")
+      isRos_(false)
     {
 
     }

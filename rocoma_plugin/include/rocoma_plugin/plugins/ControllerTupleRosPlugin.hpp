@@ -33,32 +33,30 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 /*!
-* @file     EmergencyControllerRosPluginInterface.hpp
-* @author   Gabriel Hottiger
-* @date     Jul, 2016
-*/
+ * @file     ControllerTupleRosPlugin.hpp
+ * @author   Gabriel Hottiger
+ * @date     Aug, 2016
+ */
 
 #pragma once
 
 // rocoma_plugin
-#include "rocoma_plugin/interfaces/EmergencyControllerPluginInterface.hpp"
+#include "rocoma_plugin/plugins/ControllerRosPlugin.hpp"
 
 // roco_ros
-#include "roco_ros/controllers/ControllerRos.hpp"
+#include "roco_ros/controllers/ControllerTupleRos.hpp"
 
-namespace rocoma_plugin {
+// pluginlib
+#include <pluginlib/class_list_macros.h>
 
-//!  Common interface for plugin based ros controllers.
 /*!
- *   EmergencyControllerPluginInterface is needed for the initialization of state, command, name , ...
- *   and used by the ControllerManager to interface with the controllers.
- *   ControllerRos is used to init the ros specific stuff.
+ *   Export your controller as a ControllerTuplePlugin in order to load it as a plugin.
+ *   This macro is a wrapper to PLUGINLIB_EXPORT_CLASS, for templated classes.
+ *   Protects typedefs in internal namespace.
  */
-template<typename State_, typename Command_>
-class EmergencyControllerRosPluginInterface: virtual public rocoma_plugin::EmergencyControllerPluginInterface<State_, Command_>,
-                                             virtual public roco_ros::ControllerRos<State_, Command_>
-{
-
-};
-
-} /* namespace rocoma_plugin */
+#define ROCOMA_EXPORT_CONTROLLER_TUPLE_ROS(name, state, command, ...)                                                                  \
+  namespace plugin_##name_internal {                                                                                                   \
+      using name = rocoma_plugin::ControllerRosPlugin< rocoma::ControllerTupleRos<state, command, __VA_ARGS__ > , state , command>;    \
+      using PluginBase = rocoma_plugin::ControllerRosPluginInterface<state , command>;                                                 \
+      PLUGINLIB_EXPORT_CLASS(name, PluginBase)                                                                                         \
+  }
