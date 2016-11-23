@@ -41,6 +41,7 @@
 #include "rocoma_plugin/plugins/ControllerPlugin.hpp"
 #include "rocoma_plugin/plugins/ControllerRosPlugin.hpp"
 #include "rocoma_plugin/plugins/ControllerTuplePlugin.hpp"
+#include "rocoma_plugin/plugins/ControllerTupleRosPlugin.hpp"
 #include "rocoma_plugin/plugins/EmergencyControllerPlugin.hpp"
 #include "rocoma_plugin/plugins/EmergencyControllerRosPlugin.hpp"
 #include "rocoma_plugin/plugins/FailproofControllerPlugin.hpp"
