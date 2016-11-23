@@ -14,7 +14,9 @@ class MyControllerRos: virtual public roco::ControllerRos<my_model::State, my_mo
 \endcode
 
 The implementation requirements are identical to standard controllers.
-However, roco::ControllerRos adds ros functionalities such as the getting/setting of the ros nodehandle.
+However, roco::ControllerRos adds ros functionalities such as the getting/setting of the ros nodehandle.<BR>
+<B>NOTE:</B> Don't access the nodehandle in the constructor of your function. The namespace of the handle will be default and not what you expect.
+Register the ros communication in the create() function.
 
 <H3>Export Controller Ros as a Plugin</H3>
 In order to use the plugin mechanism of the following three steps are required.

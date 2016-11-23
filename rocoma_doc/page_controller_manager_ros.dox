@@ -36,6 +36,17 @@ controller_manager:
          ... Add more controller pairs
 \endcode
 
+<H3> Set and get the parameter path. </H3>
+The parameter path specified in the yaml configuration file of the controller manager node is interpreted in the following manner. First the 'package' is found
+using ros::package::getPath('package'). The 'parameter_path' is appended to this path and now represents the full path of the parameter file. Since ros::package::getPath()
+returns an empty path if the 'package' is not found you can also set absolute paths to 'parameter_path' while leaving the package entry empty.
+
+Access this path in your controller using:
+\code{c}
+this->getParameterPath();
+\endcode
+
+
 <H3>ROS communication provided by the controller manager</H3>
 
 Services:
