@@ -74,74 +74,113 @@ ControllerManager::~ControllerManager()
 {
 }
 
-bool ControllerManager::addControllerPair(ControllerPtr&& controller,
-                                          EmgcyControllerPtr&& emergencyController) {
+bool ControllerManager::createController(const ControllerPtr & controller) {
 
   // Check for invalid controller
-  if(controller == nullptr) {
-    MELO_ERROR_STREAM("Could not add controller pair. Controller is nullptr.");
-    return false;
-  }
+   if(controller == nullptr) {
+     MELO_ERROR_STREAM("Could not add controller pair. Controller is nullptr.");
+     return false;
+   }
+
+   // Local helpers (controllers are moved and therefore not safe to access)
+   const std::string controllerName = controller->getControllerName();
+
+   // check if controller already exists
+   if(controllers_.find(controllerName) != controllers_.end()) {
+     MELO_WARN_STREAM("Could not add controller " << controllerName << ". A controller with the same name already exists.");
+     return false;
+   }
+
+   //--- Add controller
+   MELO_DEBUG_STREAM(" Adding controller " << controllerName << " ... ");
+
+   // create controller
+   if (!controller->createController(timeStep_)) {
+     MELO_ERROR_STREAM("Could not create controller " << controllerName << "!");
+     return false;
+   }
+
+   return true;
+}
+
+bool ControllerManager::addControllerPair(ControllerPtr&& controller,
+                                          EmgcyControllerPtr&& emergencyController) {
+  // Add controller
+  if(!createController(controller)) { return false; };
 
   // Local helpers (controllers are moved and therefore not safe to access)
   const std::string controllerName = controller->getControllerName();
   const std::string emgcyControllerName = (emergencyController == nullptr)?"FailproofController": emergencyController->getControllerName();
 
-  MELO_INFO_STREAM("Adding controller pair ctrl: " << controllerName << " / emgcy ctrl: " << emgcyControllerName << " ... ");
-
-  // check if controller already exists
-  if(controllers_.find(controllerName) != controllers_.end()) {
-    MELO_WARN_STREAM("... Could not add controller " << controllerName << ". A controller with the same name already exists.");
-    return false;
-  }
-
-  //--- Add controller
-  MELO_INFO_STREAM(" Adding controller " << controllerName << " ... ");
-
-  // create controller
-  if (!controller->createController(timeStep_)) {
-    MELO_ERROR_STREAM("... Could not create controller " << controllerName << "!");
-    return false;
-  }
-
   // insert controller (move ownership to controller / controller is set to nullptr)
   controllers_.insert( std::pair<std::string, ControllerPtr >(controllerName, std::move(controller) ) );
-  MELO_INFO_STREAM("... successfully added controller " << controllerName << "!");
+  MELO_DEBUG_STREAM("... successfully added controller " << controllerName << "!");
 
   //--- Add emergency controller
-  MELO_INFO_STREAM(" Adding emergency controller " << emgcyControllerName << " ... ");
+  MELO_DEBUG_STREAM(" Adding emergency controller " << emgcyControllerName << " ... ");
 
   if(emergencyController == nullptr)
   {
-    controllerPairs_.insert( std::pair< std::string, ControllerSetPtr >( controllerName, ControllerSetPtr(controllers_.at(controllerName).get(), nullptr ) ) );
-    MELO_INFO_STREAM("... sucessfully added controller pair ctrl: " << controllerName << " / emgcy ctrl: " << emgcyControllerName << " ... ");
+    controllerPairs_.insert( std::pair< std::string, ControllerSetPtr >( controllerName,
+      ControllerSetPtr(controllers_.at(controllerName).get(), nullptr ) ) );
+    MELO_DEBUG_STREAM("... sucessfully added controller pair ctrl: " << controllerName << " / emgcy ctrl: " << emgcyControllerName << " ... ");
     return true;
   }
 
   // create emergency controller
   if (!emergencyController->createController(timeStep_)) {
-    MELO_ERROR_STREAM("... Could not create emergency controller " << emgcyControllerName << "! Use failproof controller on emergency stop!");
-    controllerPairs_.insert( std::pair< std::string, ControllerSetPtr >( controllerName, ControllerSetPtr(controllers_.at(controllerName).get(), nullptr) ) );
+    MELO_WARN_STREAM("Could not create emergency controller " << emgcyControllerName << "! Use failproof controller on emergency stop!");
+    controllerPairs_.insert( std::pair< std::string, ControllerSetPtr >( controllerName,
+      ControllerSetPtr(controllers_.at(controllerName).get(), nullptr) ) );
     return false;
   }
 
   // check if emergency controller already exists
   if(emergencyControllers_.find(emgcyControllerName) != emergencyControllers_.end()) {
-    MELO_WARN_STREAM("... Could not add emergency controller " << emgcyControllerName << ". An emergency controller with the same name already exists.");
+    MELO_INFO_STREAM("An emergency controller with the name " << emgcyControllerName << " already exists. Using same instance.");
   }
   else {
     // insert emergency controller (move ownership to controller / controller is set to nullptr)
     emergencyControllers_.insert( std::pair<std::string, EmgcyControllerPtr>(emgcyControllerName, std::move(emergencyController) ) );
-    MELO_INFO_STREAM("... successfully added emergency controller " << emgcyControllerName << "!");
+    MELO_DEBUG_STREAM("... successfully added emergency controller " << emgcyControllerName << "!");
   }
 
   // Add controller pair
   controllerPairs_.insert( std::pair< std::string, ControllerSetPtr >( controllerName,
-                                                                       ControllerSetPtr(controllers_.at(controllerName).get(), emergencyControllers_.at(emgcyControllerName).get() ) ) );
+    ControllerSetPtr(controllers_.at(controllerName).get(), emergencyControllers_.at(emgcyControllerName).get() ) ) );
   MELO_INFO_STREAM("... sucessfully added controller pair ctrl: " << controllerName << " / emgcy ctrl: " << emgcyControllerName << " ... ");
 
   return true;
 }
+
+bool ControllerManager::addControllerPairWithExistingEmergencyController(ControllerPtr&& controller,
+                                                                         const std::string & emgcyControllerName)
+{
+  // Add controller
+  if(!createController(controller)) { return false; };
+
+  // Local helpers (controllers are moved and therefore not safe to access)
+  const std::string controllerName = controller->getControllerName();
+
+  // insert controller (move ownership to controller / controller is set to nullptr)
+  controllers_.insert( std::pair<std::string, ControllerPtr >(controllerName, std::move(controller) ) );
+  MELO_DEBUG_STREAM("... successfully added controller " << controllerName << "!");
+
+  // check if emergency controller already exists
+  if(emergencyControllers_.find(emgcyControllerName) != emergencyControllers_.end()) {
+    MELO_INFO_STREAM("An emergency controller with the name " << emgcyControllerName << " already exists. Using same instance.");
+    controllerPairs_.insert( std::pair< std::string, ControllerSetPtr >( controllerName,
+          ControllerSetPtr(controllers_.at(controllerName).get(), emergencyControllers_.at(emgcyControllerName).get()) ) );
+  }
+  else {
+    MELO_WARN_STREAM("Emergency controller " << emgcyControllerName << " does not exist! Use failproof controller on emergency stop!");
+    controllerPairs_.insert( std::pair< std::string, ControllerSetPtr >( controllerName,
+          ControllerSetPtr(controllers_.at(controllerName).get(), nullptr) ) );
+  }
+
+  return true;
+}
+
 
 bool ControllerManager::setFailproofController(FailproofControllerPtr&& controller)  {
 

@@ -127,6 +127,14 @@ class ControllerManager
    */
   bool addControllerPair(ControllerPtr&& controller,
                          EmgcyControllerPtr&& emergencyController);
+  /**
+   * @brief Add a controller pair to the manager
+   * @param controller              Pointer to the controller (unique ptr -> ownership transfer)
+   * @param emergencyControllerName Name of the emergency controller
+   * @return true, if controllers were created and added successfully
+   */
+  bool addControllerPairWithExistingEmergencyController(ControllerPtr&& controller,
+                                                        const std::string & emgcyControllerName);
 
   /**
    * @brief Sets the failproof controller
@@ -229,6 +237,13 @@ class ControllerManager
 //   * @brief Check timing and perform emergency stop on violation
 //   */
 //  bool checkTimingWorker(const any_worker::WorkerEvent& event);
+ protected:
+  /**
+   * @brief Try to create controller
+   * @param controller  Const reference to unique_ptr to the controller
+   * @return true, if controller was created and added successfully
+   */
+  bool createController(const ControllerPtr & controller);
 
  private:
   //! Conditional variables for measuring execution time
