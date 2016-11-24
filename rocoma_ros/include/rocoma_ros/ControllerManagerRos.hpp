@@ -43,6 +43,31 @@
 
 namespace rocoma_ros {
 
+//! Options struct to initialize controller manager ros
+struct ControllerManagerRosOptions : public rocoma::ControllerManagerOptions
+{
+  //! Default Constructor
+  ControllerManagerRosOptions():
+        rocoma::ControllerManagerOptions(),
+        nodeHandle(ros::NodeHandle())
+  {
+
+  }
+
+  //! Constructor
+  ControllerManagerRosOptions(const double timeStep,
+                              const bool isRealRobot,
+                              const ros::NodeHandle& nodeHandle):
+        rocoma::ControllerManagerOptions(timeStep, isRealRobot),
+        nodeHandle(nodeHandle)
+  {
+
+  }
+
+  //! Ros node handle
+  ros::NodeHandle nodeHandle;
+};
+
 //! Extension of the Controller Manager to ROS
 /*! Functionalities of the rocoma controller manager are wrapped as ros services.
  *  Controllers can be loaded using the ros pluginlib.
@@ -65,7 +90,7 @@ class ControllerManagerRos : public rocoma::ControllerManager {
 
     }
     /*! Constructor
-    * @param pluginName       Name of the controller plugin
+     * @param pluginName       Name of the controller plugin
      * @param name            Name of the controller
      * @param parameterPath   Path from which controller loads parameters
      * @param isRos           True if the controller is of type ControllerRosPlugin
@@ -92,34 +117,46 @@ class ControllerManagerRos : public rocoma::ControllerManager {
   using ControllerOptionsPair = std::pair<ControllerOptions, ControllerOptions>;
 
  public:
+
   /*! Constructor
    * @param scopedStateName         Name of the robot state class, including namespaces  (e.g. "myStatePkg::State")
    * @param scopedCommandName       Name of the robot command class, including namespaces  (e.g. "myCommandPkg::Command")
-   * @param timestep                Controller timestep (default: 0.01s)
-   * @param nodeHandle              Ros nodehandle (default: default constructed handle)
+   * @returns object of type ControllerManagerRos
+   */
+  ControllerManagerRos( const std::string & scopedStateName,
+                        const std::string & scopedCommandName);
+
+  /*! Constructor
+   * @param scopedStateName         Name of the robot state class, including namespaces  (e.g. "myStatePkg::State")
+   * @param scopedCommandName       Name of the robot command class, including namespaces  (e.g. "myCommandPkg::Command")
+   * @param timestep                Controller timestep
+   * @param isRealRobot             Simulation flag
+   * @param nodeHandle              Ros nodehandle
    * @returns object of type ControllerManagerRos
    */
   ControllerManagerRos(const std::string & scopedStateName,
                        const std::string & scopedCommandName,
-                       const double timestep = 0.01,
-                       const ros::NodeHandle& nodeHandle = ros::NodeHandle());
+                       const double timeStep,
+                       const bool isRealRobot,
+                       const ros::NodeHandle& nodeHandle);
+
+  /*! Constructor
+   * @param options    Controller manager ros options
+   * @param scopedStateName         Name of the robot state class, including namespaces  (e.g. "myStatePkg::State")
+   * @param scopedCommandName       Name of the robot command class, including namespaces  (e.g. "myCommandPkg::Command")
+   * @returns object of type ControllerManagerRos
+   */
+  ControllerManagerRos( const std::string & scopedStateName,
+                        const std::string & scopedCommandName,
+                        const ControllerManagerRosOptions & options);
 
   //! Default destructor
   virtual ~ControllerManagerRos();
 
-  /*! Set ros nodehandle
-   * @param nh   the nodehandle to be set
-   */
-  void setNodeHandle(ros::NodeHandle & nh) { nodeHandle_ = nh; }
+  //! Init Manager and ROS publishers and services.
+  virtual void init(const ControllerManagerRosOptions & options);
 
-  /*! Inits ROS publishers and services.
-   *
-   */
-  void initPublishersAndServices();
-
-  /*! Shuts down ROS publishers and services.
-   *
-   */
+  //! Shuts down ROS publishers and services.
   void shutdown();
 
   /*! Add a single controller pair to the manager
@@ -255,9 +292,10 @@ class ControllerManagerRos : public rocoma::ControllerManager {
   void publishEmergencyState(bool isOk);
 
  private:
+  //! Init flag
+  std::atomic_bool isInitializedRos_;
   //! Ros node handle
   ros::NodeHandle nodeHandle_;
-
   //! Switch controller service
   ros::ServiceServer switchControllerService_;
   //! Emergency stop service

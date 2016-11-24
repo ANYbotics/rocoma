@@ -56,34 +56,54 @@ namespace rocoma {
 
 //! Options struct to initialize manager
 struct ControllerManagerOptions {
+  //! Default Constructor
+  ControllerManagerOptions():
+    timeStep(0.01),
+    isRealRobot(false)
+  {
+
+  }
+
+  //! Constructor
+  ControllerManagerOptions(const double timeStep, const bool isRealRobot):
+    timeStep(timeStep),
+    isRealRobot(isRealRobot)
+  {
+
+  }
+
+  //! Controller update rate
   double timeStep;
+  //! Simulation flag
   bool isRealRobot;
 };
 
+//! Implementation of a controllermanager for adater interfaces
 class ControllerManager
 {
  public:
   //! Enumeration for switch controller feedback
   enum class SwitchResponse : int {
     NOTFOUND  = -2,
-        ERROR     = -1,
-        RUNNING   =  0,
-        SWITCHING =  1
+    ERROR     = -1,
+    RUNNING   =  0,
+    SWITCHING =  1
   };
 
   //! Enumeration indicating the controller manager state
   enum class State : int {
-        FAILURE   = -1,
-        EMERGENCY =  0,
-        OK        =  1
+    FAILURE   = -1,
+    EMERGENCY =  0,
+    OK        =  1
   };
 
   //! Enumeration indicating the emergency stop type
   enum class EmergencyStopType : int {
     FAILPROOF   = -1,
-        EMERGENCY   =  0
+    EMERGENCY   =  0
   };
 
+ protected:
   //! Set of controller pointers (normal and emergency controller)
   struct ControllerSetPtr {
     ControllerSetPtr(roco::ControllerAdapterInterface * controller,
@@ -184,7 +204,7 @@ class ControllerManager
    * @param response_promise  Reference to a promise in which the result will be stored in (Lifetime of response_promise must be taken care of)
    */
   void switchController(const std::string & controllerName,
-		  	  	  	  	std::promise<SwitchResponse> & response_promise);
+                        std::promise<SwitchResponse> & response_promise);
 
   /**
    * @brief Get a vector of all available controller names
@@ -204,10 +224,10 @@ class ControllerManager
    */
   virtual bool cleanup();
 
-//  /**
-//   * @brief Check timing and perform emergency stop on violation
-//   */
-//  bool checkTimingWorker(const any_worker::WorkerEvent& event);
+  //  /**
+  //   * @brief Check timing and perform emergency stop on violation
+  //   */
+  //  bool checkTimingWorker(const any_worker::WorkerEvent& event);
  protected:
   /**
    * @brief Try to create controller
@@ -246,10 +266,10 @@ class ControllerManager
                               std::promise<SwitchResponse> & response_promise);
  private:
   //! Conditional variables for measuring execution time
-//  std::atomic_bool updating_;
-//  std::condition_variable timerStart_;
-//  std::condition_variable timerStop_;
-//  std::atomic<double> minimalRealtimeFactor_;
+  //  std::atomic_bool updating_;
+  //  std::condition_variable timerStart_;
+  //  std::condition_variable timerStop_;
+  //  std::atomic<double> minimalRealtimeFactor_;
 
   //! Flag to differ between simulation and real robot
   std::atomic<bool> isInitialized_;
