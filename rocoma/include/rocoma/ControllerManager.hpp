@@ -54,6 +54,12 @@
 
 namespace rocoma {
 
+//! Options struct to initialize manager
+struct ControllerManagerOptions {
+  double timeStep;
+  bool isRealRobot;
+};
+
 class ControllerManager
 {
  public:
@@ -103,21 +109,31 @@ class ControllerManager
  public:
   /**
    * @brief Constructor
-   * @param timestep controller timestep (default = 0.01s)
    */
-  ControllerManager(const double timestep = 0.01);
+  ControllerManager();
+
+  /**
+   * @brief Constructor
+   * @param timestep    controller timestep
+   * @param isRealRobot simulation flag
+   */
+  ControllerManager(const double timestep,
+                    const bool isRealRobot);
+
+  /**
+   * @brief Constructor
+   * @param options Configuration Options of the manager
+   */
+  ControllerManager(const ControllerManagerOptions & options);
 
   //! Destructor
   virtual ~ControllerManager();
 
   /**
-   * @brief Sets the controller timestep
-   * @param timestep  controller timestep
+   * @brief Initializes the controller manager
+   * @param options Configuration Options of the manager
    */
-  void setTimestep(const double timestep)
-  {
-    timeStep_ = timestep;
-  }
+  void init(const ControllerManagerOptions & options);
 
   /**
    * @brief Add a controller pair to the manager
@@ -156,17 +172,6 @@ class ControllerManager
   bool emergencyStop();
 
   /**
-   * @brief Worker callback stopping the previous controller and notify emergency stop
-   * @param event        Worker event
-   * @param controller   Pointer to the controller that was active when the emergency stop occured
-   * @param stopType     Type of the emergency stop
-   * @return true, if controller was stopped successfully
-   */
-  bool emergencyStopControllerWorker(const any_worker::WorkerEvent& event,
-                                     roco::ControllerAdapterInterface * controller,
-                                     EmergencyStopType stopType);
-
-  /**
    * @brief Tries to switch to a desired controller
    * @param controllerName    Name of the desired controller
    * @return result of the switching operation
@@ -180,20 +185,6 @@ class ControllerManager
    */
   void switchController(const std::string & controllerName,
 		  	  	  	  	std::promise<SwitchResponse> & response_promise);
-
-
-
-  /**
-   * @brief Worker callback switching the controller
-   * @param event        Worker event
-   * @param oldController   Pointer to the controller that is currently active
-   * @param newController   Pointer to the controller that shall be switched to
-   * @return true, if controller switching was successful
-   */
-  bool switchControllerWorker(const any_worker::WorkerEvent& event,
-                              roco::ControllerAdapterInterface * oldController,
-                              roco::ControllerAdapterInterface * newController,
-                              std::promise<SwitchResponse> & response_promise);
 
   /**
    * @brief Get a vector of all available controller names
@@ -213,26 +204,6 @@ class ControllerManager
    */
   virtual bool cleanup();
 
-  /**
-   * @brief Get isRealRobot
-   * @return true if real robot
-   */
-  bool isRealRobot() const;
-
-  /**
-   * @brief Set isRealRobot
-   */
-  void setIsRealRobot(bool isRealRobot);
-
-  /**
-   * @brief notify others of the emergency stop (default: do nothing)
-   * @param type     Type of the emergency stop
-   */
-  virtual void notifyEmergencyStop(EmergencyStopType type)
-  {
-
-  }
-
 //  /**
 //   * @brief Check timing and perform emergency stop on violation
 //   */
@@ -245,12 +216,43 @@ class ControllerManager
    */
   bool createController(const ControllerPtr & controller);
 
+  /**
+   * @brief Worker callback stopping the previous controller and notify emergency stop
+   * @param event        Worker event
+   * @param controller   Pointer to the controller that was active when the emergency stop occured
+   * @param stopType     Type of the emergency stop
+   * @return true, if controller was stopped successfully
+   */
+  bool emergencyStopControllerWorker(const any_worker::WorkerEvent& event,
+                                     roco::ControllerAdapterInterface * controller,
+                                     EmergencyStopType stopType);
+
+  /**
+   * @brief notify others of the emergency stop (default: do nothing)
+   * @param type     Type of the emergency stop
+   */
+  virtual void notifyEmergencyStop(EmergencyStopType type) { }
+
+  /**
+   * @brief Worker callback switching the controller
+   * @param event        Worker event
+   * @param oldController   Pointer to the controller that is currently active
+   * @param newController   Pointer to the controller that shall be switched to
+   * @return true, if controller switching was successful
+   */
+  bool switchControllerWorker(const any_worker::WorkerEvent& event,
+                              roco::ControllerAdapterInterface * oldController,
+                              roco::ControllerAdapterInterface * newController,
+                              std::promise<SwitchResponse> & response_promise);
  private:
   //! Conditional variables for measuring execution time
 //  std::atomic_bool updating_;
 //  std::condition_variable timerStart_;
 //  std::condition_variable timerStop_;
 //  std::atomic<double> minimalRealtimeFactor_;
+
+  //! Flag to differ between simulation and real robot
+  std::atomic<bool> isInitialized_;
 
   //! Controller timestep (equal for all controllers)
   std::atomic<double> timeStep_;
