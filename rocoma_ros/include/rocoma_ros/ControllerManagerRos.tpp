@@ -105,7 +105,7 @@ bool ControllerManagerRos<State_,Command_>::cleanup() {
 }
 
 template<typename State_, typename Command_>
-bool ControllerManagerRos<State_,Command_>::setupControllerPair(const ControllerOptionsPair & options,
+bool ControllerManagerRos<State_,Command_>::setupControllerPair(const ManagedControllerOptionsPair & options,
                                                                 std::shared_ptr<State_> state,
                                                                 std::shared_ptr<Command_> command,
                                                                 std::shared_ptr<boost::shared_mutex> mutexState,
@@ -239,7 +239,7 @@ bool ControllerManagerRos<State_,Command_>::setupFailproofController(const std::
 
 template<typename State_, typename Command_>
 bool ControllerManagerRos<State_,Command_>::setupControllers(const std::string & failproofControllerName,
-                                                             const std::vector< ControllerOptionsPair > & controllerNameMap,
+                                                             const std::vector< ManagedControllerOptionsPair > & controllerNameMap,
                                                              std::shared_ptr<State_> state,
                                                              std::shared_ptr<Command_> command,
                                                              std::shared_ptr<boost::shared_mutex> mutexState,
@@ -281,8 +281,8 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
   }
 
   // Parse controller list
-  std::vector<ControllerOptionsPair> controller_option_pairs;
-  ControllerOptionsPair controller_option_pair;
+  std::vector<ManagedControllerOptionsPair> controller_option_pairs;
+  ManagedControllerOptionsPair controller_option_pair;
   XmlRpc::XmlRpcValue controller_pair_list;
   XmlRpc::XmlRpcValue controller;
 
@@ -350,7 +350,7 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
         else
         {
           MELO_WARN("Controllerpair no %d has no member emergency_controller. Add failproof controller instead.", i);
-          controller_option_pair.second = ControllerOptions();
+          controller_option_pair.second = ManagedControllerOptions();
           controller_option_pairs.push_back(controller_option_pair);
           continue;
         }
@@ -377,7 +377,7 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
         else
         {
           MELO_WARN("Subentry 'emergency_controller' of controllerpair no %d has missing or wrong-type entries. Add failproof controller instead.", i);
-          controller_option_pair.second = ControllerOptions();
+          controller_option_pair.second = ManagedControllerOptions();
         }
 
         controller_option_pairs.push_back(controller_option_pair);

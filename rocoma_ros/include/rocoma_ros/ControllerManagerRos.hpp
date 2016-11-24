@@ -43,6 +43,45 @@
 
 namespace rocoma_ros {
 
+//! Struct to simplify the adding of a controller pair
+struct ManagedControllerOptions {
+
+  ManagedControllerOptions():
+    pluginName_(""),
+    name_(""),
+    parameterPath_(""),
+    isRos_(false)
+  {
+
+  }
+  /*! Constructor
+   * @param pluginName       Name of the controller plugin
+   * @param name            Name of the controller
+   * @param parameterPath   Path from which controller loads parameters
+   * @param isRos           True if the controller is of type ControllerRosPlugin
+   * @returns object of type ManagedControllerOptions
+   */
+  ManagedControllerOptions(const std::string & pluginName,
+                    const std::string & name,
+                    const std::string & parameterPath,
+                    const bool isRos):
+                      pluginName_(pluginName),
+                      name_(name),
+                      parameterPath_(parameterPath),
+                      isRos_(isRos)
+  {
+
+  }
+
+  std::string pluginName_;
+  std::string name_;
+  std::string parameterPath_;
+  bool isRos_;
+};
+
+using ManagedControllerOptionsPair = std::pair<ManagedControllerOptions, ManagedControllerOptions>;
+
+
 //! Options struct to initialize controller manager ros
 struct ControllerManagerRosOptions : public rocoma::ControllerManagerOptions
 {
@@ -75,46 +114,6 @@ struct ControllerManagerRosOptions : public rocoma::ControllerManagerOptions
  */
 template<typename State_, typename Command_>
 class ControllerManagerRos : public rocoma::ControllerManager {
-
- public:
-
-  //! Struct to simplify the adding of a controller pair
-  struct ControllerOptions {
-
-    ControllerOptions():
-      pluginName_(""),
-      name_(""),
-      parameterPath_(""),
-      isRos_(false)
-    {
-
-    }
-    /*! Constructor
-     * @param pluginName       Name of the controller plugin
-     * @param name            Name of the controller
-     * @param parameterPath   Path from which controller loads parameters
-     * @param isRos           True if the controller is of type ControllerRosPlugin
-     * @returns object of type ControllerOptions
-     */
-    ControllerOptions(const std::string & pluginName,
-                      const std::string & name,
-                      const std::string & parameterPath,
-                      const bool isRos):
-                        pluginName_(pluginName),
-                        name_(name),
-                        parameterPath_(parameterPath),
-                        isRos_(isRos)
-    {
-
-    }
-
-    std::string pluginName_;
-    std::string name_;
-    std::string parameterPath_;
-    bool isRos_;
-  };
-
-  using ControllerOptionsPair = std::pair<ControllerOptions, ControllerOptions>;
 
  public:
 
@@ -167,7 +166,7 @@ class ControllerManagerRos : public rocoma::ControllerManager {
    * @param mutexCommand    mutex protecting robot command pointer
    * @returns true iff added controller pair successfully
    */
-  bool setupControllerPair(const ControllerOptionsPair & options,
+  bool setupControllerPair(const ManagedControllerOptionsPair & options,
                            std::shared_ptr<State_> state,
                            std::shared_ptr<Command_> command,
                            std::shared_ptr<boost::shared_mutex> mutexState,
@@ -197,7 +196,7 @@ class ControllerManagerRos : public rocoma::ControllerManager {
    * @returns true iff all controllers were added successfully
    */
   bool setupControllers(const std::string & failproofControllerName,
-                        const std::vector<ControllerOptionsPair> & controllerOptions,
+                        const std::vector<ManagedControllerOptionsPair> & controllerOptions,
                         std::shared_ptr<State_> state,
                         std::shared_ptr<Command_> command,
                         std::shared_ptr<boost::shared_mutex> mutexState,
