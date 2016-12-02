@@ -42,10 +42,9 @@
 
 // rocoma_plugin
 #include "rocoma_plugin/plugins/ControllerPlugin.hpp"
-#include "rocoma_plugin/plugins/ControllerRosPlugin.hpp"
 
-// rocoma
-#include "rocoma/controllers/ControllerTuple.hpp"
+// roco
+#include "roco/controllers/ControllerTuple.hpp"
 
 // pluginlib
 #include <pluginlib/class_list_macros.h>
@@ -57,14 +56,7 @@
  */
 #define ROCOMA_EXPORT_CONTROLLER_TUPLE(name, state, command, ...)                                                               \
   namespace plugin_##name_internal {                                                                                            \
-      using name = rocoma_plugin::ControllerPlugin< rocoma::ControllerTuple<state, command, __VA_ARGS__ > , state , command>;   \
+      using name = rocoma_plugin::ControllerPlugin< roco::ControllerTuple<state, command, __VA_ARGS__ > , state , command>;   \
       using PluginBase = rocoma_plugin::ControllerPluginInterface<state , command>;                                             \
       PLUGINLIB_EXPORT_CLASS(name, PluginBase)                                                                                  \
-  }
-
-#define ROCOMA_EXPORT_CONTROLLER_TUPLE_ROS(name, state, command, ...)                                                                  \
-  namespace plugin_##name_internal {                                                                                                   \
-      using name = rocoma_plugin::ControllerRosPlugin< rocoma::ControllerTupleRos<state, command, __VA_ARGS__ > , state , command>;    \
-      using PluginBase = rocoma_plugin::ControllerRosPluginInterface<state , command>;                                                 \
-      PLUGINLIB_EXPORT_CLASS(name, PluginBase)                                                                                         \
   }

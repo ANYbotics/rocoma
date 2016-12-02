@@ -1,7 +1,7 @@
 /**********************************************************************
  * Software License Agreement (BSD License)
  *
- * Copyright (c) 2016, Christian Gehring, Gabriel Hottiger
+ * Copyright (c) 2016, Gabriel Hottiger
  * All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -14,7 +14,7 @@
  *     copyright notice, this list of conditions and the following
  *     disclaimer in the documentation and/or other materials provided
  *     with the distribution.
- *   * Neither the name of ETH Zurich
+ *   * Neither the name of Autonomous Systems Lab nor ETH Zurich
  *     nor the names of its contributors may be used to endorse or
  *     promote products derived from this software without specific
  *     prior written permission.
@@ -33,15 +33,30 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 /*!
- * @file     rocoma_plugin.hpp
+ * @file     ControllerTupleRosPlugin.hpp
  * @author   Gabriel Hottiger
  * @date     Aug, 2016
  */
 
-#include "rocoma_plugin/plugins/ControllerPlugin.hpp"
+#pragma once
+
+// rocoma_plugin
 #include "rocoma_plugin/plugins/ControllerRosPlugin.hpp"
-#include "rocoma_plugin/plugins/ControllerTuplePlugin.hpp"
-#include "rocoma_plugin/plugins/ControllerTupleRosPlugin.hpp"
-#include "rocoma_plugin/plugins/EmergencyControllerPlugin.hpp"
-#include "rocoma_plugin/plugins/EmergencyControllerRosPlugin.hpp"
-#include "rocoma_plugin/plugins/FailproofControllerPlugin.hpp"
+
+// roco_ros
+#include "roco_ros/controllers/ControllerTupleRos.hpp"
+
+// pluginlib
+#include <pluginlib/class_list_macros.h>
+
+/*!
+ *   Export your controller as a ControllerTuplePlugin in order to load it as a plugin.
+ *   This macro is a wrapper to PLUGINLIB_EXPORT_CLASS, for templated classes.
+ *   Protects typedefs in internal namespace.
+ */
+#define ROCOMA_EXPORT_CONTROLLER_TUPLE_ROS(name, state, command, ...)                                                                  \
+  namespace plugin_##name_internal {                                                                                                   \
+      using name = rocoma_plugin::ControllerRosPlugin< roco_ros::ControllerTupleRos<state, command, __VA_ARGS__ > , state , command>;    \
+      using PluginBase = rocoma_plugin::ControllerRosPluginInterface<state , command>;                                                 \
+      PLUGINLIB_EXPORT_CLASS(name, PluginBase)                                                                                         \
+  }

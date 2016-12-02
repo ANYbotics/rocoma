@@ -43,8 +43,8 @@
 // rocoma_plugin
 #include "rocoma_plugin/interfaces/ControllerPluginInterface.hpp"
 
-// roco
-#include "roco/controllers/ControllerRos.hpp"
+// roco_ros
+#include "roco_ros/controllers/ControllerRos.hpp"
 
 namespace rocoma_plugin {
 
@@ -56,7 +56,7 @@ namespace rocoma_plugin {
  */
 template<typename State_, typename Command_>
 class ControllerRosPluginInterface: virtual public rocoma_plugin::ControllerPluginInterface<State_, Command_>,
-                                    virtual public roco::ControllerRos<State_, Command_>
+                                    virtual public roco_ros::ControllerRos<State_, Command_>
 {
 
 };

@@ -6,6 +6,7 @@ set(CMAKE_CXX_FLAGS "-std=c++11")
 find_package(catkin REQUIRED
   COMPONENTS
     roco
+    roco_ros
     rocoma
     pluginlib
 )
@@ -15,6 +16,7 @@ catkin_package(
   LIBRARIES
   CATKIN_DEPENDS
     roco
+    roco_ros
     rocoma
     pluginlib
   DEPENDS
@@ -27,4 +29,3 @@ install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
   PATTERN ".svn" EXCLUDE
 )
-

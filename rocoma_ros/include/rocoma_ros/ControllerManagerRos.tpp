@@ -6,21 +6,40 @@
 namespace rocoma_ros {
 
 template<typename State_, typename Command_>
-ControllerManagerRos<State_,Command_>::ControllerManagerRos(const std::string & scopedStateName,
-                                                            const std::string & scopedCommandName,
-                                                            const double timeStep,
-                                                            const ros::NodeHandle& nodeHandle):
-                                                            rocoma::ControllerManager(timeStep),
-                                                            nodeHandle_(nodeHandle),
-                                                            failproofControllerLoader_("rocoma_plugin", "rocoma_plugin::FailproofControllerPluginInterface<" + scopedStateName + ", " + scopedCommandName + ">"),
-                                                            emergencyControllerLoader_("rocoma_plugin", "rocoma_plugin::EmergencyControllerPluginInterface<" + scopedStateName + ", " + scopedCommandName + ">"),
-                                                            emergencyControllerRosLoader_("rocoma_plugin", "rocoma_plugin::EmergencyControllerRosPluginInterface<" + scopedStateName + ", " + scopedCommandName + ">"),
-                                                            controllerLoader_("rocoma_plugin", "rocoma_plugin::ControllerPluginInterface<" + scopedStateName + ", " + scopedCommandName + ">"),
-                                                            controllerRosLoader_("rocoma_plugin", "rocoma_plugin::ControllerRosPluginInterface<" + scopedStateName + ", " + scopedCommandName + ">")
-
+ControllerManagerRos<State_,Command_>::ControllerManagerRos( const std::string & scopedStateName,
+                                                             const std::string & scopedCommandName):
+                                                             rocoma::ControllerManager(),
+                                                             isInitializedRos_(false),
+                                                             nodeHandle_(),
+                                                             failproofControllerLoader_("rocoma_plugin", "rocoma_plugin::FailproofControllerPluginInterface<" + scopedStateName + ", " + scopedCommandName + ">"),
+                                                             emergencyControllerLoader_("rocoma_plugin", "rocoma_plugin::EmergencyControllerPluginInterface<" + scopedStateName + ", " + scopedCommandName + ">"),
+                                                             emergencyControllerRosLoader_("rocoma_plugin", "rocoma_plugin::EmergencyControllerRosPluginInterface<" + scopedStateName + ", " + scopedCommandName + ">"),
+                                                             controllerLoader_("rocoma_plugin", "rocoma_plugin::ControllerPluginInterface<" + scopedStateName + ", " + scopedCommandName + ">"),
+                                                             controllerRosLoader_("rocoma_plugin", "rocoma_plugin::ControllerRosPluginInterface<" + scopedStateName + ", " + scopedCommandName + ">")
 {
 
 }
+
+template<typename State_, typename Command_>
+ControllerManagerRos<State_,Command_>::ControllerManagerRos( const std::string & scopedStateName,
+                                                             const std::string & scopedCommandName,
+                                                             const double timeStep,
+                                                             const bool isRealRobot,
+                                                             const ros::NodeHandle& nodeHandle):
+      ControllerManagerRos()
+{
+  this->init(ControllerManagerRosOptions(timeStep, isRealRobot, nodeHandle));
+}
+
+template<typename State_, typename Command_>
+ControllerManagerRos<State_,Command_>::ControllerManagerRos( const std::string & scopedStateName,
+                                                             const std::string & scopedCommandName,
+                                                             const ControllerManagerRosOptions & options):
+      ControllerManagerRos()
+{
+  this->init(options);
+}
+
 
 template<typename State_, typename Command_>
 ControllerManagerRos<State_,Command_>::~ControllerManagerRos() {
@@ -29,8 +48,17 @@ ControllerManagerRos<State_,Command_>::~ControllerManagerRos() {
 
 
 template<typename State_, typename Command_>
-void ControllerManagerRos<State_,Command_>::initPublishersAndServices() {
+void ControllerManagerRos<State_,Command_>::init(const ControllerManagerRosOptions & options) {
+  if(isInitializedRos_) {
+    MELO_WARN("ControllerManagerRos already initialized. Kept current configuration.");
+    return;
+  }
 
+  // Init controller manager
+  rocoma::ControllerManager::init(options);
+  nodeHandle_ = options.nodeHandle;
+
+  // Shutdown publishers
   shutdown();
 
   // initialize services
@@ -55,6 +83,9 @@ void ControllerManagerRos<State_,Command_>::initPublishersAndServices() {
   publishActiveController(this->getActiveControllerName());
   emergencyStopStatePublisher_ = nodeHandle_.advertise<any_msgs::State>("notify_emergency_stop", 1, true);
   publishEmergencyState(true);
+
+  // Set init flag
+  isInitializedRos_ = true;
 }
 
 template<typename State_, typename Command_>
@@ -74,12 +105,15 @@ bool ControllerManagerRos<State_,Command_>::cleanup() {
 }
 
 template<typename State_, typename Command_>
-bool ControllerManagerRos<State_,Command_>::setupControllerPair(const ControllerOptionsPair & options,
+bool ControllerManagerRos<State_,Command_>::setupControllerPair(const ManagedControllerOptionsPair & options,
                                                                 std::shared_ptr<State_> state,
                                                                 std::shared_ptr<Command_> command,
                                                                 std::shared_ptr<boost::shared_mutex> mutexState,
                                                                 std::shared_ptr<boost::shared_mutex> mutexCommand) {
-
+  if(!isInitializedRos_) {
+    MELO_ERROR("ControllerManagerRos was not initialized. Can not setup controller.");
+    return false;
+  }
   //--- Add controller
   rocoma_plugin::ControllerPluginInterface<State_, Command_> * controller;
 
@@ -100,7 +134,6 @@ bool ControllerManagerRos<State_,Command_>::setupControllerPair(const Controller
     controller->setName( options.first.name_ );
     controller->setStateAndCommand(state, mutexState, command, mutexCommand);
     controller->setParameterPath(options.first.parameterPath_);
-    controller->setIsRealRobot(isRealRobot());
   }
   catch(pluginlib::PluginlibException& ex)
   {
@@ -169,6 +202,10 @@ bool ControllerManagerRos<State_,Command_>::setupFailproofController(const std::
                                                                      std::shared_ptr<Command_> command,
                                                                      std::shared_ptr<boost::shared_mutex> mutexState,
                                                                      std::shared_ptr<boost::shared_mutex> mutexCommand) {
+  if(!isInitializedRos_) {
+    MELO_ERROR("ControllerManagerRos was not initialized. Can not setup failproof controller.");
+    return false;
+  }
   try
   {
     // Instantiate controller
@@ -202,11 +239,16 @@ bool ControllerManagerRos<State_,Command_>::setupFailproofController(const std::
 
 template<typename State_, typename Command_>
 bool ControllerManagerRos<State_,Command_>::setupControllers(const std::string & failproofControllerName,
-                                                             const std::vector< ControllerOptionsPair > & controllerNameMap,
+                                                             const std::vector< ManagedControllerOptionsPair > & controllerNameMap,
                                                              std::shared_ptr<State_> state,
                                                              std::shared_ptr<Command_> command,
                                                              std::shared_ptr<boost::shared_mutex> mutexState,
                                                              std::shared_ptr<boost::shared_mutex> mutexCommand) {
+  if(!isInitializedRos_) {
+    MELO_ERROR("ControllerManagerRos was not initialized. Can not setup controllers.");
+    return false;
+  }
+
   // add failproof controller to manager
   bool success = setupFailproofController(failproofControllerName, state, command, mutexState, mutexCommand);
 
@@ -225,6 +267,11 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
                                                                                 std::shared_ptr<Command_> command,
                                                                                 std::shared_ptr<boost::shared_mutex> mutexState,
                                                                                 std::shared_ptr<boost::shared_mutex> mutexCommand) {
+  if(!isInitializedRos_) {
+    MELO_ERROR("ControllerManagerRos was not initialized. Can not setup controllers from parameter server.");
+    return false;
+  }
+
   // Parse failproof controller name
   std::string failproofControllerName;
   if(!nodeHandle_.getParam("controller_manager/failproof_controller", failproofControllerName)) {
@@ -234,8 +281,8 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
   }
 
   // Parse controller list
-  std::vector<ControllerOptionsPair> controller_option_pairs;
-  ControllerOptionsPair controller_option_pair;
+  std::vector<ManagedControllerOptionsPair> controller_option_pairs;
+  ManagedControllerOptionsPair controller_option_pair;
   XmlRpc::XmlRpcValue controller_pair_list;
   XmlRpc::XmlRpcValue controller;
 
@@ -303,7 +350,7 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
         else
         {
           MELO_WARN("Controllerpair no %d has no member emergency_controller. Add failproof controller instead.", i);
-          controller_option_pair.second = ControllerOptions();
+          controller_option_pair.second = ManagedControllerOptions();
           controller_option_pairs.push_back(controller_option_pair);
           continue;
         }
@@ -330,7 +377,7 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
         else
         {
           MELO_WARN("Subentry 'emergency_controller' of controllerpair no %d has missing or wrong-type entries. Add failproof controller instead.", i);
-          controller_option_pair.second = ControllerOptions();
+          controller_option_pair.second = ManagedControllerOptions();
         }
 
         controller_option_pairs.push_back(controller_option_pair);
