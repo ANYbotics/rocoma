@@ -452,7 +452,7 @@ void ControllerManagerRos<State_,Command_>::notifyEmergencyStop(rocoma::Controll
 
 template<typename State_, typename Command_>
 void ControllerManagerRos<State_,Command_>::notifyControllerChanged(const std::string & newControllerName) {
-  publishActiveController(this->getActiveControllerName());
+  publishActiveController(newControllerName);
 }
 
 template<typename State_, typename Command_>
