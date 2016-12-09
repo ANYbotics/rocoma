@@ -333,6 +333,7 @@ bool ControllerManager::emergencyStop() {
       {
         // Switch to emergency state
         activeControllerState_ = State::EMERGENCY;
+        this->notifyControllerChanged(activeControllerPair_.emgcyControllerName_);
 
         // Return here -> do not move on to failproof controller
         return true;
@@ -360,6 +361,7 @@ bool ControllerManager::emergencyStop() {
 
   // Switch to failure state
   activeControllerState_ = State::FAILURE;
+  this->notifyControllerChanged(failproofController_->getControllerName());
 
   return true;
 }
@@ -638,6 +640,7 @@ bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
     }
 
     MELO_INFO("Switched to controller %s", activeControllerPair_.controllerName_.c_str());
+    this->notifyControllerChanged(activeControllerPair_.controllerName_);
     response_promise.set_value(SwitchResponse::SWITCHING);
     return true;
   }

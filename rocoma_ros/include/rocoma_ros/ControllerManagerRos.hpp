@@ -273,6 +273,10 @@ class ControllerManagerRos : public rocoma::ControllerManager {
    */
   void notifyEmergencyStop(rocoma::ControllerManager::EmergencyStopType type);
 
+  /*! Inform other nodes (via message) that the controller was switched
+   * @param newControllerName   name of the "new" controller
+   */
+  void notifyControllerChanged(const std::string & newControllerName);
 
   /**
    * @brief Cleanup all controllers and ROS services and publishers.

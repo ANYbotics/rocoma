@@ -254,6 +254,12 @@ class ControllerManager
   virtual void notifyEmergencyStop(EmergencyStopType type) { }
 
   /**
+   * @brief notify others of the emergency stop (default: do nothing)
+   * @param type     Type of the emergency stop
+   */
+  virtual void notifyControllerChanged(const std::string & newControllerName) { }
+
+  /**
    * @brief Worker callback switching the controller
    * @param event        Worker event
    * @param oldController   Pointer to the controller that is currently active

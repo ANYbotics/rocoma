@@ -426,8 +426,6 @@ bool ControllerManagerRos<State_,Command_>::switchController(rocoma_msgs::Switch
       break;
   }
 
-  publishActiveController(this->getActiveControllerName());
-
   return true;
 }
 
@@ -450,6 +448,11 @@ void ControllerManagerRos<State_,Command_>::notifyEmergencyStop(rocoma::Controll
   // TODO react differently depending on the emergency stop type
   publishEmergencyState(false);
   publishEmergencyState(true);
+}
+
+template<typename State_, typename Command_>
+void ControllerManagerRos<State_,Command_>::notifyControllerChanged(const std::string & newControllerName) {
+  publishActiveController(newControllerName);
 }
 
 template<typename State_, typename Command_>
