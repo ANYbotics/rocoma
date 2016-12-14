@@ -134,6 +134,9 @@ bool ControllerManager::addControllerPair(ControllerPtr&& controller,
     return true;
   }
 
+  // set properties
+  emergencyController->setIsRealRobot(isRealRobot_);
+
   // create emergency controller
   if (!emergencyController->createController(timeStep_)) {
     MELO_WARN_STREAM("Could not create emergency controller " << emgcyControllerName << "! Use failproof controller on emergency stop!");
@@ -147,9 +150,6 @@ bool ControllerManager::addControllerPair(ControllerPtr&& controller,
     MELO_INFO_STREAM("An emergency controller with the name " << emgcyControllerName << " already exists. Using same instance.");
   }
   else {
-    // set properties
-    emergencyController->setIsRealRobot(isRealRobot_);
-
     // insert emergency controller (move ownership to controller / controller is set to nullptr)
     emergencyControllers_.insert( std::pair<std::string, EmgcyControllerPtr>(emgcyControllerName, std::move(emergencyController) ) );
     MELO_DEBUG_STREAM("... successfully added emergency controller " << emgcyControllerName << "!");
@@ -555,14 +555,14 @@ bool ControllerManager::createController(const ControllerPtr & controller) {
   //--- Add controller
   MELO_DEBUG_STREAM(" Adding controller " << controllerName << " ... ");
 
+  // Set controller properties
+  controller->setIsRealRobot(isRealRobot_);
+
   // create controller
   if (!controller->createController(timeStep_)) {
     MELO_ERROR_STREAM("Could not create controller " << controllerName << "!");
     return false;
   }
-
-  // Set controller properties
-  controller->setIsRealRobot(isRealRobot_);
 
   return true;
 }
