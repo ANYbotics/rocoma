@@ -242,10 +242,6 @@ bool ControllerAdapter<Controller_, State_, Command_>::stopController()
   // Set flag
   this->isRunning_ = false;
 
-  // Collect logger data
-  signal_logger::logger->stopLogger();
-  signal_logger::logger->saveLoggerData();
-
   // Stop controller
   try {
     if(!this->stop()) {
@@ -265,6 +261,11 @@ bool ControllerAdapter<Controller_, State_, Command_>::stopController()
 template<typename Controller_, typename State_, typename Command_>
 bool ControllerAdapter<Controller_,State_, Command_>::preStopController()
 {
+
+  // Collect logger data
+  signal_logger::logger->stopLogger();
+  signal_logger::logger->saveLoggerData();
+
   try {
     if(!this->preStop()) {
       MELO_WARN("Could not prepare to stop controller %s!", this->getName().c_str());
