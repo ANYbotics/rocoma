@@ -1,5 +1,5 @@
 ### Documentation (Doxygen) ###
-A complete documentation of rocoma is available [here](http://ethz-asl-lr.bitbucket.org/rocoma/).
+A complete documentation of rocoma is available [here](http://leggedrobotics.bitbucket.org/rocoma/).
 
 ### TODO's ###
 * implement absolute time (setTime, getTime -> compatible with ros simulation time)
