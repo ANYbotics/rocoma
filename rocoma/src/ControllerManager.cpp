@@ -282,7 +282,7 @@ bool ControllerManager::updateController() {
 }
 
 bool ControllerManager::emergencyStop() {
-  MELO_ERROR("Emergency Stop!")
+  MELO_ERROR("Emergency Stop!");
       // Cannot call emergency stop twice simultaniously
       std::unique_lock<std::mutex> lockEmergencyStop(emergencyStopMutex_);
 
@@ -354,7 +354,7 @@ bool ControllerManager::emergencyStop() {
 
   // Advance failproof controller
   {
-    MELO_INFO("Switched to failproof controller!")
+    MELO_INFO("Switched to failproof controller!");
         std::unique_lock<std::mutex> lockFailproofCOntroller(failproofControllerMutex_);
     failproofController_->advanceController(timeStep_);
   }
@@ -530,6 +530,7 @@ bool ControllerManager::cleanup() {
     }
   }
   MELO_DEBUG("[ControllerManager] Reset fail proof controller.");
+  failproofController_->cleanupController();
   failproofController_.reset(nullptr); // clean up unique ptrs here, see above
 
   return success;
