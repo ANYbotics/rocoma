@@ -23,6 +23,7 @@ In order to install, clone the latest version from this repository into your cat
 * **[roco](https://bitbucket.org/leggedrobotics/roco):** Robot controller interface
 * **[message_logger](https://bitbucket.org/leggedrobotics/message_logger):** Logger for messages
 * **[signal_logger](https://bitbucket.org/leggedrobotics/signal_logger):** Logger for variables
+* **[any_common](https://bitbucket.org/leggedrobotics/any_common):** Common tools (workers)
 	
 ## Usage
 
