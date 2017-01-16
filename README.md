@@ -2,7 +2,7 @@
 
 ## Overview
 
-This software package provides a controller which enables ANYmal to locomote with a trotting gait.
+This software package provides a C++ robot controller manager that is compatible with the [roco](https://bitbucket.org/leggedrobotics/roco) interface.
 
 A complete documentation of rocoma is available [here](http://docs.leggedrobotics.com/rocoma_doc/).
 
