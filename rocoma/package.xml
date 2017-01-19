@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>rocoma</name>
-  <version>0.0.0</version>
+  <version>0.0.1</version>
   <description>The robot controller manager package</description>
   <maintainer email="gehrinch@ethz.ch">Christian Gehring</maintainer>
   <license>BSD</license>
