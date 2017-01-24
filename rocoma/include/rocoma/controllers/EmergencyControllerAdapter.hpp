@@ -91,7 +91,7 @@ class EmergencyControllerAdapter: virtual public roco::EmergencyControllerAdapte
 
     // Check if the controller was created.
     if (!this->isCreated()) {
-      MELO_WARN_STREAM("Controller was not created!");
+      MELO_WARN_STREAM("[Rocoma][" << this->getName() << "] Was not created!");
       return false;
     }
 
@@ -105,7 +105,7 @@ class EmergencyControllerAdapter: virtual public roco::EmergencyControllerAdapte
 
       // Initialize controller
       if (!this->initializeFast(dt)) {
-        MELO_WARN_STREAM("Controller could not be fast initialized!");
+        MELO_WARN_STREAM("[Rocoma][" << this->getName() << "] Could not be fast initialized!");
         return false;
       }
 
@@ -117,7 +117,7 @@ class EmergencyControllerAdapter: virtual public roco::EmergencyControllerAdapte
       this->isInitialized_ = true;
 
     } catch (std::exception& e) {
-      MELO_WARN_STREAM("Exception caught:\n" << e.what());
+      MELO_WARN_STREAM("[Rocoma][" << this->getName() << "] Exception caught while fast initializing:\n" << e.what());
       this->isInitialized_ = false;
       return false;
     }
@@ -125,7 +125,7 @@ class EmergencyControllerAdapter: virtual public roco::EmergencyControllerAdapte
     // Start logging
     this->isRunning_ = true;
     signal_logger::logger->startLogger();
-    MELO_INFO_STREAM( "Fast initialized controller " << this->getControllerName() << " successfully!");
+    MELO_INFO_STREAM("[Rocoma][" << this->getName() << "] Fast initialized successfully!");
 
     return true;
   }
