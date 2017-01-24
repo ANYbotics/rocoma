@@ -51,7 +51,7 @@ template<typename Controller_, typename State_, typename Command_>
 bool ControllerAdapter<Controller_, State_, Command_>::createController(double dt)
 {
   if (this->isCreated()) {
-    MELO_WARN_STREAM("Controller has already been created!");
+    MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Has already been created!");
     return true;
   }
 
@@ -59,7 +59,7 @@ bool ControllerAdapter<Controller_, State_, Command_>::createController(double d
     // Create controller
     if (!this->create(dt)) {
       this->isCreated_ = false;
-      MELO_WARN_STREAM("Controller could not be created!");
+      MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Could not be created!");
       return false;
     }
 
@@ -68,7 +68,7 @@ bool ControllerAdapter<Controller_, State_, Command_>::createController(double d
 
   } catch (std::exception& e) {
     //! return false (let manager handle this)
-    MELO_WARN_STREAM("Exception caught: " << e.what());
+    MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Exception caught while creating: " << e.what());
     this->isCreated_ = false;
     return false;
   }
@@ -81,7 +81,7 @@ bool ControllerAdapter<Controller_, State_, Command_>::initializeController(doub
 {
   // Check if the controller was created.
   if (!this->isCreated()) {
-    MELO_WARN_STREAM("Controller was not created!");
+    MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Not created on initialize!");
     return false;
   }
 
@@ -100,7 +100,7 @@ bool ControllerAdapter<Controller_, State_, Command_>::initializeController(doub
 
     // Initialize controller
     if (!this->initialize(dt)) {
-      MELO_WARN_STREAM("Controller could not be initialized!");
+      MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Could not be initialized!");
       return false;
     }
 
@@ -112,7 +112,7 @@ bool ControllerAdapter<Controller_, State_, Command_>::initializeController(doub
     this->isInitialized_ = true;
 
   } catch (std::exception& e) {
-    MELO_WARN_STREAM("Exception caught:\n" << e.what());
+    MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Exception caught while initializing:\n" << e.what());
     this->isInitialized_ = false;
     return false;
   }
@@ -120,7 +120,7 @@ bool ControllerAdapter<Controller_, State_, Command_>::initializeController(doub
   // Start logging
   this->isRunning_ = true;
   signal_logger::logger->startLogger();
-  MELO_INFO_STREAM( "Initialized controller " << this->getControllerName() << " successfully!");
+  MELO_INFO_STREAM("[Rocoma][" << this->getControllerName() << "] Successfully initialized!");
 
   return true;
 }
@@ -130,7 +130,7 @@ bool ControllerAdapter<Controller_, State_, Command_>::advanceController(double 
 {
   // Check if controller is initialized
   if (!this->isInitialized()) {
-    MELO_WARN_STREAM("Controller was not initialized!");
+    MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Not initialized on advance!");
     return false;
   }
 
@@ -141,7 +141,7 @@ bool ControllerAdapter<Controller_, State_, Command_>::advanceController(double 
     }
 
     if (!this->advance(dt)) {
-      MELO_WARN_STREAM("Controller::advance() returned false!");
+      MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Could not advance!");
       return false;
     }
 
@@ -154,7 +154,7 @@ bool ControllerAdapter<Controller_, State_, Command_>::advanceController(double 
     signal_logger::logger->collectLoggerData();
 
   } catch (std::exception& e) {
-    MELO_WARN_STREAM("Exception caught: " << e.what());
+    MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Exception caught while advancing: " << e.what());
     return false;
   }
 
@@ -166,7 +166,7 @@ bool ControllerAdapter<Controller_, State_, Command_>::resetController(double dt
 {
   // Check if controller was created
   if (!this->isCreated()) {
-    MELO_WARN_STREAM("Controller has not been created!");
+    MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Has not been created!");
     return false;
   }
 
@@ -184,7 +184,7 @@ bool ControllerAdapter<Controller_, State_, Command_>::resetController(double dt
 
     // Reset controller
     if (!this->reset(dt)) {
-      MELO_WARN_STREAM("Could not reset controller!");
+      MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Could not reset controller!");
       return false;
     }
 
@@ -194,14 +194,14 @@ bool ControllerAdapter<Controller_, State_, Command_>::resetController(double dt
     }
 
   } catch (std::exception& e) {
-    MELO_WARN_STREAM("Exception caught: " << e.what());
+    MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Exception caught while resetting: " << e.what());
     return false;
   }
 
   // Start logging
   this->isRunning_ = true;
   signal_logger::logger->startLogger();
-  MELO_INFO_STREAM("Reset controller " << this->getControllerName() << " successfully!");
+  MELO_INFO_STREAM("[Rocoma][" << this->getControllerName() << "] Reset successfully!");
 
   return true;
 }
@@ -209,23 +209,23 @@ bool ControllerAdapter<Controller_, State_, Command_>::resetController(double dt
 template<typename Controller_, typename State_, typename Command_>
 bool ControllerAdapter<Controller_,State_, Command_>::cleanupController()
 {
-  MELO_INFO_STREAM("Cleaning controller " << this->getControllerName() << " up.");
+  MELO_INFO_STREAM("[Rocoma][" << this->getControllerName() << "] Clean up!");
 
   // Check if controller was created
   if (!this->isCreated()) {
-    MELO_WARN_STREAM("Controller is not created!");
+    MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Was not created!");
     return false;
   }
 
   // Cleanup controllers
   try {
     if (!this->cleanup()) {
-      MELO_WARN_STREAM("Could not clean up the controller!");
+      MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Could not clean up!");
       return false;
     }
 
   } catch (std::exception& e) {
-    MELO_WARN_STREAM("Exception caught: " << e.what());
+    MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Exception caught while cleaning up: " << e.what());
     return false;
   }
 
@@ -245,12 +245,12 @@ bool ControllerAdapter<Controller_, State_, Command_>::stopController()
   // Stop controller
   try {
     if(!this->stop()) {
-      MELO_WARN("Could not stop controller %s!", this->getName().c_str());
+      MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Could not be stopped!");
       return false;
     }
   }
   catch (std::exception& e) {
-    MELO_WARN_STREAM("Could not stop controller " << this->getName() << "! Exception caught: " << e.what());
+    MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Exception caught while stopping: " << e.what());
     return false;
   }
 
@@ -268,12 +268,12 @@ bool ControllerAdapter<Controller_,State_, Command_>::preStopController()
 
   try {
     if(!this->preStop()) {
-      MELO_WARN("Could not prepare to stop controller %s!", this->getName().c_str());
+      MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Could not prepare to stop controller!");
       return false;
     }
   }
   catch (std::exception& e) {
-    MELO_WARN_STREAM("Could not prepare to stop controller " << this->getName() << "! Exception caught: " << e.what());
+    MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Exception caught while pre-stopping: " << e.what());
     return false;
   }
 
@@ -288,7 +288,7 @@ bool ControllerAdapter<Controller_,State_, Command_>::updateState(double dt, boo
   if (checkState && this->isCheckingState_) {
     boost::shared_lock<boost::shared_mutex> lock(this->getStateMutex());
     if (!this->getState().checkState()) {
-      MELO_ERROR("Bad state!");
+      MELO_ERROR_STREAM("[Rocoma][" << this->getControllerName() << "] Bad state!");
       return false;
     }
   }
@@ -301,7 +301,7 @@ bool ControllerAdapter<Controller_,State_, Command_>::updateCommand(double dt)
   if (this->isCheckingCommand_) {
     boost::unique_lock<boost::shared_mutex> lock(this->getCommandMutex());
     if (!this->getCommand().limitCommand()) {
-      MELO_ERROR("The command is invalid!");
+      MELO_ERROR_STREAM("[Rocoma][" << this->getControllerName() << "] The command is invalid!");
       return false;
     }
   }

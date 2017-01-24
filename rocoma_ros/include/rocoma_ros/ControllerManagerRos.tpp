@@ -50,7 +50,7 @@ ControllerManagerRos<State_,Command_>::~ControllerManagerRos() {
 template<typename State_, typename Command_>
 void ControllerManagerRos<State_,Command_>::init(const ControllerManagerRosOptions & options) {
   if(isInitializedRos_) {
-    MELO_WARN("ControllerManagerRos already initialized. Kept current configuration.");
+    MELO_WARN("[RocomaRos] Already initialized. Kept current configuration.");
     return;
   }
 
@@ -111,7 +111,7 @@ bool ControllerManagerRos<State_,Command_>::setupControllerPair(const ManagedCon
                                                                 std::shared_ptr<boost::shared_mutex> mutexState,
                                                                 std::shared_ptr<boost::shared_mutex> mutexCommand) {
   if(!isInitializedRos_) {
-    MELO_ERROR("ControllerManagerRos was not initialized. Can not setup controller.");
+    MELO_ERROR("[RocomaRos] Not initialized. Can not setup controller.");
     return false;
   }
   //--- Add controller
@@ -138,9 +138,8 @@ bool ControllerManagerRos<State_,Command_>::setupControllerPair(const ManagedCon
   catch(pluginlib::PluginlibException& ex)
   {
     //handle the class failing to load
-    MELO_ERROR("The plugin failed to load for some reason. Error: %s", ex.what());
-    MELO_WARN_STREAM("Could not setup controller: " << options.first.name_ << "!");
-
+    MELO_ERROR("[RocomaRos] The plugin failed to load for some reason. Error: %s", ex.what());
+    MELO_WARN_STREAM("[RocomaRos] Could not setup controller: " << options.first.name_ << "!");
     return false;
   }
 
@@ -172,8 +171,8 @@ bool ControllerManagerRos<State_,Command_>::setupControllerPair(const ManagedCon
     catch(pluginlib::PluginlibException& ex)
     {
       //handle the class failing to load
-      MELO_WARN("The plugin failed to load for some reason. Error: %s", ex.what());
-      MELO_WARN_STREAM("Could not setup emergency controller: " << options.second.name_ << "! Using failproof controller instead");
+      MELO_WARN("[RocomaRos] The plugin failed to load for some reason. Error: %s", ex.what());
+      MELO_WARN_STREAM("[RocomaRos] Could not setup emergency controller: " << options.second.name_ << "! Using failproof controller instead");
       emgcyController = nullptr;
     }
   } // endif
@@ -185,13 +184,13 @@ bool ControllerManagerRos<State_,Command_>::setupControllerPair(const ManagedCon
   if(!this->addControllerPair(std::unique_ptr< roco::ControllerAdapterInterface >(controller),
                               std::unique_ptr< roco::EmergencyControllerAdapterInterface >(emgcyController)))
   {
-    MELO_WARN_STREAM("Could not add controller pair ( " << options.first.name_ << " / "
+    MELO_WARN_STREAM("[RocomaRos] Could not add controller pair ( " << options.first.name_ << " / "
                      << emergencyControllerName << " ) to controller manager!");
     return false;
   }
 
   // Inform user
-  MELO_INFO_STREAM("Successfully added controller pair ( " << options.first.name_ << " / "
+  MELO_INFO_STREAM("[RocomaRos] Successfully added controller pair ( " << options.first.name_ << " / "
                    << emergencyControllerName << " ) to controller manager!");
 
 }
@@ -203,7 +202,7 @@ bool ControllerManagerRos<State_,Command_>::setupFailproofController(const std::
                                                                      std::shared_ptr<boost::shared_mutex> mutexState,
                                                                      std::shared_ptr<boost::shared_mutex> mutexCommand) {
   if(!isInitializedRos_) {
-    MELO_ERROR("ControllerManagerRos was not initialized. Can not setup failproof controller.");
+    MELO_ERROR("[RocomaRos] Not initialized. Can not setup failproof controller.");
     return false;
   }
   try
@@ -217,19 +216,19 @@ bool ControllerManagerRos<State_,Command_>::setupFailproofController(const std::
 
     // Add controller to the manager
     if(!this->setFailproofController(std::unique_ptr< rocoma_plugin::FailproofControllerPluginInterface<State_,Command_> >(controller))) {
-      MELO_WARN_STREAM("Could not add failproof controller: " << controllerPluginName << " to controller manager!");
+      MELO_WARN_STREAM("[RocomaRos] Could not add failproof controller: " << controllerPluginName << " to controller manager!");
       return false;
     }
 
     // Inform user
-    MELO_INFO_STREAM("Succesfully setup failproof controller: " << controllerPluginName << "!");
+    MELO_INFO_STREAM("[RocomaRos] Succesfully setup failproof controller: " << controllerPluginName << "!");
 
   }
   catch(pluginlib::PluginlibException& ex)
   {
     //handle the class failing to load
-    MELO_ERROR("The plugin failed to load for some reason. Error: %s", ex.what());
-    MELO_WARN_STREAM("Could not setup failproof controller: " << controllerPluginName << "!");
+    MELO_ERROR("[RocomaRos] The plugin failed to load for some reason. Error: %s", ex.what());
+    MELO_WARN_STREAM("[RocomaRos] Could not setup failproof controller: " << controllerPluginName << "!");
     return false;
   }
 
@@ -245,7 +244,7 @@ bool ControllerManagerRos<State_,Command_>::setupControllers(const std::string &
                                                              std::shared_ptr<boost::shared_mutex> mutexState,
                                                              std::shared_ptr<boost::shared_mutex> mutexCommand) {
   if(!isInitializedRos_) {
-    MELO_ERROR("ControllerManagerRos was not initialized. Can not setup controllers.");
+    MELO_ERROR("[RocomaRos] Not initialized. Can not setup controllers.");
     return false;
   }
 
@@ -268,14 +267,14 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
                                                                                 std::shared_ptr<boost::shared_mutex> mutexState,
                                                                                 std::shared_ptr<boost::shared_mutex> mutexCommand) {
   if(!isInitializedRos_) {
-    MELO_ERROR("ControllerManagerRos was not initialized. Can not setup controllers from parameter server.");
+    MELO_ERROR("[RocomaRos] Not initialized. Can not setup controllers from parameter server.");
     return false;
   }
 
   // Parse failproof controller name
   std::string failproofControllerName;
   if(!nodeHandle_.getParam("controller_manager/failproof_controller", failproofControllerName)) {
-    MELO_ERROR("Could not load parameter 'controller_manager/failproof_controller' from parameter server. Abort.");
+    MELO_ERROR("[RocomaRos] Could not load parameter 'controller_manager/failproof_controller' from parameter server. Abort.");
     exit(-1);
     return false;
   }
@@ -287,7 +286,7 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
   XmlRpc::XmlRpcValue controller;
 
   if(!nodeHandle_.getParam("controller_manager/controller_pairs", controller_pair_list)) {
-    MELO_WARN("Could not load parameter 'controller_manager/controller_pairs'. Add only failproof controller.");
+    MELO_WARN("[RocomaRos] Could not load parameter 'controller_manager/controller_pairs'. Add only failproof controller.");
   }
   else {
     if(controller_pair_list.getType() == XmlRpc::XmlRpcValue::TypeArray)
@@ -299,7 +298,7 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
            !controller_pair_list[i].hasMember("controller_pair") ||
            controller_pair_list[i]["controller_pair"].getType() != XmlRpc::XmlRpcValue::TypeStruct )
         {
-          MELO_WARN("Controllerpair no %d can not be obtained. Skip controller pair.", i);
+          MELO_WARN("[RocomaRos] Controllerpair no %d can not be obtained. Skip controller pair.", i);
           continue;
         }
 
@@ -311,7 +310,7 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
         }
         else
         {
-          MELO_WARN("Controllerpair no %d has no or wrong-typed member controller. Skip controller pair.", i);
+          MELO_WARN("[RocomaRos] Controllerpair no %d has no or wrong-typed member controller. Skip controller pair.", i);
           continue;
         }
 
@@ -332,12 +331,12 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
           controller_option_pair.first.isRos_ = static_cast<bool>(controller["is_ros"]);
           controller_option_pair.first.parameterPath_ = ros::package::getPath( static_cast<std::string>(controller["parameter_package"]) ) + "/" +
               static_cast<std::string>(controller["parameter_path"]);
-          MELO_INFO("Got controller plugin %s with controller name %s successfully from the parameter server. (is_ros: %s, complete parameter_path: %s!",
+          MELO_INFO("[RocomaRos] Got controller plugin %s with controller name %s successfully from the parameter server. \n (is_ros: %s, complete parameter_path: %s!",
                     controller_option_pair.first.pluginName_.c_str(), controller_option_pair.first.name_.c_str(), controller_option_pair.first.isRos_?"true":"false", controller_option_pair.first.parameterPath_.c_str());
         }
         else
         {
-          MELO_WARN("Subentry 'controller' of controllerpair no %d has missing or wrong-type entries. Skip controller.", i);
+          MELO_WARN("[RocomaRos] Subentry 'controller' of controllerpair no %d has missing or wrong-type entries. Skip controller.", i);
           continue;
         }
 
@@ -349,7 +348,7 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
         }
         else
         {
-          MELO_WARN("Controllerpair no %d has no member emergency_controller. Add failproof controller instead.", i);
+          MELO_WARN("[RocomaRos] Controllerpair no %d has no member emergency_controller. Add failproof controller instead.", i);
           controller_option_pair.second = ManagedControllerOptions();
           controller_option_pairs.push_back(controller_option_pair);
           continue;
@@ -371,12 +370,12 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
           controller_option_pair.second.isRos_ = static_cast<bool>(controller["is_ros"]);
           controller_option_pair.second.parameterPath_ = ros::package::getPath( static_cast<std::string>(controller["parameter_package"]) ) + "/" +
               static_cast<std::string>(controller["parameter_path"]);
-          MELO_INFO("Got controller plugin %s with controller name %s successfully from the parameter server. (is_ros: %s, complete parameter_path: %s!",
+          MELO_INFO("[RocomaRos] Got controller plugin %s with controller name %s successfully from the parameter server.\n(is_ros: %s, complete parameter_path: %s!",
                     controller_option_pair.second.name_.c_str(), controller_option_pair.second.name_.c_str(), controller_option_pair.second.isRos_?"true":"false", controller_option_pair.second.parameterPath_.c_str());
         }
         else
         {
-          MELO_WARN("Subentry 'emergency_controller' of controllerpair no %d has missing or wrong-type entries. Add failproof controller instead.", i);
+          MELO_WARN("[RocomaRos] Subentry 'emergency_controller' of controllerpair no %d has missing or wrong-type entries. Add failproof controller instead.", i);
           controller_option_pair.second = ManagedControllerOptions();
         }
 
@@ -384,7 +383,7 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
       }
     }
     else {
-      MELO_WARN("Parameter 'controller_manager/controller_pairs' is not of array type. Add only failproof controller.");
+      MELO_WARN("[RocomaRos] Parameter 'controller_manager/controller_pairs' is not of array type. Add only failproof controller.");
       controller_option_pairs.clear();
     }
   }

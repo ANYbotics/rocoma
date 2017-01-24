@@ -96,7 +96,7 @@ ControllerManager::~ControllerManager()
 void ControllerManager::init(const ControllerManagerOptions & options)
 {
   if(isInitialized_) {
-    MELO_WARN("Controller Manager was already initialized. Do nothing.");
+    MELO_WARN("[Rocoma] Controller Manager was already initialized. Do nothing.");
     return;
   }
 
@@ -108,12 +108,14 @@ void ControllerManager::init(const ControllerManagerOptions & options)
 bool ControllerManager::addControllerPair(ControllerPtr&& controller,
                                           EmgcyControllerPtr&& emergencyController) {
   if(!isInitialized_) {
-    MELO_ERROR("Controller Manager is not initialized can not add controller pair.");
+    MELO_ERROR("[Rocoma] Controller Manager is not initialized. Can not add controller pair.");
     return false;
   }
 
   // Add controller
-  if(!createController(controller)) { return false; };
+  if(!createController(controller)) {
+    return false;
+  }
 
   // Local helpers (controllers are moved and therefore not safe to access)
   const std::string controllerName = controller->getControllerName();
@@ -121,16 +123,16 @@ bool ControllerManager::addControllerPair(ControllerPtr&& controller,
 
   // insert controller (move ownership to controller / controller is set to nullptr)
   controllers_.insert( std::pair<std::string, ControllerPtr >(controllerName, std::move(controller) ) );
-  MELO_DEBUG_STREAM("... successfully added controller " << controllerName << "!");
+  MELO_DEBUG_STREAM("[Rocoma][" << controllerName << "] Successfully added controller!");
 
   //--- Add emergency controller
-  MELO_DEBUG_STREAM(" Adding emergency controller " << emgcyControllerName << " ... ");
+  MELO_DEBUG_STREAM("[Rocoma][" << emgcyControllerName << "] Add emergency controller!");
 
   if(emergencyController == nullptr)
   {
     controllerPairs_.insert( std::pair< std::string, ControllerSetPtr >( controllerName,
                                                                          ControllerSetPtr(controllers_.at(controllerName).get(), nullptr ) ) );
-    MELO_INFO_STREAM("... sucessfully added controller pair ctrl: " << controllerName << " / emgcy ctrl: " << emgcyControllerName << ".");
+    MELO_INFO_STREAM("[Rocoma][" << controllerName << " / " << emgcyControllerName << "] Successfully added controller pair.");
     return true;
   }
 
@@ -139,7 +141,7 @@ bool ControllerManager::addControllerPair(ControllerPtr&& controller,
 
   // create emergency controller
   if (!emergencyController->createController(timeStep_)) {
-    MELO_WARN_STREAM("Could not create emergency controller " << emgcyControllerName << "! Use failproof controller on emergency stop!");
+    MELO_WARN_STREAM("[Rocoma][" << emgcyControllerName << "] Could not be created! Use failproof controller on emergency stop!");
     controllerPairs_.insert( std::pair< std::string, ControllerSetPtr >( controllerName,
                                                                          ControllerSetPtr(controllers_.at(controllerName).get(), nullptr) ) );
     return false;
@@ -147,18 +149,18 @@ bool ControllerManager::addControllerPair(ControllerPtr&& controller,
 
   // check if emergency controller already exists
   if(emergencyControllers_.find(emgcyControllerName) != emergencyControllers_.end()) {
-    MELO_INFO_STREAM("An emergency controller with the name " << emgcyControllerName << " already exists. Using same instance.");
+    MELO_INFO_STREAM("[Rocoma][" << emgcyControllerName << "] An emergency controller with the name already exists. Using same instance.");
   }
   else {
     // insert emergency controller (move ownership to controller / controller is set to nullptr)
     emergencyControllers_.insert( std::pair<std::string, EmgcyControllerPtr>(emgcyControllerName, std::move(emergencyController) ) );
-    MELO_DEBUG_STREAM("... successfully added emergency controller " << emgcyControllerName << "!");
+    MELO_DEBUG_STREAM("[Rocoma][" << emgcyControllerName << "] Successfully added emergency controller!");
   }
 
   // Add controller pair
   controllerPairs_.insert( std::pair< std::string, ControllerSetPtr >( controllerName,
                                                                        ControllerSetPtr(controllers_.at(controllerName).get(), emergencyControllers_.at(emgcyControllerName).get() ) ) );
-  MELO_INFO_STREAM("... sucessfully added controller pair ctrl: " << controllerName << " / emgcy ctrl: " << emgcyControllerName << ".");
+  MELO_INFO_STREAM("[Rocoma][" << controllerName << " / " << emgcyControllerName << "] Successfully added controller pair.");
 
   return true;
 }
@@ -167,7 +169,7 @@ bool ControllerManager::addControllerPairWithExistingEmergencyController(Control
                                                                          const std::string & emgcyControllerName)
 {
   if(!isInitialized_) {
-    MELO_ERROR("Controller Manager is not initialized can not add controller with existing emergency controller.");
+    MELO_ERROR("[Rocoma] Controller Manager is not initialized. Can not add controller with existing emergency controller.");
     return false;
   }
 
@@ -179,20 +181,20 @@ bool ControllerManager::addControllerPairWithExistingEmergencyController(Control
 
   // insert controller (move ownership to controller / controller is set to nullptr)
   controllers_.insert( std::pair<std::string, ControllerPtr >(controllerName, std::move(controller) ) );
-  MELO_DEBUG_STREAM("... successfully added controller " << controllerName << "!");
+  MELO_DEBUG_STREAM("[Rocoma][" << controllerName << "] Successfully added controller!");
 
   // check if emergency controller already exists
   if(emergencyControllers_.find(emgcyControllerName) != emergencyControllers_.end()) {
-    MELO_INFO_STREAM("An emergency controller with the name " << emgcyControllerName << " already exists. Using same instance.");
+    MELO_INFO_STREAM("[Rocoma][" << emgcyControllerName << "] An emergency controller with the name already exists. Using same instance.");
     controllerPairs_.insert( std::pair< std::string, ControllerSetPtr >( controllerName,
                                                                          ControllerSetPtr(controllers_.at(controllerName).get(), emergencyControllers_.at(emgcyControllerName).get()) ) );
-    MELO_INFO_STREAM("... sucessfully added controller pair ctrl: " << controllerName << " / emgcy ctrl: " << emgcyControllerName << ".");
+    MELO_INFO_STREAM("[Rocoma][" << controllerName << " / " << emgcyControllerName << "] Successfully added controller pair.");
   }
   else {
-    MELO_WARN_STREAM("Emergency controller " << emgcyControllerName << " does not exist! Use failproof controller on emergency stop!");
+    MELO_WARN_STREAM("[Rocoma][" << emgcyControllerName << "] Does not exist in list! Use failproof controller on emergency stop!");
     controllerPairs_.insert( std::pair< std::string, ControllerSetPtr >( controllerName,
                                                                          ControllerSetPtr(controllers_.at(controllerName).get(), nullptr) ) );
-    MELO_INFO_STREAM("... sucessfully added controller pair ctrl: " << controllerName << " / emgcy ctrl: FailproofController.");
+    MELO_INFO_STREAM("[Rocoma][" << controllerName << " / ] Successfully added controller pair.");
   }
 
   return true;
@@ -202,29 +204,29 @@ bool ControllerManager::addControllerPairWithExistingEmergencyController(Control
 bool ControllerManager::setFailproofController(FailproofControllerPtr&& controller)
 {
   if(!isInitialized_) {
-    MELO_ERROR("Controller Manager is not initialized can not set failproof controller.");
+    MELO_ERROR("[Rocoma] Controller Manager is not initialized. Can not set failproof controller.");
     return false;
   }
 
   // If nullptr abort
   if(controller == nullptr) {
-    MELO_ERROR_STREAM("Could not add failproof controller. Failproof controller is nullptr.");
+    MELO_ERROR_STREAM("[Rocoma] Could not add failproof controller. Failproof controller is nullptr. Abort!");
     exit(-1);
   }
 
   // controller name (controller is moved within this function, therefore not safe to access everywhere)
   std::string controllerName = controller->getControllerName();
-  MELO_INFO("Adding failproof controller %s ...", controllerName.c_str());
+  MELO_DEBUG_STREAM("[Rocoma][" << controllerName << "] Adding failproof controller!");
 
   // create controller
   if (!controller->createController(timeStep_)) {
-    MELO_ERROR("Could not create failproof controller %s!", controllerName.c_str());
+    MELO_ERROR_STREAM("[Rocoma][" << controllerName << "] Could not create failproof controller. Abort!");
     exit(-1);
   }
 
   // move controller
   failproofController_ = std::move(controller);
-  MELO_INFO("... finished adding failproof controller %s.", controllerName.c_str());
+  MELO_INFO_STREAM("[Rocoma][" << controllerName << "] Successfully added failproof controller!");
 
   return true;
 }
@@ -232,7 +234,7 @@ bool ControllerManager::setFailproofController(FailproofControllerPtr&& controll
 bool ControllerManager::updateController() {
 
   if(failproofController_.get() == nullptr) {
-    MELO_ERROR("Can not advance controller manager. Failproof controller is null. Abort!");
+    MELO_ERROR("[Rocoma] Can not advance controller manager. Failproof controller is null. Abort!");
     exit(-1);
   }
 
@@ -282,7 +284,7 @@ bool ControllerManager::updateController() {
 }
 
 bool ControllerManager::emergencyStop() {
-  MELO_ERROR("Emergency Stop!");
+  MELO_ERROR("[Rocoma] Emergency Stop!");
       // Cannot call emergency stop twice simultaniously
       std::unique_lock<std::mutex> lockEmergencyStop(emergencyStopMutex_);
 
@@ -295,7 +297,7 @@ bool ControllerManager::emergencyStop() {
   // Check if controller is in failproof state already
   if(activeControllerState_ == State::FAILURE)
   {
-    MELO_DEBUG("Failproof controller is already running!");
+    MELO_DEBUG("[Rocoma] Failproof controller is already running on emergency stop!");
     return false;
   }
 
@@ -354,7 +356,7 @@ bool ControllerManager::emergencyStop() {
 
   // Advance failproof controller
   {
-    MELO_INFO("Switched to failproof controller!");
+    MELO_INFO("[Rocoma] Switched to failproof controller!");
         std::unique_lock<std::mutex> lockFailproofCOntroller(failproofControllerMutex_);
     failproofController_->advanceController(timeStep_);
   }
@@ -395,7 +397,7 @@ void ControllerManager::switchController(const std::string & controllerName,
   {
     std::unique_lock<std::mutex> lockActiveController(activeControllerMutex_);
     if (activeControllerState_ == State::OK && controllerName == activeControllerPair_.controllerName_) {
-      MELO_INFO("Controller %s is already running!", controllerName.c_str());
+      MELO_INFO("[Rocoma] Controller %s is already running!", controllerName.c_str());
       response_promise.set_value(SwitchResponse::RUNNING);
       return;
     }
@@ -446,7 +448,7 @@ void ControllerManager::switchController(const std::string & controllerName,
   }
   else {
     // controller is not part of controller map
-    MELO_INFO("Controller %s not found!", controllerName.c_str());
+    MELO_INFO("[Rocoma] Controller %s not found!", controllerName.c_str());
     response_promise.set_value(SwitchResponse::NOTFOUND);
     return;
   }
@@ -503,7 +505,7 @@ bool ControllerManager::cleanup() {
     std::unique_lock<std::mutex> lockEmergencyController(emergencyControllerMutex_);
 
     // stop all workers
-    MELO_DEBUG("[ControllerManager] Stopping all workers.");
+    MELO_DEBUG("[Rocoma] Stopping all workers.");
     {
       std::unique_lock<std::mutex> lockWorkerManager(workerManagerMutex_);
       workerManager_.stopWorkers(true);
@@ -511,7 +513,7 @@ bool ControllerManager::cleanup() {
 
     // cleanup all controllers
     // TODO wait for controllers to be finished initializing
-    MELO_DEBUG("[ControllerManager] Cleaning all controllers up.");
+    MELO_DEBUG("[Rocoma] Cleaning all controllers up.");
     for (auto& controller : controllers_) {
       while(controller.second->isBeingStopped()) { MELO_INFO_THROTTLE_STREAM(1.0, "Stopping controller " << controller.first ); }
       success = controller.second->cleanupController() && success;
@@ -522,14 +524,14 @@ bool ControllerManager::cleanup() {
       controller.second.reset(nullptr);
     }
 
-    MELO_DEBUG("[ControllerManager] Cleaning all emergency controllers up.");
+    MELO_DEBUG("[Rocoma] Cleaning all emergency controllers up.");
     for (auto& emergency_controller : emergencyControllers_ ) {
       while(emergency_controller.second->isBeingStopped()) { }
       success = emergency_controller.second->cleanupController() && success;
       emergency_controller.second.reset(nullptr); // clean up unique ptrs here, see above
     }
   }
-  MELO_DEBUG("[ControllerManager] Reset fail proof controller.");
+  MELO_DEBUG("[Rocoma] Reset fail proof controller.");
   failproofController_->cleanupController();
   failproofController_.reset(nullptr); // clean up unique ptrs here, see above
 
@@ -540,7 +542,7 @@ bool ControllerManager::createController(const ControllerPtr & controller) {
 
   // Check for invalid controller
   if(controller == nullptr) {
-    MELO_ERROR_STREAM("Could not add controller pair. Controller is nullptr.");
+    MELO_ERROR_STREAM("[Rocoma] Could not add controller pair. Controller is nullptr.");
     return false;
   }
 
@@ -549,19 +551,19 @@ bool ControllerManager::createController(const ControllerPtr & controller) {
 
   // check if controller already exists
   if(controllers_.find(controllerName) != controllers_.end()) {
-    MELO_WARN_STREAM("Could not add controller " << controllerName << ". A controller with the same name already exists.");
+    MELO_WARN_STREAM("[Rocoma][" << controllerName << "] Could not add controller. A controller with the same name already exists.");
     return false;
   }
 
   //--- Add controller
-  MELO_DEBUG_STREAM(" Adding controller " << controllerName << " ... ");
+  MELO_DEBUG_STREAM("[Rocoma][" << controllerName << "] Adding controller!");
 
   // Set controller properties
   controller->setIsRealRobot(isRealRobot_);
 
   // create controller
   if (!controller->createController(timeStep_)) {
-    MELO_ERROR_STREAM("Could not create controller " << controllerName << "!");
+    MELO_ERROR_STREAM("[Rocoma][" << controllerName << "] Could not create controller!");
     return false;
   }
 
@@ -608,13 +610,13 @@ bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
    * 3. newController could be being stopped by a different thread at the moment (wait for completion)
    */
   if(newController->isBeingStopped()) {
-    MELO_WARN("Controller is currently being stopped. Wait for completion before switching.")
+    MELO_WARN_STREAM("[Rocoma][" << newController->getControllerName() << "] Controller is currently being stopped. Wait for completion before switching.")
   }
   while(newController->isBeingStopped()){}
 
   //! initialize new controller
   if(!newController->initializeController(timeStep_)) {
-    MELO_ERROR("Could not ínitialize controller %s. Not switching.", newController->getControllerName().c_str());
+    MELO_ERROR_STREAM("[Rocoma][" << newController->getControllerName() << "] Could not initialize. Not switching.");
     response_promise.set_value(SwitchResponse::ERROR);
     return false;
   }
@@ -640,7 +642,7 @@ bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
       oldController->setIsBeingStopped(false);
     }
 
-    MELO_INFO("Switched to controller %s", activeControllerPair_.controllerName_.c_str());
+    MELO_INFO("[Rocoma] Switched to controller %s", activeControllerPair_.controllerName_.c_str());
     this->notifyControllerChanged(activeControllerPair_.controllerName_);
     response_promise.set_value(SwitchResponse::SWITCHING);
     return true;
@@ -648,7 +650,7 @@ bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
   else {
     // switch to freeze controller
     emergencyStop();
-    MELO_ERROR("Controller initialization was unsuccessful. Could not switch to controller %s", newController->getControllerName().c_str());
+    MELO_ERROR_STREAM("[Rocoma][" << newController->getControllerName() << "] Controller initialization was unsuccessful. Not switching.");
     response_promise.set_value(SwitchResponse::ERROR);
     return false;
   }
