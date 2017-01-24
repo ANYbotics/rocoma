@@ -270,7 +270,7 @@ class ControllerManager
                               roco::ControllerAdapterInterface * oldController,
                               roco::ControllerAdapterInterface * newController,
                               std::promise<SwitchResponse> & response_promise);
- private:
+ protected:
   //! Conditional variables for measuring execution time
   //  std::atomic_bool updating_;
   //  std::condition_variable timerStart_;

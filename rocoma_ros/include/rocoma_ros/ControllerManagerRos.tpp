@@ -401,8 +401,14 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
 template<typename State_, typename Command_>
 bool ControllerManagerRos<State_,Command_>::emergencyStop(std_srvs::Trigger::Request& req,
                                                           std_srvs::Trigger::Response& res) {
-   res.success = rocoma::ControllerManager::emergencyStop();
-   return true;
+  if(activeControllerState_ != State::OK) {
+    // Only allow emergency stop when normal controller is running.
+    res.success = true;
+  }
+  else {
+    res.success = rocoma::ControllerManager::emergencyStop();
+  }
+  return true;
 }
 
 template<typename State_, typename Command_>

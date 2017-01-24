@@ -101,7 +101,6 @@ class EmergencyControllerAdapter: virtual public roco::EmergencyControllerAdapte
       if(!this->updateState(dt, false)) {
         return false;
       }
-      signal_logger::logger->stopLogger();
 
       // Initialize controller
       if (!this->initializeFast(dt)) {

@@ -96,7 +96,6 @@ bool ControllerAdapter<Controller_, State_, Command_>::initializeController(doub
     if(!this->updateState(dt, false)) {
    	  return false;
    	}
-    signal_logger::logger->stopLogger();
 
     // Initialize controller
     if (!this->initialize(dt)) {
@@ -180,7 +179,6 @@ bool ControllerAdapter<Controller_, State_, Command_>::resetController(double dt
     if(!updateState(dt, false) ) {
       return false;
     }
-    signal_logger::logger->stopLogger();
 
     // Reset controller
     if (!this->reset(dt)) {
