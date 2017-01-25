@@ -118,6 +118,7 @@ bool ControllerAdapter<Controller_, State_, Command_>::initializeController(doub
 
   // Start logging
   this->isRunning_ = true;
+  signal_logger::logger->updateLogger(false);
   signal_logger::logger->startLogger();
   MELO_INFO_STREAM("[Rocoma][" << this->getControllerName() << "] Successfully initialized!");
 
