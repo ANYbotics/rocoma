@@ -329,9 +329,10 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
           controller_option_pair.first.pluginName_ = static_cast<std::string>(controller["plugin_name"]);
           controller_option_pair.first.name_ = static_cast<std::string>(controller["name"]);
           controller_option_pair.first.isRos_ = static_cast<bool>(controller["is_ros"]);
-          controller_option_pair.first.parameterPath_ = ros::package::getPath( static_cast<std::string>(controller["parameter_package"]) ) + "/" +
-              static_cast<std::string>(controller["parameter_path"]);
-          MELO_INFO("[RocomaRos] Got controller plugin %s with controller name %s successfully from the parameter server. \n (is_ros: %s, complete parameter_path: %s!",
+          std::string parameterPackage = static_cast<std::string>(controller["parameter_package"]);
+          if(!parameterPackage.empty()) { parameterPackage = ros::package::getPath(parameterPackage); }
+          controller_option_pair.first.parameterPath_ = parameterPackage + "/" + static_cast<std::string>(controller["parameter_path"]);
+          MELO_INFO("[RocomaRos] Got controller plugin %s with controller name %s successfully from the parameter server. \n (is_ros: %s, complete parameter_path: %s!)",
                     controller_option_pair.first.pluginName_.c_str(), controller_option_pair.first.name_.c_str(), controller_option_pair.first.isRos_?"true":"false", controller_option_pair.first.parameterPath_.c_str());
         }
         else
