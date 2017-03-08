@@ -100,8 +100,9 @@ void ControllerManagerRos<State_,Command_>::shutdown() {
 
 template<typename State_, typename Command_>
 bool ControllerManagerRos<State_,Command_>::cleanup() {
+  bool success = rocoma::ControllerManager::cleanup();
   shutdown();
-  return rocoma::ControllerManager::cleanup();
+  return success;
 }
 
 template<typename State_, typename Command_>
