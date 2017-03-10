@@ -279,6 +279,51 @@ bool ControllerAdapter<Controller_,State_, Command_>::preStopController()
   return true;
 }
 
+
+template<typename Controller_, typename State_, typename Command_>
+bool ControllerAdapter<Controller_, State_, Command_>::swapController(double dt, const std::unique_ptr<roco::ControllerStateInterface>& swapState)
+{
+  // Check if the controller was created.
+  if (!this->isCreated()) {
+    MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Not created on swap!");
+    return false;
+  }
+
+  // Initialize the controller now.
+  try {
+    // Update the state.
+    if(!this->updateState(dt, false)) {
+      return false;
+    }
+
+    // Initialize controller
+    if (!this->swap(dt, swapState)) {
+      MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Could not be swapped!");
+      return false;
+    }
+
+    // Update command
+    if(!this->updateCommand(dt)) {
+      return false;
+    }
+
+    this->isInitialized_ = true;
+
+  } catch (std::exception& e) {
+    MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Exception caught while swapping:\n" << e.what());
+    this->isInitialized_ = false;
+    return false;
+  }
+
+  // Start logging
+  this->isRunning_ = true;
+  signal_logger::logger->updateLogger();
+  signal_logger::logger->startLogger();
+  MELO_INFO_STREAM("[Rocoma][" << this->getControllerName() << "] Successfully swapped!");
+
+  return true;
+}
+
 template<typename Controller_, typename State_, typename Command_>
 bool ControllerAdapter<Controller_,State_, Command_>::updateState(double dt, bool checkState)
 {

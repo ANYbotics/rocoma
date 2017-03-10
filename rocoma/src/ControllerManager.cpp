@@ -615,7 +615,10 @@ bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
   while(newController->isBeingStopped()){}
 
   //! initialize new controller
-  if(!newController->initializeController(timeStep_)) {
+  std::unique_ptr<roco::ControllerStateInterface> state(nullptr);
+  if(oldController != nullptr) { oldController->getControllerSwapState(state); }
+
+  if(!newController->swapController(timeStep_, state)) {
     MELO_ERROR_STREAM("[Rocoma][" << newController->getControllerName() << "] Could not initialize. Not switching.");
     response_promise.set_value(SwitchResponse::ERROR);
     return false;
