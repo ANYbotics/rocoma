@@ -44,9 +44,7 @@
 // Roco
 #include "roco/model/CommandInterface.hpp"
 #include "roco/model/StateInterface.hpp"
-#include "roco/controllers/Controller.hpp"
-#include "roco/controllers/adapters/ControllerAdapterInterface.hpp"
-#include "roco/controllers/ControllerStateInterface.hpp"
+#include "roco/controllers/controllers.hpp"
 
 // Rocoma
 #include "rocoma/controllers/ControllerExtensionImplementation.hpp"
@@ -126,12 +124,12 @@ class ControllerAdapter: virtual public roco::ControllerAdapterInterface, public
    * @param state  state of the previous controller
    * @returns true if successful
    */
-  virtual bool swapController(double dt, const std::unique_ptr<roco::ControllerStateInterface>& swapState);
+  virtual bool swapController(double dt, const roco::ControllerSwapStateInterfacePtr& swapState);
 
   /*! Use this method to get the state of the controller. Must be thread-safe parallel to advance.
    * @returns state
    */
-  virtual bool getControllerSwapState(std::unique_ptr<roco::ControllerStateInterface>& swapState) { Controller_::getSwapState(swapState); return true; }
+  virtual bool getControllerSwapState(roco::ControllerSwapStateInterfacePtr& swapState);
 
   /*! Sets if the real robot is controlled or only a simulated version.
    * @param flag indicating robot type

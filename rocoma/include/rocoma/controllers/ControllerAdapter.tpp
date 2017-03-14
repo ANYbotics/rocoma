@@ -279,15 +279,16 @@ bool ControllerAdapter<Controller_,State_, Command_>::preStopController()
   return true;
 }
 
-
 template<typename Controller_, typename State_, typename Command_>
-bool ControllerAdapter<Controller_, State_, Command_>::swapController(double dt, const std::unique_ptr<roco::ControllerStateInterface>& swapState)
+bool ControllerAdapter<Controller_, State_, Command_>::swapController(double dt, const roco::ControllerSwapStateInterfacePtr& swapState)
 {
   // Check if the controller was created.
   if (!this->isCreated()) {
     MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Not created on swap!");
     return false;
   }
+
+  // todo: If not initialized -> initialize? -> then also set flags below
 
   // Initialize the controller now.
   try {
@@ -296,7 +297,7 @@ bool ControllerAdapter<Controller_, State_, Command_>::swapController(double dt,
       return false;
     }
 
-    // Initialize controller
+    // Swap controller
     if (!this->swap(dt, swapState)) {
       MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Could not be swapped!");
       return false;
@@ -322,6 +323,12 @@ bool ControllerAdapter<Controller_, State_, Command_>::swapController(double dt,
   MELO_INFO_STREAM("[Rocoma][" << this->getControllerName() << "] Successfully swapped!");
 
   return true;
+}
+
+template<typename Controller_, typename State_, typename Command_>
+bool ControllerAdapter<Controller_,State_, Command_>::getControllerSwapState(roco::ControllerSwapStateInterfacePtr& swapState)
+{
+  return this->getSwapState(swapState);
 }
 
 template<typename Controller_, typename State_, typename Command_>
