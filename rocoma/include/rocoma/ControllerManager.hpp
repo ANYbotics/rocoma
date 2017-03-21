@@ -34,9 +34,7 @@
 #pragma once
 
 // roco
-#include <roco/controllers/adapters/ControllerAdapterInterface.hpp>
-#include <roco/controllers/adapters/EmergencyControllerAdapterInterface.hpp>
-#include <roco/controllers/adapters/FailproofControllerAdapterInterface.hpp>
+#include <roco/controllers/controllers.hpp>
 
 // any_worker
 #include <any_worker/WorkerManager.hpp>
