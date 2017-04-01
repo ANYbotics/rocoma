@@ -19,7 +19,7 @@ catkin_package(
     any_worker
     message_logger
     signal_logger
-  DEPENDS boost
+  DEPENDS Boost
 )
 
 ###########
