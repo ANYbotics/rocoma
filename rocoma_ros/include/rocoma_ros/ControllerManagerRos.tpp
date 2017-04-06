@@ -79,9 +79,14 @@ void ControllerManagerRos<State_,Command_>::init(const ControllerManagerRosOptio
   emergencyStopService_ = nodeHandle_.advertiseService(service_name_emergency_stop, &ControllerManagerRos::emergencyStop, this);
 
   // initialize publishers
-  activeControllerPublisher_ = nodeHandle_.advertise<std_msgs::String>("notify_active_controller", 1, true);
+  std::string topic_name_notify_active_controller{"notify_active_controller"};
+  nodeHandle_.getParam("publishers/notify_active_controller/topic", topic_name_notify_active_controller);
+  activeControllerPublisher_ = nodeHandle_.advertise<std_msgs::String>(topic_name_notify_active_controller, 1, true);
   publishActiveController(this->getActiveControllerName());
-  emergencyStopStatePublisher_ = nodeHandle_.advertise<any_msgs::State>("notify_emergency_stop", 1, true);
+  
+  std::string topic_name_notify_emergency_stop{"notify_emergency_stop"};
+  nodeHandle_.getParam("publishers/notify_emergency_stop/topic", topic_name_notify_emergency_stop);
+  emergencyStopStatePublisher_ = nodeHandle_.advertise<any_msgs::State>(topic_name_notify_emergency_stop, 1, true);
   publishEmergencyState(true);
 
   // Set init flag
