@@ -55,6 +55,9 @@ Thus following functions have to be implemented.
   virtual bool cleanup();
   virtual bool stop();
   virtual bool preStop();
+  virtual bool getSwapState(roco::ControllerSwapStateInterfacePtr& swapState);
+  virtual bool swap(double dt, const roco::ControllerSwapStateInterfacePtr& swapState);
+
 }; // end class
 }  // end namespace
 \endcode
