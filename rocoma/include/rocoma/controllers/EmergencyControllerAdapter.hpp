@@ -115,11 +115,19 @@ class EmergencyControllerAdapter: virtual public roco::EmergencyControllerAdapte
 
       this->isInitialized_ = true;
 
-    } catch (std::exception& e) {
+    }
+#ifndef NDEBUG
+    catch (std::exception& e) {
       MELO_WARN_STREAM("[Rocoma][" << this->getName() << "] Exception caught while fast initializing:\n" << e.what());
       this->isInitialized_ = false;
       return false;
     }
+    catch (...) {
+      MELO_WARN_STREAM("[Rocoma][" << this->getName() << "] Exception caught while fast initializing!\n");
+      this->isInitialized_ = false;
+      return false;
+    }
+#endif
 
     // Start logging
     this->isRunning_ = true;

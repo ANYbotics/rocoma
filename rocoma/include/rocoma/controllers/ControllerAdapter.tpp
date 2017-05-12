@@ -66,12 +66,21 @@ bool ControllerAdapter<Controller_, State_, Command_>::createController(double d
     // Set flag
     this->isCreated_ = true;
 
-  } catch (std::exception& e) {
+  }
+#ifndef NDEBUG
+  catch (std::exception& e) {
     //! return false (let manager handle this)
     MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Exception caught while creating: " << e.what());
     this->isCreated_ = false;
     return false;
   }
+  catch (...) {
+    //! return false (let manager handle this)
+    MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Exception caught while creating!";
+    this->isCreated_ = false;
+    return false;
+  }
+#endif
 
   return true;
 }
@@ -110,11 +119,19 @@ bool ControllerAdapter<Controller_, State_, Command_>::initializeController(doub
 
     this->isInitialized_ = true;
 
-  } catch (std::exception& e) {
+  }
+#ifndef NDEBUG
+  catch (std::exception& e) {
     MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Exception caught while initializing:\n" << e.what());
     this->isInitialized_ = false;
     return false;
   }
+  catch (...) {
+    MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Exception caught while initializing!\n");
+    this->isInitialized_ = false;
+    return false;
+  }
+#endif
 
   // Start logging
   this->isRunning_ = true;
@@ -153,11 +170,17 @@ bool ControllerAdapter<Controller_, State_, Command_>::advanceController(double 
     // Collect logger data
     signal_logger::logger->collectLoggerData();
 
-  } catch (std::exception& e) {
+  }
+#ifndef NDEBUG
+  catch (std::exception& e) {
     MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Exception caught while advancing: " << e.what());
     return false;
   }
-
+  catch (...) {
+    MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Exception caught while advancing! ");
+    return false;
+  }
+#endif
   return true;
 }
 
@@ -192,10 +215,17 @@ bool ControllerAdapter<Controller_, State_, Command_>::resetController(double dt
       return false;
     }
 
-  } catch (std::exception& e) {
+  }
+#ifndef NDEBUG
+  catch (std::exception& e) {
     MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Exception caught while resetting: " << e.what());
     return false;
   }
+  catch (...) {
+    MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Exception caught while resetting!");
+    return false;
+  }
+#endif
 
   // Start logging
   this->isRunning_ = true;
@@ -223,10 +253,17 @@ bool ControllerAdapter<Controller_,State_, Command_>::cleanupController()
       return false;
     }
 
-  } catch (std::exception& e) {
+  }
+#ifndef NDEBUG
+  catch (std::exception& e) {
     MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Exception caught while cleaning up: " << e.what());
     return false;
   }
+  catch (...) {
+    MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Exception caught while cleaning up!");
+    return false;
+  }
+#endif
 
   // Set flags
   this->isInitialized_ = false;
@@ -248,10 +285,16 @@ bool ControllerAdapter<Controller_, State_, Command_>::stopController()
       return false;
     }
   }
+#ifndef NDEBUG
   catch (std::exception& e) {
     MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Exception caught while stopping: " << e.what());
     return false;
   }
+  catch (...) {
+    MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Exception caught while stopping!");
+    return false;
+  }
+#endif
 
   return true;
 }
@@ -271,10 +314,16 @@ bool ControllerAdapter<Controller_,State_, Command_>::preStopController()
       return false;
     }
   }
+#ifndef NDEBUG
   catch (std::exception& e) {
     MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Exception caught while pre-stopping: " << e.what());
     return false;
   }
+  catch (...) {
+    MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Exception caught while pre-stopping! ");
+    return false;
+  }
+#endif
 
   return true;
 }
@@ -310,11 +359,19 @@ bool ControllerAdapter<Controller_, State_, Command_>::swapController(double dt,
 
     this->isInitialized_ = true;
 
-  } catch (std::exception& e) {
+  }
+#ifndef NDEBUG
+  catch (std::exception& e) {
     MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Exception caught while swapping:\n" << e.what());
     this->isInitialized_ = false;
     return false;
   }
+  catch (...) {
+    MELO_WARN_STREAM("[Rocoma][" << this->getControllerName() << "] Exception caught while swapping!\n");
+    this->isInitialized_ = false;
+    return false;
+  }
+#endif
 
   // Start logging
   this->isRunning_ = true;
