@@ -78,12 +78,17 @@ void ControllerManagerRos<State_,Command_>::init(const ControllerManagerRosOptio
   nodeHandle_.getParam("servers/emergency_stop/service", service_name_emergency_stop);
   emergencyStopService_ = nodeHandle_.advertiseService(service_name_emergency_stop, &ControllerManagerRos::emergencyStop, this);
 
+  std::string service_name_clear_emergency_stop{"controller_manager/clear_emergency_stop"};
+  nodeHandle_.getParam("servers/clear_emergency_stop/service", service_name_clear_emergency_stop);
+  clearEmergencyStopService_ = nodeHandle_.advertiseService(service_name_clear_emergency_stop, &ControllerManagerRos::clearEmergencyStop, this);
+
+
   // initialize publishers
   std::string topic_name_notify_active_controller{"notify_active_controller"};
   nodeHandle_.getParam("publishers/notify_active_controller/topic", topic_name_notify_active_controller);
   activeControllerPublisher_ = nodeHandle_.advertise<std_msgs::String>(topic_name_notify_active_controller, 1, true);
   publishActiveController(this->getActiveControllerName());
-  
+
   std::string topic_name_notify_emergency_stop{"notify_emergency_stop"};
   nodeHandle_.getParam("publishers/notify_emergency_stop/topic", topic_name_notify_emergency_stop);
   emergencyStopStatePublisher_ = nodeHandle_.advertise<any_msgs::State>(topic_name_notify_emergency_stop, 1, true);
@@ -99,6 +104,7 @@ void ControllerManagerRos<State_,Command_>::shutdown() {
   getAvailableControllersService_.shutdown();
   getActiveControllerService_.shutdown();
   emergencyStopService_.shutdown();
+  clearEmergencyStopService_.shutdown();
   emergencyStopStatePublisher_.shutdown();
   activeControllerPublisher_.shutdown();
 }
@@ -415,6 +421,14 @@ bool ControllerManagerRos<State_,Command_>::emergencyStop(std_srvs::Trigger::Req
   else {
     res.success = rocoma::ControllerManager::emergencyStop();
   }
+  return true;
+}
+
+
+template<typename State_, typename Command_>
+bool ControllerManagerRos<State_,Command_>::clearEmergencyStop(std_srvs::Trigger::Request& req,
+                                                               std_srvs::Trigger::Response& res) {
+  rocoma::ControllerManager::clearEmergencyStop();
   return true;
 }
 

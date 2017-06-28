@@ -47,6 +47,7 @@ ControllerManager::ControllerManager(const double timestep,
                                       isInitialized_(true),
                                       timeStep_(timestep),
                                       isRealRobot_(isRealRobot),
+                                      hasClearedEmergencyStop_(true),
                                       activeControllerState_(State::FAILURE),
                                       workerManager_(),
                                       controllers_(),
@@ -284,6 +285,9 @@ bool ControllerManager::updateController() {
 }
 
 bool ControllerManager::emergencyStop() {
+  // Forbid contrller switches
+  hasClearedEmergencyStop_.store(false);
+
   MELO_ERROR("[Rocoma] Emergency Stop!");
       // Cannot call emergency stop twice simultaniously
       std::unique_lock<std::mutex> lockEmergencyStop(emergencyStopMutex_);
@@ -366,6 +370,10 @@ bool ControllerManager::emergencyStop() {
   this->notifyControllerChanged(failproofController_->getControllerName());
 
   return true;
+}
+
+void ControllerManager::clearEmergencyStop() {
+  hasClearedEmergencyStop_.store(true);
 }
 
 ControllerManager::SwitchResponse ControllerManager::switchController(const std::string & controllerName) {
@@ -618,8 +626,14 @@ bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
   roco::ControllerSwapStateInterfacePtr state(nullptr);
   if(oldController != nullptr) { oldController->getControllerSwapState(state); }
 
-  if(!newController->swapController(timeStep_, state)) {
-    MELO_ERROR_STREAM("[Rocoma][" << newController->getControllerName() << "] Could not swap. Not switching.");
+  if(hasClearedEmergencyStop_.load()) {
+    if(!newController->swapController(timeStep_, state)) {
+      MELO_ERROR_STREAM("[Rocoma][" << newController->getControllerName() << "] Could not swap. Not switching.");
+      response_promise.set_value(SwitchResponse::ERROR);
+      return false;
+    }
+  } else {
+    MELO_ERROR_STREAM("[Rocoma][" << newController->getControllerName() << "] Could not swap. Emergency stop was not cleared. Not switching.");
     response_promise.set_value(SwitchResponse::ERROR);
     return false;
   }

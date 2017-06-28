@@ -244,6 +244,16 @@ class ControllerManagerRos : public rocoma::ControllerManager {
   bool emergencyStop(std_srvs::Trigger::Request  &req,
                      std_srvs::Trigger::Response &res);
 
+  /*! Clear emergency stop
+   * @param req   empty request
+   * @param res   empty response
+   * @return true iff successful
+   */
+  bool clearEmergencyStop(std_srvs::Trigger::Request  &req,
+                          std_srvs::Trigger::Response &res);
+
+
+
   /*! Switch controller service callback, switches to a new controller
    * @param req   contains name of the new controller
    * @param res   contains the result of the switching
@@ -303,6 +313,8 @@ class ControllerManagerRos : public rocoma::ControllerManager {
   ros::ServiceServer switchControllerService_;
   //! Emergency stop service
   ros::ServiceServer emergencyStopService_;
+  //! Clear emergency stop service
+  ros::ServiceServer clearEmergencyStopService_;
   //! Get available controllers service
   ros::ServiceServer getAvailableControllersService_;
   //! Get active controller service

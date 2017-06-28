@@ -190,6 +190,11 @@ class ControllerManager
   bool emergencyStop();
 
   /**
+   * @brief Clears the emergency stop, controller switches are now allowed
+   */
+  void clearEmergencyStop();
+
+  /**
    * @brief Tries to switch to a desired controller
    * @param controllerName    Name of the desired controller
    * @return result of the switching operation
@@ -283,6 +288,9 @@ class ControllerManager
 
   //! Flag to differ between simulation and real robot
   std::atomic<bool> isRealRobot_;
+
+  //! Flag indicating if emergency stop was cleared
+  std::atomic<bool> hasClearedEmergencyStop_;
 
   //! Current controller state
   std::atomic<State> activeControllerState_;
