@@ -64,19 +64,19 @@ void ControllerManagerRos<State_,Command_>::init(const ControllerManagerRosOptio
   // initialize services
   std::string service_name_switch_controller{"controller_manager/switch_controller"};
   nodeHandle_.getParam("servers/switch_controller/service", service_name_switch_controller);
-  switchControllerService_ = nodeHandle_.advertiseService(service_name_switch_controller, &ControllerManagerRos::switchController, this);
+  switchControllerService_ = nodeHandle_.advertiseService(service_name_switch_controller, &ControllerManagerRos::switchControllerService, this);
 
   std::string service_name_get_available_controllers{"controller_manager/get_available_controllers"};
   nodeHandle_.getParam("servers/get_available_controllers/service", service_name_get_available_controllers);
-  getAvailableControllersService_ = nodeHandle_.advertiseService(service_name_get_available_controllers, &ControllerManagerRos::getAvailableControllers, this);
+  getAvailableControllersService_ = nodeHandle_.advertiseService(service_name_get_available_controllers, &ControllerManagerRos::getAvailableControllersService, this);
 
   std::string service_name_get_active_controller{"controller_manager/get_active_controller"};
   nodeHandle_.getParam("servers/get_active_controller/service", service_name_get_active_controller);
-  getActiveControllerService_ = nodeHandle_.advertiseService(service_name_get_active_controller, &ControllerManagerRos::getActiveController, this);
+  getActiveControllerService_ = nodeHandle_.advertiseService(service_name_get_active_controller, &ControllerManagerRos::getActiveControllerService, this);
 
   std::string service_name_emergency_stop{"controller_manager/emergency_stop"};
   nodeHandle_.getParam("servers/emergency_stop/service", service_name_emergency_stop);
-  emergencyStopService_ = nodeHandle_.advertiseService(service_name_emergency_stop, &ControllerManagerRos::emergencyStop, this);
+  emergencyStopService_ = nodeHandle_.advertiseService(service_name_emergency_stop, &ControllerManagerRos::emergencyStopService, this);
 
   // initialize publishers
   std::string topic_name_notify_active_controller{"notify_active_controller"};
@@ -406,8 +406,8 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
 }
 
 template<typename State_, typename Command_>
-bool ControllerManagerRos<State_,Command_>::emergencyStop(std_srvs::Trigger::Request& req,
-                                                          std_srvs::Trigger::Response& res) {
+bool ControllerManagerRos<State_,Command_>::emergencyStopService(std_srvs::Trigger::Request& req,
+                                                                 std_srvs::Trigger::Response& res) {
   if(activeControllerState_ != State::OK) {
     // Only allow emergency stop when normal controller is running.
     res.success = true;
@@ -419,8 +419,8 @@ bool ControllerManagerRos<State_,Command_>::emergencyStop(std_srvs::Trigger::Req
 }
 
 template<typename State_, typename Command_>
-bool ControllerManagerRos<State_,Command_>::switchController(rocoma_msgs::SwitchController::Request& req,
-                                                             rocoma_msgs::SwitchController::Response& res) {
+bool ControllerManagerRos<State_,Command_>::switchControllerService(rocoma_msgs::SwitchController::Request& req,
+                                                                    rocoma_msgs::SwitchController::Response& res) {
 
   // This is another ros-thread anyway so this operation can be blocking until controller switched
   switch(  rocoma::ControllerManager::switchController(req.name) ) {
@@ -442,15 +442,15 @@ bool ControllerManagerRos<State_,Command_>::switchController(rocoma_msgs::Switch
 }
 
 template<typename State_, typename Command_>
-bool ControllerManagerRos<State_,Command_>::getAvailableControllers( rocoma_msgs::GetAvailableControllers::Request& req,
-                                                                     rocoma_msgs::GetAvailableControllers::Response& res) {
+bool ControllerManagerRos<State_,Command_>::getAvailableControllersService( rocoma_msgs::GetAvailableControllers::Request& req,
+                                                                            rocoma_msgs::GetAvailableControllers::Response& res) {
   res.available_controllers = this->getAvailableControllerNames();
   return true;
 }
 
 template<typename State_, typename Command_>
-bool ControllerManagerRos<State_,Command_>::getActiveController(rocoma_msgs::GetActiveController::Request& req,
-                                                                rocoma_msgs::GetActiveController::Response& res) {
+bool ControllerManagerRos<State_,Command_>::getActiveControllerService(rocoma_msgs::GetActiveController::Request& req,
+                                                                       rocoma_msgs::GetActiveController::Response& res) {
   res.active_controller = this->getActiveControllerName();
   return true;
 }
