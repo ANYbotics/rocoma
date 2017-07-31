@@ -241,32 +241,32 @@ class ControllerManagerRos : public rocoma::ControllerManager {
    * @param res   empty response
    * @return true iff successful
    */
-  bool emergencyStop(std_srvs::Trigger::Request  &req,
-                     std_srvs::Trigger::Response &res);
+  bool emergencyStopService(std_srvs::Trigger::Request  &req,
+                            std_srvs::Trigger::Response &res);
 
   /*! Switch controller service callback, switches to a new controller
    * @param req   contains name of the new controller
    * @param res   contains the result of the switching
    * @return true iff successful
    */
-  bool switchController(rocoma_msgs::SwitchController::Request  &req,
-                        rocoma_msgs::SwitchController::Response &res);
+  bool switchControllerService(rocoma_msgs::SwitchController::Request  &req,
+                               rocoma_msgs::SwitchController::Response &res);
 
   /*! Get available controllers service callback, returns a list of all available controllers
    * @param req   empty request
    * @param res   contains vector of strings with the available controller names
    * @return true iff successful
    */
-  bool getAvailableControllers(rocoma_msgs::GetAvailableControllers::Request &req,
-                               rocoma_msgs::GetAvailableControllers::Response &res);
+  bool getAvailableControllersService(rocoma_msgs::GetAvailableControllers::Request &req,
+                                      rocoma_msgs::GetAvailableControllers::Response &res);
 
   /*! Get active controller service callback, returns the name of the currently active controller
    * @param req   empty request
    * @param res   contains name of the currently active controller
    * @return true iff successful
    */
-  bool getActiveController(rocoma_msgs::GetActiveController::Request &req,
-                           rocoma_msgs::GetActiveController::Response &res);
+  bool getActiveControllerService(rocoma_msgs::GetActiveController::Request &req,
+                                  rocoma_msgs::GetActiveController::Response &res);
 
   /*! Inform other nodes (via message) when an emergency stop was triggered
    * @param type   type of the emergency stop
