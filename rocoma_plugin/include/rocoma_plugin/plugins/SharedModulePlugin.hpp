@@ -43,8 +43,8 @@
 // pluginlib
 #include <pluginlib/class_list_macros.h>
 
-// rocoma_plugin
-#include "rocoma_plugin/interfaces/SharedModulePluginInterface.hpp"
+// roco
+#include "roco/controllers/SharedModuleInterface.hpp"
 
 /*!
  *   Export your shared module as a SharedModulePlugin in order to load it as a plugin.
@@ -58,11 +58,5 @@
   }
 
 namespace rocoma_plugin {
-
-//!  Plugin based controller adapter.
-class SharedModulePlugin: public rocoma_plugin::SharedModulePluginInterface
-{
-
-};
-
+using SharedModulePlugin = roco::SharedModuleInterface;
 } /* namespace rocoma_plugin */
