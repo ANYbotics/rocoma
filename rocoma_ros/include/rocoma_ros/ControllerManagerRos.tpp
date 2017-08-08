@@ -15,7 +15,8 @@ ControllerManagerRos<State_,Command_>::ControllerManagerRos( const std::string &
                                                              emergencyControllerLoader_("rocoma_plugin", "rocoma_plugin::EmergencyControllerPluginInterface<" + scopedStateName + ", " + scopedCommandName + ">"),
                                                              emergencyControllerRosLoader_("rocoma_plugin", "rocoma_plugin::EmergencyControllerRosPluginInterface<" + scopedStateName + ", " + scopedCommandName + ">"),
                                                              controllerLoader_("rocoma_plugin", "rocoma_plugin::ControllerPluginInterface<" + scopedStateName + ", " + scopedCommandName + ">"),
-                                                             controllerRosLoader_("rocoma_plugin", "rocoma_plugin::ControllerRosPluginInterface<" + scopedStateName + ", " + scopedCommandName + ">")
+                                                             controllerRosLoader_("rocoma_plugin", "rocoma_plugin::ControllerRosPluginInterface<" + scopedStateName + ", " + scopedCommandName + ">"),
+                                                             sharedModuleLoader_("rocoma_plugin", "rocoma_plugin::SharedModulePluginInterface")
 {
 
 }
@@ -140,6 +141,16 @@ bool ControllerManagerRos<State_,Command_>::setupControllerPair(const ManagedCon
     controller->setName( options.first.name_ );
     controller->setStateAndCommand(state, mutexState, command, mutexCommand);
     controller->setParameterPath(options.first.parameterPath_);
+
+    // Add shared modules
+    for(auto & sharedModuleName : options.first.sharedModuleNames_) {
+      if(!this->hasSharedModule(sharedModuleName)) {
+        this->addSharedModule(roco::SharedModuleInterfacePtr( sharedModuleLoader_.createUnmanagedInstance(sharedModuleName) ) );
+      }
+      MELO_INFO_STREAM("[RocomaRos] Added shared module " << sharedModuleName << " to controller " << options.first.name_ << "!");
+      controller->addSharedModule(sharedModules_.at(sharedModuleName));
+    }
+
   }
   catch(pluginlib::PluginlibException& ex)
   {
@@ -173,6 +184,16 @@ bool ControllerManagerRos<State_,Command_>::setupControllerPair(const ManagedCon
       emgcyController->setName( options.second.name_ );
       emgcyController->setStateAndCommand(state, mutexState, command, mutexCommand);
       emgcyController->setParameterPath(options.second.parameterPath_);
+
+      // Add shared modules
+      for(auto & sharedModuleName : options.second.sharedModuleNames_) {
+        if(!this->hasSharedModule(sharedModuleName)) {
+          this->addSharedModule(roco::SharedModuleInterfacePtr( sharedModuleLoader_.createUnmanagedInstance(sharedModuleName) ) );
+        }
+        MELO_INFO_STREAM("[RocomaRos] Added shared module " << sharedModuleName << " to emergency controller " << options.second.name_ << "!");
+        emgcyController->addSharedModule(sharedModules_.at(sharedModuleName));
+      }
+
     }
     catch(pluginlib::PluginlibException& ex)
     {
@@ -338,6 +359,14 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
           std::string parameterPackage = static_cast<std::string>(controller["parameter_package"]);
           if(!parameterPackage.empty()) { parameterPackage = ros::package::getPath(parameterPackage); }
           controller_option_pair.first.parameterPath_ = parameterPackage + "/" + static_cast<std::string>(controller["parameter_path"]);
+          XmlRpc::XmlRpcValue shared_modules;
+          if(controller.hasMember("shared_modules") && controller["shared_modules"].getType() == XmlRpc::XmlRpcValue::TypeArray) {
+            for (unsigned int j = 0; j < controller["shared_modules"].size(); ++j) {
+              if(controller["shared_modules"][j].getType() == XmlRpc::XmlRpcValue::TypeString) {
+                controller_option_pair.first.sharedModuleNames_.push_back(controller["shared_modules"][j]);
+              }
+            }
+          }
           MELO_INFO("[RocomaRos] Got controller plugin %s with controller name %s successfully from the parameter server. \n (is_ros: %s, complete parameter_path: %s!)",
                     controller_option_pair.first.pluginName_.c_str(), controller_option_pair.first.name_.c_str(), controller_option_pair.first.isRos_?"true":"false", controller_option_pair.first.parameterPath_.c_str());
         }
@@ -377,6 +406,14 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
           controller_option_pair.second.isRos_ = static_cast<bool>(controller["is_ros"]);
           controller_option_pair.second.parameterPath_ = ros::package::getPath( static_cast<std::string>(controller["parameter_package"]) ) + "/" +
               static_cast<std::string>(controller["parameter_path"]);
+          XmlRpc::XmlRpcValue shared_modules;
+          if(controller.hasMember("shared_modules") && controller["shared_modules"].getType() == XmlRpc::XmlRpcValue::TypeArray) {
+            for (unsigned int j = 0; j < controller["shared_modules"].size(); ++j) {
+              if(controller["shared_modules"][j].getType() == XmlRpc::XmlRpcValue::TypeString) {
+                controller_option_pair.first.sharedModuleNames_.push_back(controller["shared_modules"][j]);
+              }
+            }
+          }
           MELO_INFO("[RocomaRos] Got controller plugin %s with controller name %s successfully from the parameter server.\n(is_ros: %s, complete parameter_path: %s!",
                     controller_option_pair.second.name_.c_str(), controller_option_pair.second.name_.c_str(), controller_option_pair.second.isRos_?"true":"false", controller_option_pair.second.parameterPath_.c_str());
         }

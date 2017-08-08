@@ -1,7 +1,7 @@
 /**********************************************************************
  * Software License Agreement (BSD License)
  *
- * Copyright (c) 2016, Christian Gehring, Gabriel Hottiger
+ * Copyright (c) 2016, Gabriel Hottiger
  * All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -14,7 +14,7 @@
  *     copyright notice, this list of conditions and the following
  *     disclaimer in the documentation and/or other materials provided
  *     with the distribution.
- *   * Neither the name of ETH Zurich
+ *   * Neither the name of Autonomous Systems Lab nor ETH Zurich
  *     nor the names of its contributors may be used to endorse or
  *     promote products derived from this software without specific
  *     prior written permission.
@@ -33,16 +33,22 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 /*!
- * @file     rocoma_plugin.hpp
- * @author   Gabriel Hottiger
- * @date     Aug, 2016
- */
+* @file     SharedModulePluginInterface.hpp
+* @author   Gabriel Hottiger
+* @date     Aug, 2017
+*/
 
-#include "rocoma_plugin/plugins/ControllerPlugin.hpp"
-#include "rocoma_plugin/plugins/ControllerRosPlugin.hpp"
-#include "rocoma_plugin/plugins/ControllerTuplePlugin.hpp"
-#include "rocoma_plugin/plugins/ControllerTupleRosPlugin.hpp"
-#include "rocoma_plugin/plugins/EmergencyControllerPlugin.hpp"
-#include "rocoma_plugin/plugins/EmergencyControllerRosPlugin.hpp"
-#include "rocoma_plugin/plugins/FailproofControllerPlugin.hpp"
-#include "rocoma_plugin/plugins/SharedModulePlugin.hpp"
+#pragma once
+
+// roco
+#include "roco/controllers/SharedModuleInterface.hpp"
+
+namespace rocoma_plugin {
+
+//!  Common interface for plugin based shared modules
+class SharedModulePluginInterface: public roco::SharedModuleInterface
+{
+
+};
+
+} /* namespace rocoma_plugin */

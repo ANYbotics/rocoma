@@ -131,6 +131,11 @@ class ControllerAdapter: virtual public roco::ControllerAdapterInterface, public
    */
   virtual bool getControllerSwapState(roco::ControllerSwapStateInterfacePtr& swapState);
 
+  /*! Use this method to set a shared module to the controller.
+   * @param   module reference to module to be set
+   */
+  virtual void addControllerSharedModule(roco::SharedModuleInterfacePtr& module);
+
   /*! Sets if the real robot is controlled or only a simulated version.
    * @param flag indicating robot type
    */

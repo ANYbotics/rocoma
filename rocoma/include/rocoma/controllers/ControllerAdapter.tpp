@@ -413,6 +413,12 @@ bool ControllerAdapter<Controller_,State_, Command_>::getControllerSwapState(roc
 }
 
 template<typename Controller_, typename State_, typename Command_>
+void ControllerAdapter<Controller_,State_, Command_>::addControllerSharedModule(roco::SharedModuleInterfacePtr& module)
+{
+  return this->addSharedModule(module);
+}
+
+template<typename Controller_, typename State_, typename Command_>
 bool ControllerAdapter<Controller_,State_, Command_>::updateState(double dt, bool checkState)
 {
   this->time_.setNow();
