@@ -330,7 +330,7 @@ class ControllerManagerRos : public rocoma::ControllerManager {
   //! Controller ROS class loader
   pluginlib::ClassLoader< rocoma_plugin::ControllerRosPluginInterface<State_, Command_> > controllerRosLoader_;
   //! Shared module class loader
-  pluginlib::ClassLoader< rocoma_plugin::SharedModulePlugin > sharedModuleLoader_;
+  pluginlib::ClassLoader< rocoma_plugin::SharedModulePluginInterface > sharedModuleLoader_;
 };
 
 }

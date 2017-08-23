@@ -16,7 +16,7 @@ ControllerManagerRos<State_,Command_>::ControllerManagerRos( const std::string &
                                                              emergencyControllerRosLoader_("rocoma_plugin", "rocoma_plugin::EmergencyControllerRosPluginInterface<" + scopedStateName + ", " + scopedCommandName + ">"),
                                                              controllerLoader_("rocoma_plugin", "rocoma_plugin::ControllerPluginInterface<" + scopedStateName + ", " + scopedCommandName + ">"),
                                                              controllerRosLoader_("rocoma_plugin", "rocoma_plugin::ControllerRosPluginInterface<" + scopedStateName + ", " + scopedCommandName + ">"),
-                                                             sharedModuleLoader_("rocoma_plugin", "rocoma_plugin::SharedModulePlugin")
+                                                             sharedModuleLoader_("rocoma_plugin", "rocoma_plugin::SharedModulePluginInterface")
 {
 
 }
