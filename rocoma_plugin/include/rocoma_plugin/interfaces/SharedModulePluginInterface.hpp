@@ -41,8 +41,8 @@
 #pragma once
 
 // roco
-#include "roco/controllers/SharedModuleInterface.hpp"
+#include "roco/controllers/SharedModule.hpp"
 
 namespace rocoma_plugin {
-using SharedModulePluginInterface = roco::SharedModuleInterface;
+using SharedModulePluginInterface = roco::SharedModule;
 } /* namespace rocoma_plugin */

@@ -39,14 +39,49 @@
 
 namespace rocoma_ros {
 
+//! Struct to simplify the adding of a module (controller / shared module)
+struct ManagedModuleOptions {
+
+  ManagedModuleOptions():
+      pluginName_(""),
+      name_(""),
+      parameterPath_(""),
+      isRos_(false)
+  {
+
+  }
+
+  /*! Constructor
+   * @param pluginName          Name of the module plugin
+   * @param name                Name of the module
+   * @param parameterPath       Path from which module loads parameters
+   * @param isRos               True if the module is ros dependent
+   * @returns object of type    ManagedModuleOptions
+   */
+  ManagedModuleOptions(const std::string & pluginName,
+                       const std::string & name,
+                       const std::string & parameterPath,
+                       const bool isRos):
+      pluginName_(pluginName),
+      name_(name),
+      parameterPath_(parameterPath),
+      isRos_(isRos)
+  {
+
+  }
+
+  std::string pluginName_;
+  std::string name_;
+  std::string parameterPath_;
+  bool isRos_;
+};
+
+
 //! Struct to simplify the adding of a controller pair
-struct ManagedControllerOptions {
+struct ManagedControllerOptions : public ManagedModuleOptions {
 
   ManagedControllerOptions():
-    pluginName_(""),
-    name_(""),
-    parameterPath_(""),
-    isRos_(false),
+    ManagedModuleOptions(),
     sharedModuleNames_{ }
   {
 
@@ -60,23 +95,16 @@ struct ManagedControllerOptions {
    * @returns object of type ManagedControllerOptions
    */
   ManagedControllerOptions(const std::string & pluginName,
-                    const std::string & name,
-                    const std::string & parameterPath,
-                    const bool isRos,
-                    const std::vector<std::string> & sharedModuleNames = { }):
-                      pluginName_(pluginName),
-                      name_(name),
-                      parameterPath_(parameterPath),
-                      isRos_(isRos),
-                      sharedModuleNames_(sharedModuleNames)
+                           const std::string & name,
+                           const std::string & parameterPath,
+                           const bool isRos,
+                           const std::vector<std::string> & sharedModuleNames = { }):
+    ManagedModuleOptions(pluginName, name, parameterPath, isRos),
+    sharedModuleNames_(sharedModuleNames)
   {
 
   }
 
-  std::string pluginName_;
-  std::string name_;
-  std::string parameterPath_;
-  bool isRos_;
   std::vector<std::string> sharedModuleNames_;
 };
 
@@ -202,6 +230,12 @@ class ControllerManagerRos : public rocoma::ControllerManager {
                         std::shared_ptr<Command_> command,
                         std::shared_ptr<boost::shared_mutex> mutexState,
                         std::shared_ptr<boost::shared_mutex> mutexCommand);
+
+  /*! Add a vector of shared module pairs to the manager
+   * @param sharedModuleOptions vector of shared module options
+   * @returns true iff all shared modules were added successfully
+   */
+  bool setupSharedModules(const std::vector<ManagedModuleOptions> & sharedModuleOptions);
 
   /*! Loads the names of the controllers from the ros parameter server.
    * Pattern in yaml:
@@ -331,6 +365,8 @@ class ControllerManagerRos : public rocoma::ControllerManager {
   pluginlib::ClassLoader< rocoma_plugin::ControllerRosPluginInterface<State_, Command_> > controllerRosLoader_;
   //! Shared module class loader
   pluginlib::ClassLoader< rocoma_plugin::SharedModulePluginInterface > sharedModuleLoader_;
+  //! Shared module ROS class loader
+  pluginlib::ClassLoader< rocoma_plugin::SharedModuleRosPluginInterface > sharedModuleRosLoader_;
 };
 
 }

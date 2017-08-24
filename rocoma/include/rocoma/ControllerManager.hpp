@@ -274,7 +274,7 @@ class ControllerManager
    * @param sharedModule The shared module to add
    * @return true iff successful
    */
-  bool addSharedModule(roco::SharedModuleInterfacePtr&& sharedModule);
+  bool addSharedModule(roco::SharedModulePtr&& sharedModule);
 
   /**
  * @brief Checks if a shared module with this name was already added
@@ -308,7 +308,7 @@ class ControllerManager
   //! Unordered map of all available controllers (owned by the manager)
   std::unordered_map< std::string, ControllerPtr > controllers_;
   std::unordered_map< std::string, EmgcyControllerPtr > emergencyControllers_;
-  std::unordered_map< std::string, roco::SharedModuleInterfacePtr > sharedModules_;
+  std::unordered_map< std::string, roco::SharedModulePtr > sharedModules_;
 
   //! Controller Pairs
   std::unordered_map< std::string, ControllerSetPtr > controllerPairs_;

@@ -662,12 +662,12 @@ bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
   return true;
 }
 
-bool ControllerManager::addSharedModule(roco::SharedModuleInterfacePtr&& sharedModule) {
+bool ControllerManager::addSharedModule(roco::SharedModulePtr&& sharedModule) {
   std::string name = sharedModule->getName();
 
   if( hasSharedModule(name) ) {
-    MELO_ERROR_STREAM("[Rocoma][" << name << "] A shared module with this name was already added!");
-    return false;
+    MELO_WARN_STREAM("[Rocoma][" << name << "] A shared module with this name was already added! Do nothing.");
+    return true;
   }
 
   sharedModules_.emplace(name, std::move(sharedModule));
