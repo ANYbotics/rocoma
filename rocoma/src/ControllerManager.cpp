@@ -285,12 +285,12 @@ bool ControllerManager::updateController() {
 }
 
 bool ControllerManager::emergencyStop() {
-  // Forbid contrller switches
+  // Forbid controller switches
   hasClearedEmergencyStop_.store(false);
 
   MELO_ERROR("[Rocoma] Emergency Stop!");
-      // Cannot call emergency stop twice simultaniously
-      std::unique_lock<std::mutex> lockEmergencyStop(emergencyStopMutex_);
+  // Cannot call emergency stop twice simultaneously
+  std::unique_lock<std::mutex> lockEmergencyStop(emergencyStopMutex_);
 
   // Clean workers
   {
@@ -373,6 +373,7 @@ bool ControllerManager::emergencyStop() {
 }
 
 void ControllerManager::clearEmergencyStop() {
+  MELO_INFO("[Rocoma] Cleared Emergency Stop.");
   hasClearedEmergencyStop_.store(true);
 }
 

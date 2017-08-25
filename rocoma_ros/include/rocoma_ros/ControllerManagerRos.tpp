@@ -80,7 +80,7 @@ void ControllerManagerRos<State_,Command_>::init(const ControllerManagerRosOptio
 
   std::string service_name_clear_emergency_stop{"controller_manager/clear_emergency_stop"};
   nodeHandle_.getParam("servers/clear_emergency_stop/service", service_name_clear_emergency_stop);
-  clearEmergencyStopService_ = nodeHandle_.advertiseService(service_name_clear_emergency_stop, &ControllerManagerRos::clearEmergencyStop, this);
+  clearEmergencyStopService_ = nodeHandle_.advertiseService(service_name_clear_emergency_stop, &ControllerManagerRos::clearEmergencyStopService, this);
 
 
   // initialize publishers
@@ -426,9 +426,10 @@ bool ControllerManagerRos<State_,Command_>::emergencyStopService(std_srvs::Trigg
 
 
 template<typename State_, typename Command_>
-bool ControllerManagerRos<State_,Command_>::clearEmergencyStop(std_srvs::Trigger::Request& req,
-                                                               std_srvs::Trigger::Response& res) {
+bool ControllerManagerRos<State_,Command_>::clearEmergencyStopService(std_srvs::Trigger::Request& req,
+                                                                      std_srvs::Trigger::Response& res) {
   rocoma::ControllerManager::clearEmergencyStop();
+  res.success = true;
   return true;
 }
 

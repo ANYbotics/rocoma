@@ -244,13 +244,13 @@ class ControllerManagerRos : public rocoma::ControllerManager {
   bool emergencyStopService(std_srvs::Trigger::Request  &req,
                             std_srvs::Trigger::Response &res);
 
-  /*! Clear emergency stop
+  /*! Clear emergency stop service callback
    * @param req   empty request
    * @param res   empty response
    * @return true iff successful
    */
-  bool clearEmergencyStop(std_srvs::Trigger::Request  &req,
-                          std_srvs::Trigger::Response &res);
+  bool clearEmergencyStopService(std_srvs::Trigger::Request  &req,
+                                 std_srvs::Trigger::Response &res);
 
 
 
