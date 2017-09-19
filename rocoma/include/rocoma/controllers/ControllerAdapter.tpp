@@ -324,7 +324,7 @@ bool ControllerAdapter<Controller_,State_, Command_>::preStopController()
 
   // Collect logger data
   signal_logger::logger->stopLogger();
-  signal_logger::logger->saveLoggerData();
+  signal_logger::logger->saveLoggerData( {signal_logger::LogFileType::BINARY} );
 
 #ifdef NDEBUG
   try
