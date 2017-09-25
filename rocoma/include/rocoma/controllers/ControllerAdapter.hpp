@@ -133,8 +133,9 @@ class ControllerAdapter: virtual public roco::ControllerAdapterInterface, public
 
   /*! Use this method to set a shared module to the controller.
    * @param   module reference to module to be set
+   * @returns true if successful
    */
-  virtual void addControllerSharedModule(const roco::SharedModulePtr& module);
+  virtual bool addControllerSharedModule(const roco::SharedModulePtr& module);
 
   /*! Sets if the real robot is controlled or only a simulated version.
    * @param flag indicating robot type

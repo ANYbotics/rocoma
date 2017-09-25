@@ -413,7 +413,7 @@ bool ControllerAdapter<Controller_,State_, Command_>::getControllerSwapState(roc
 }
 
 template<typename Controller_, typename State_, typename Command_>
-void ControllerAdapter<Controller_,State_, Command_>::addControllerSharedModule(const roco::SharedModulePtr& module)
+bool ControllerAdapter<Controller_,State_, Command_>::addControllerSharedModule(const roco::SharedModulePtr& module)
 {
   return this->addSharedModule(module);
 }
