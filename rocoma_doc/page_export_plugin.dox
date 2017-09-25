@@ -1,0 +1,107 @@
+/*! \page page_export_plugin Export Controller Plugin
+
+<H2>Export Controller as a Plugin</H2>
+In order to use the plugin mechanism of rocoma the following three steps are required.
+
+<H3> 1. Put controller export macro in a separate file </H3>
+Add a new file to the source directory of your controller ( e.g. my_controller_plugin.cpp ).
+The source file should look something like:
+\code{c}
+// Include your controller
+#include "my_controller/MyController.hpp"
+
+// Include rocoma_plugin
+#include "rocoma_plugin/rocoma_plugin.hpp"
+
+// Export controller via macro
+ROCOMA_EXPORT_CONTROLLER(
+    MyControllerPlugin,
+    my_model::State,
+    my_model::Command,
+    my_controller::MyController
+);
+\endcode
+
+<H4> ROCOMA_EXPORT... Macro's </H4>
+
+The ROCOMA_EXPORT... macros are wrappers of pluginlib's PLUGINLIB_EXPORT_CLASS(...) for templated classes.
+
+- The first argument is the name of the controller plugin. (This name is used in the ros plugin context to refer to this controller)
+- The second argument is the State class
+- The third argument is the Command class
+- The fourth argument is the controller that we want to export
+
+There are different macros for the different controller types:
+- ROCOMA_EXPORT_FAILPROOF_CONTROLLER()
+- ROCOMA_EXPORT_CONTROLLER()
+- ROCOMA_EXPORT_CONTROLLER_ROS()
+- ROCOMA_EXPORT_EMERGENCY_CONTROLLER()
+- ROCOMA_EXPORT_EMERGENCY_CONTROLLER_ROS()
+- ROCOMA_EXPORT_CONTROLLER_TUPLE()
+- ROCOMA_EXPORT_CONTROLLER_TUPLE_ROS()
+
+Instead of a single fourth argument the controller tuple macros take an arbitrary number of comma-separated controllers.
+The order in which the controllers are listed, is also the order in which the tuple will executed them.
+
+
+<H3> 2. Create a separate library for the created file </H3>
+Becuase you should not statically link against plugin libraries, you need to create a separate library for the plugin export.
+\code{cmake}
+# Don't add the plugin library here, you should not statically link against it
+catkin_package(
+ ...
+  LIBRARIES ${PROJECT_NAME}
+ ...
+)
+
+# Controller library
+add_library( ${PROJECT_NAME}
+  src/MyController.cpp
+)
+
+target_link_libraries( ${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+)
+
+# Separate plugin library
+add_library( my_controller_plugin
+  src/my_controller_plugin.cpp
+)
+
+target_link_libraries( my_controller_plugin
+  ${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+)
+\endcode
+
+<H3> 3. Add a plugin description file </H3>
+The ros plugin lib requires that the controller package contains a plugin description file. Assume the controller package is named my_controller,
+then we add the following file, let's name it rocoma_plugin.xml.
+\code{xml}
+<library path="lib/libmy_controller_plugin">
+  <class type="MyController" base_class_type="rocoma_plugin::ControllerPluginInterface<my_model::State, my_model::Command>">
+  </class>
+</library>
+\endcode
+
+ - Replace libmy_controller with the correct library name
+ - Replace class type with the same name that we used in the first entry of the macro
+ - Replace my_model::State, my_model::Command with the correct state and command class name
+ - Additional white spaces or characters will cause errors in the plugin generation
+ - Choose the base class type according to your controller type:
+      - rocoma_plugin::ControllerPluginInterface<my_model::State, my_model::Command>
+      - rocoma_plugin::ControllerRosPluginInterface<my_model::State, my_model::Command>
+      - rocoma_plugin::EmergencyControllerPluginInterface<my_model::State, my_model::Command>
+      - rocoma_plugin::EmergencyControllerRosPluginInterface<my_model::State, my_model::Command>
+      - rocoma_plugin::FailproofControllerPluginInterface<my_model::State, my_model::Command>
+  - ControllerTuples are treated identically to Controllers
+
+<H3> 4. Export the plugin description file </H3>
+We have to export this configuration file in the package.xml of our package.
+\code{xml}
+<export>
+  <rocoma_plugin plugin="${prefix}/rocoma_plugin.xml" />
+</export>
+\endcode
+
+*/

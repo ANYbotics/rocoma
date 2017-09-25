@@ -1,0 +1,31 @@
+/*! \page page_state_command State and Command
+
+<H3>State and Command</H3>
+First of all one has to implement a State and a Command class.The State contains all information the controller needs about the robot's configuration, where as
+the Command class contains commands for all the actuators that can be set by the controllers. Rocoma requires that the State class implements roco::StateInterface
+and the Command class has to implement roco::CommandInterface.
+
+Lets assume we have the following dummy implementations.
+\code{c}
+namespace my_model {
+class Command: public roco::CommandInterface {
+ public:
+  bool limitCommand() {
+    return true;
+  }
+};
+}
+\endcode
+
+\code{c}
+namespace my_model {
+class State: public roco::StateInterface {
+ public:
+  bool checkState() const{
+    return true;
+  }
+};
+}
+\endcode
+
+*/

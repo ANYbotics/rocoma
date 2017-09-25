@@ -10,9 +10,10 @@
   <buildtool_depend>catkin</buildtool_depend>
   <depend>doxygen</depend>
   <depend>roco</depend>
+  <depend>roco_ros</depend>
   <depend>rocoma</depend>
   <depend>rocoma_ros</depend>
   <depend>rocoma_msgs</depend>
   <depend>rocoma_plugin</depend>
-  
+
 </package>
