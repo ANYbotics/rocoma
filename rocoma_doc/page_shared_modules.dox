@@ -4,10 +4,11 @@ Imagine two or more of your controllers have to share some kind of control algor
 Sharing this controller specific things in the State class is not really desirable. Therefore rocoma introduces the concept of
 shared modules. Shared modules are allocated by the controller manager, and afterwards set to the interested controllers.
 Shared modules have to inherit from the very slim roco::SharedModule interface.
+<B>The implementer has to assure thread-safety! Only using shared modules in the advance function is recommended. </B>
+
 
 Example of a shared module:
 \code{c}
-// Include your controller
 #include "roco/controllers/controllers.hpp"
 
 class MySharedModule : virtual public roco::SharedModule {
@@ -45,7 +46,7 @@ bool MyController::advance(double dt) {
 
 bool MyController::addSharedModule(const roco::SharedModulePtr& module) {
   auto sm = std::dynamic_pointer_cast<MySharedModule>(module);
-  if( drivismgController != nullptr ) {
+  if( sm != nullptr ) {
     sm_ = sm;
   }
   return sm != nullptr;

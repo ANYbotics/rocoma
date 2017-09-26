@@ -1,4 +1,4 @@
-/*! \page page_export_plugin Export Controller Plugin
+/*! \page page_export_plugin Export Plugins
 
 <H2>Export Controller as a Plugin</H2>
 In order to use the plugin mechanism of rocoma the following three steps are required.
@@ -103,5 +103,16 @@ We have to export this configuration file in the package.xml of our package.
   <rocoma_plugin plugin="${prefix}/rocoma_plugin.xml" />
 </export>
 \endcode
+
+<H2>Export shared module as a Plugin</H2>
+The same as above holds for shared modules.
+Using the macros (Arguments: Module plugin name, shared module type):
+- ROCOMA_EXPORT_SHARED_MODULE()
+- ROCOMA_EXPORT_SHARED_MODULE_ROS()
+
+And the plugin base types:
+- rocoma_plugin::SharedModulePluginInterface
+- rocoma_plugin::SharedModuleRosPluginInterface
+
 
 */
