@@ -222,6 +222,20 @@ class ControllerManager
    */
   virtual bool cleanup();
 
+  /**
+   * @brief Add a shared module to the controller manager
+    * @param sharedModule The shared module to add
+    * @return true iff successful
+    */
+  bool addSharedModule(roco::SharedModulePtr&& sharedModule);
+
+  /**
+   * @brief Checks if a shared module with this name was already added
+   * @param moduleName The name of the shared module
+   * @return true if a module with this name was already added
+   */
+  bool hasSharedModule(const std::string & moduleName);
+
   //  /**
   //   * @brief Check timing and perform emergency stop on violation
   //   */
@@ -268,20 +282,6 @@ class ControllerManager
                               roco::ControllerAdapterInterface * oldController,
                               roco::ControllerAdapterInterface * newController,
                               std::promise<SwitchResponse> & response_promise);
-
-  /**
-   * @brief Add a shared module to the controller manager
-   * @param sharedModule The shared module to add
-   * @return true iff successful
-   */
-  bool addSharedModule(roco::SharedModulePtr&& sharedModule);
-
-  /**
- * @brief Checks if a shared module with this name was already added
- * @param moduleName The name of the shared module
- * @return true if a module with this name was already added
- */
-  bool hasSharedModule(const std::string & moduleName);
 
  protected:
   //! Conditional variables for measuring execution time
