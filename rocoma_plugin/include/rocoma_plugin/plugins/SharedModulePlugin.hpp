@@ -1,7 +1,7 @@
 /**********************************************************************
  * Software License Agreement (BSD License)
  *
- * Copyright (c) 2016, Christian Gehring, Gabriel Hottiger
+ * Copyright (c) 2016, Gabriel Hottiger, Christian Gehring
  * All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -14,7 +14,7 @@
  *     copyright notice, this list of conditions and the following
  *     disclaimer in the documentation and/or other materials provided
  *     with the distribution.
- *   * Neither the name of ETH Zurich
+ *   * Neither the name of Autonomous Systems Lab nor ETH Zurich
  *     nor the names of its contributors may be used to endorse or
  *     promote products derived from this software without specific
  *     prior written permission.
@@ -33,26 +33,30 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 /*!
- * @file     rocoma_plugin.hpp
+ * @file     SharedModulePlugin.hpp
  * @author   Gabriel Hottiger
- * @date     Aug, 2016
+ * @date     Aug, 2017
  */
 
+#pragma once
 
-#include "rocoma_plugin/interfaces/ControllerPluginInterface.hpp"
-#include "rocoma_plugin/interfaces/ControllerRosPluginInterface.hpp"
-#include "rocoma_plugin/interfaces/EmergencyControllerPluginInterface.hpp"
-#include "rocoma_plugin/interfaces/EmergencyControllerRosPluginInterface.hpp"
-#include "rocoma_plugin/interfaces/FailproofControllerPluginInterface.hpp"
+// pluginlib
+#include <pluginlib/class_list_macros.h>
+
+// roco
 #include "rocoma_plugin/interfaces/SharedModulePluginInterface.hpp"
-#include "rocoma_plugin/interfaces/SharedModuleRosPluginInterface.hpp"
 
-#include "rocoma_plugin/plugins/ControllerPlugin.hpp"
-#include "rocoma_plugin/plugins/ControllerRosPlugin.hpp"
-#include "rocoma_plugin/plugins/ControllerTuplePlugin.hpp"
-#include "rocoma_plugin/plugins/ControllerTupleRosPlugin.hpp"
-#include "rocoma_plugin/plugins/EmergencyControllerPlugin.hpp"
-#include "rocoma_plugin/plugins/EmergencyControllerRosPlugin.hpp"
-#include "rocoma_plugin/plugins/FailproofControllerPlugin.hpp"
-#include "rocoma_plugin/plugins/SharedModulePlugin.hpp"
-#include "rocoma_plugin/plugins/SharedModuleRosPlugin.hpp"
+/*!
+ *   Export your shared module as a SharedModulePlugin in order to load it as a plugin.
+ *   This macro is a wrapper to PLUGINLIB_EXPORT_CLASS.
+ *   Protects typedefs in internal namespace.
+ */
+#define ROCOMA_EXPORT_SHARED_MODULE(name, module)                       \
+  namespace plugin_##name_internal {                                    \
+      using name = module;                                              \
+      PLUGINLIB_EXPORT_CLASS(name, rocoma_plugin::SharedModulePlugin)   \
+  }
+
+namespace rocoma_plugin {
+using SharedModulePlugin = rocoma_plugin::SharedModulePluginInterface;
+} /* namespace rocoma_plugin */

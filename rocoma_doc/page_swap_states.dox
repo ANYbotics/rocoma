@@ -1,0 +1,71 @@
+/*! \page page_swap_states Swap States
+
+When switching from one controller to another, you could want to pass a state from the currently active to the next controller.
+To prevent polluting the Roco State class and to guarantee a certain order of execution, rocoma provides the possibility of passing a
+swap state to the next controller.
+
+Example:
+ControllerA is running, the user requests a change to ControllerB.
+Rocoma first calls the getSwapState() function of ControllerA, then with the obtained state it calls swap of ControllerB.
+In this swap function we also take care of tuple swap states, this is not necessary if you don't use tuples.
+
+\code{c}
+#include "roco/controllers/ControllerSwapStateInterface.hpp"
+
+class MySwapState : public roco::ControllerSwapStateInterface {
+ public:
+  MySwapState(const double state): state_(state) { }
+
+  ~MySwapState() = default;
+
+  virtual bool operator== ( const ControllerSwapStateInterface& state ) const {
+    try {
+      const MySwapState& item = dynamic_cast<const MySwapState&>(state);
+      return ( (state_ == item.getState()));
+    } catch(const std::bad_cast& e) {
+      return false;
+    }
+  }
+
+  double getState() const { return state_; }
+
+ private:
+  double state_;
+};
+\endcode
+
+<B>ControllerA</B>
+\code{c}
+bool ControllerA::getSwapState(roco::ControllerSwapStateInterfacePtr& swapState) {
+  swapState.reset( new MySwapState(someState_) )
+  return true;
+}
+\endcode
+
+<B>ControllerB</B>
+\code{c}
+bool ControllerB::swap(double dt, const roco::ControllerSwapStateInterfacePtr& swapState) {
+  if(ControllerB::initialize(dt)) {
+    // Build up vector of pointers
+    std::vector<roco::ControllerSwapStateInterface *> states;
+    // First check if tuple state
+    roco::ControllerTupleSwapState * tupleState = dynamic_cast<roco::ControllerTupleSwapState *>(swapState.get());
+    if(tupleState != nullptr) {
+      for(auto& s : tupleState->getSwapStates() ) { states.push_back(s.get()); }
+    } else {
+      states.push_back(swapState.get());
+    }
+
+    for(auto& state : states) {
+      MySwapState * myState = dynamic_cast<MySwapState * >(state);
+      if(myState != nullptr) {
+        controller_->setState(myState->getState());
+      }
+    }
+  }
+
+  return true;
+}
+\endcode
+
+*/

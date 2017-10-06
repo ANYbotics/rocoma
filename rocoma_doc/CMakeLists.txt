@@ -11,6 +11,7 @@ find_package(Doxygen)
 IF(DOXYGEN)
   find_package(catkin REQUIRED COMPONENTS
     roco
+    roco_ros
     rocoma
     rocoma_ros
     rocoma_plugin
@@ -22,6 +23,7 @@ IF(DOXYGEN)
     LIBRARIES
     CATKIN_DEPENDS
       roco
+      roco_ros
       rocoma
       rocoma_ros
       rocoma_plugin
@@ -35,6 +37,14 @@ IF(DOXYGEN)
     message (STATUS "Found roco at: ${SOURCE_ROCO_DIR}")
   else()
     message (FATAL_ERROR "Couldn't find roco! ${SOURCE_ROCO_DIR}")
+  endif()
+
+  # Find roco_ros for documentation
+  find_path (SOURCE_ROCO_ROS_DIR NAMES roco_ros/controllers/ControllerRos.hpp PATHS ${roco_ros_INCLUDE_DIRS}... NO_DEFAULT_PATH)
+  if(EXISTS "${SOURCE_ROCO_ROS_DIR}")
+    message (STATUS "Found roco_ros at: ${SOURCE_ROCO_ROS_DIR}")
+  else()
+    message (FATAL_ERROR "Couldn't find roco_ros! ${SOURCE_ROCO_ROS_DIR}")
   endif()
 
   # Find rocoma for documentation
@@ -64,7 +74,7 @@ IF(DOXYGEN)
   # Set some environment variables
   Set(DOCSOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/doc)
   Set(DOXYGEN_IMAGE_DIRS "\"${CMAKE_CURRENT_SOURCE_DIR}/figures/\"" )
-  Set(DOXYGEN_SOURCE_DIRS "${DOXYGEN_SOURCE_DIRS} \"${SOURCE_ROCO_DIR}/../\" \"${SOURCE_ROCOMA_DIR}/../\" \"${SOURCE_ROCOMA_ROS_DIR}/../\" \"${SOURCE_ROCOMA_PLUGIN_DIR}/../\" \"${CMAKE_CURRENT_SOURCE_DIR}/\" ")
+  Set(DOXYGEN_SOURCE_DIRS "${DOXYGEN_SOURCE_DIRS} \"${SOURCE_ROCO_DIR}/../\" \"${SOURCE_ROCO_ROS_DIR}/../\" \"${SOURCE_ROCOMA_DIR}/../\" \"${SOURCE_ROCOMA_ROS_DIR}/../\" \"${SOURCE_ROCOMA_PLUGIN_DIR}/../\" \"${CMAKE_CURRENT_SOURCE_DIR}/\" ")
   Set(HTML_DIR ${CMAKE_CURRENT_SOURCE_DIR}/doc/html)
   MAKE_DIRECTORY(${HTML_DIR})
 
@@ -77,6 +87,7 @@ IF(DOXYGEN)
 
   # Unset cache files
   unset(${SOURCE_ROCO_DIR} CACHE)
+  unset(${SOURCE_ROCO_ROS_DIR} CACHE)
   unset(${SOURCE_ROCOMA_DIR} CACHE)
   unset(${SOURCE_ROCOMA_ROS_DIR} CACHE)
   unset(${SOURCE_ROCOMA_PLUGIN_DIR} CACHE)
