@@ -442,7 +442,10 @@ void ControllerManager::switchController(const std::string & controllerName,
       // Add worker to switch to new controller
       std::unique_lock<std::mutex> lockWorkerManager(workerManagerMutex_);
       workerManager_.cleanDestructibleWorkers();
-      workerManager_.addWorker(switchControllerWorkerOptions, true);
+      if( !workerManager_.addWorker(switchControllerWorkerOptions, true) ) {
+        MELO_ERROR_STREAM("[Rocoma] Can not create worker! Already running a switch thread with the same name?");
+        response_promise.set_value(SwitchResponse::ERROR);
+      }
     }
 
     return;
