@@ -11,6 +11,17 @@ ControllerManagerRos<State_,Command_>::ControllerManagerRos( const std::string &
                                                              rocoma::ControllerManager(),
                                                              isInitializedRos_(false),
                                                              nodeHandle_(),
+                                                             switchControllerService_(),
+                                                             emergencyStopService_(),
+                                                             clearEmergencyStopService_(),
+                                                             getAvailableControllersService_(),
+                                                             getActiveControllerService_(),
+                                                             activeControllerPublisher_(),
+                                                             activeControllerMsg_(),
+                                                             emergencyStopStatePublisher_(),
+                                                             emergencyStopStateMsg_(),
+                                                             clearedEmergencyStopStatePublisher_(),
+                                                             clearedEmergencyStopStateMsg_(),
                                                              failproofControllerLoader_("rocoma_plugin", "rocoma_plugin::FailproofControllerPluginInterface<" + scopedStateName + ", " + scopedCommandName + ">"),
                                                              emergencyControllerLoader_("rocoma_plugin", "rocoma_plugin::EmergencyControllerPluginInterface<" + scopedStateName + ", " + scopedCommandName + ">"),
                                                              emergencyControllerRosLoader_("rocoma_plugin", "rocoma_plugin::EmergencyControllerRosPluginInterface<" + scopedStateName + ", " + scopedCommandName + ">"),
@@ -93,6 +104,11 @@ void ControllerManagerRos<State_,Command_>::init(const ControllerManagerRosOptio
   nodeHandle_.getParam("publishers/notify_emergency_stop/topic", topic_name_notify_emergency_stop);
   emergencyStopStatePublisher_ = nodeHandle_.advertise<any_msgs::State>(topic_name_notify_emergency_stop, 1, true);
   publishEmergencyState(true);
+
+  std::string topic_name_notify_cleared_emergency_stop{"notify_cleared_emergency_stop"};
+  nodeHandle_.getParam("publishers/notify_cleared_emergency_stop/topic", topic_name_notify_cleared_emergency_stop);
+  clearedEmergencyStopStatePublisher_ = nodeHandle_.advertise<any_msgs::State>(topic_name_notify_cleared_emergency_stop, 1, true);
+  publishClearedEmergencyState(true);
 
   // Set init flag
   isInitializedRos_ = true;
@@ -470,6 +486,12 @@ bool ControllerManagerRos<State_,Command_>::getActiveController(rocoma_msgs::Get
 }
 
 template<typename State_, typename Command_>
+void ControllerManagerRos<State_,Command_>::clearEmergencyStop() {
+  rocoma::ControllerManager::clearEmergencyStop();
+  publishClearedEmergencyState(this->hasClearedEmergencyStop_);
+}
+
+template<typename State_, typename Command_>
 void ControllerManagerRos<State_,Command_>::notifyEmergencyStop(rocoma::ControllerManager::EmergencyStopType type) {
   // TODO react differently depending on the emergency stop type
   publishEmergencyState(false);
@@ -500,6 +522,17 @@ void ControllerManagerRos<State_,Command_>::publishEmergencyState(bool isOk) {
   // Publish message
   any_msgs::StatePtr stateMsg( new any_msgs::State(emergencyStopStateMsg_) );
   emergencyStopStatePublisher_.publish( any_msgs::StateConstPtr(stateMsg) );
+}
+
+template<typename State_, typename Command_>
+void ControllerManagerRos<State_,Command_>::publishClearedEmergencyState(bool isOk) {
+  // Fill msg
+  clearedEmergencyStopStateMsg_.stamp = ros::Time::now();
+  clearedEmergencyStopStateMsg_.is_ok = isOk;
+
+  // Publish message
+  any_msgs::StatePtr stateMsg( new any_msgs::State(clearedEmergencyStopStateMsg_) );
+  clearedEmergencyStopStatePublisher_.publish( any_msgs::StateConstPtr(stateMsg) );
 }
 
 }

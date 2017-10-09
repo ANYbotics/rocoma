@@ -293,6 +293,12 @@ class ControllerManagerRos : public rocoma::ControllerManager {
    * @return true, if successful emergency stop and all controllers are cleaned up
    */
   virtual bool cleanup();
+
+  /**
+   * @brief Clears the emergency stop, controller switches are now allowed
+   */
+  void clearEmergencyStop() override;
+
  private:
   /*! Publish the active controller.
    * @param activeController   active controller name
@@ -303,6 +309,11 @@ class ControllerManagerRos : public rocoma::ControllerManager {
    * @param isOk   publish isOk on topic
    */
   void publishEmergencyState(bool isOk);
+
+  /*! Publish on the cleared emergency stop topic
+   * @param isOk   publish isOk on topic
+   */
+  void publishClearedEmergencyState(bool isOk);
 
  private:
   //! Init flag
@@ -329,6 +340,11 @@ class ControllerManagerRos : public rocoma::ControllerManager {
   ros::Publisher emergencyStopStatePublisher_;
   //! Emergency stop message
   any_msgs::State emergencyStopStateMsg_;
+
+  //! Cleared emergency state publisher
+  ros::Publisher clearedEmergencyStopStatePublisher_;
+  //! Cleared emergency state message
+  any_msgs::State clearedEmergencyStopStateMsg_;
 
   //! Failproof controller class loader
   pluginlib::ClassLoader< rocoma_plugin::FailproofControllerPluginInterface<State_, Command_> > failproofControllerLoader_;

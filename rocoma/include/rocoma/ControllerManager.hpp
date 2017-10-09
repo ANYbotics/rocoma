@@ -192,7 +192,7 @@ class ControllerManager
   /**
    * @brief Clears the emergency stop, controller switches are now allowed
    */
-  void clearEmergencyStop();
+  virtual void clearEmergencyStop();
 
   /**
    * @brief Tries to switch to a desired controller
