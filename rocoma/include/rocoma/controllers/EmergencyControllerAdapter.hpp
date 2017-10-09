@@ -49,9 +49,6 @@
 // Rocoma
 #include "rocoma/controllers/ControllerAdapter.hpp"
 
-// Signal logger
-#include <signal_logger/signal_logger.hpp>
-
 // Message logger
 #include <message_logger/message_logger.hpp>
 
@@ -134,7 +131,6 @@ class EmergencyControllerAdapter: virtual public roco::EmergencyControllerAdapte
 
     // Start logging
     this->isRunning_ = true;
-    signal_logger::logger->startLogger();
     MELO_INFO_STREAM("[Rocoma][" << this->getName() << "] Fast initialized successfully!");
 
     return true;

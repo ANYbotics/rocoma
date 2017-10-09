@@ -342,8 +342,10 @@ bool ControllerManager::emergencyStop() {
         std::unique_lock<std::mutex> lockEmergencyController(emergencyControllerMutex_);
         // Init emergency controller fast
         success = activeControllerPair_.emgcyController_->initializeControllerFast(timeStep_);
+        signal_logger::logger->startLogger();
         // only advance if correctly initialized
         success = success && activeControllerPair_.emgcyController_->advanceController(timeStep_);
+        signal_logger::logger->collectLoggerData();
       }
 
       if(success)
