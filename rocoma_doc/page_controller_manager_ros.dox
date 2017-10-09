@@ -18,6 +18,15 @@ The parameter server has to contain the following parameters for this to work pr
 \code{yaml}
 controller_manager:
    failproof_controller: "MyFailProofController"
+
+   shared_modules:
+     - shared_module:
+         plugin_name:              "MySharedModule"
+         name:                     "MySharedModule"
+         is_ros:                   false
+         parameter_package:        "my_shared_module_package"
+         parameter_path:           "my_param_folder/my_param_file.xml"
+     ... Add more shared modules
    controller_pairs:
      - controller_pair:
          controller:
@@ -26,6 +35,9 @@ controller_manager:
            is_ros:                   true
            parameter_package:        "my_controller_package"
            parameter_path:           "my_param_folder/my_param_file.xml"
+           shared_modules:
+             - "MySharedModule"
+             - ... Add more shared modules
          emergency_controller:
            plugin_name:              "MyEmergencyControllerPlugin"
            name:                     "MyEmergencyController "

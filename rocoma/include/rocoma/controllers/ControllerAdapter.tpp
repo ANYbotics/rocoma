@@ -324,7 +324,7 @@ bool ControllerAdapter<Controller_,State_, Command_>::preStopController()
 
   // Collect logger data
   signal_logger::logger->stopLogger();
-  signal_logger::logger->saveLoggerData();
+  signal_logger::logger->saveLoggerData( {signal_logger::LogFileType::BINARY} );
 
 #ifdef NDEBUG
   try
@@ -410,6 +410,12 @@ template<typename Controller_, typename State_, typename Command_>
 bool ControllerAdapter<Controller_,State_, Command_>::getControllerSwapState(roco::ControllerSwapStateInterfacePtr& swapState)
 {
   return this->getSwapState(swapState);
+}
+
+template<typename Controller_, typename State_, typename Command_>
+bool ControllerAdapter<Controller_,State_, Command_>::addControllerSharedModule(const roco::SharedModulePtr& module)
+{
+  return this->addSharedModule(module);
 }
 
 template<typename Controller_, typename State_, typename Command_>

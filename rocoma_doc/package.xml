@@ -1,17 +1,19 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>rocoma_doc</name>
-  <version>0.1.0</version>
+  <version>0.1.1</version>
   <description>The robot controller manager documentation package</description>
   <maintainer email="gehrinch@ethz.ch">Christian Gehring</maintainer>
   <license>BSD</license>
   <author email="gabriel.hottigerh@mavt.ethz.ch">Gabriel Hottiger</author>
 
   <buildtool_depend>catkin</buildtool_depend>
+  <depend>doxygen</depend>
   <depend>roco</depend>
+  <depend>roco_ros</depend>
   <depend>rocoma</depend>
   <depend>rocoma_ros</depend>
   <depend>rocoma_msgs</depend>
   <depend>rocoma_plugin</depend>
-  
+
 </package>

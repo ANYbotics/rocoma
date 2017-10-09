@@ -52,6 +52,7 @@ ControllerManager::ControllerManager(const double timestep,
                                       workerManager_(),
                                       controllers_(),
                                       emergencyControllers_(),
+                                      sharedModules_(),
                                       controllerPairs_(),
                                       activeControllerPair_(nullptr, nullptr),
                                       failproofController_(nullptr),
@@ -285,12 +286,12 @@ bool ControllerManager::updateController() {
 }
 
 bool ControllerManager::emergencyStop() {
-  // Forbid contrller switches
+  // Forbid controller switches
   hasClearedEmergencyStop_.store(false);
 
   MELO_ERROR("[Rocoma] Emergency Stop!");
-      // Cannot call emergency stop twice simultaniously
-      std::unique_lock<std::mutex> lockEmergencyStop(emergencyStopMutex_);
+  // Cannot call emergency stop twice simultaneously
+  std::unique_lock<std::mutex> lockEmergencyStop(emergencyStopMutex_);
 
   // Clean workers
   {
@@ -373,6 +374,7 @@ bool ControllerManager::emergencyStop() {
 }
 
 void ControllerManager::clearEmergencyStop() {
+  MELO_INFO("[Rocoma] Cleared Emergency Stop.");
   hasClearedEmergencyStop_.store(true);
 }
 
@@ -674,6 +676,26 @@ bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
 
   return true;
 }
+
+bool ControllerManager::addSharedModule(roco::SharedModulePtr&& sharedModule) {
+  std::string name = sharedModule->getName();
+
+  if( hasSharedModule(name) ) {
+    MELO_WARN_STREAM("[Rocoma][" << name << "] A shared module with this name was already added! Do nothing.");
+    return true;
+  }
+
+  sharedModules_.emplace(name, std::move(sharedModule));
+
+  return true;
+}
+
+
+
+bool ControllerManager::hasSharedModule(const std::string & moduleName) {
+  return sharedModules_.find(moduleName) != sharedModules_.end();
+}
+
 
 //bool ControllerManager::checkTimingWorker(const any_worker::WorkerEvent& event){
 //
