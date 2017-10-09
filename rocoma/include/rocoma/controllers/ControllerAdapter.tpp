@@ -139,10 +139,8 @@ bool ControllerAdapter<Controller_, State_, Command_>::initializeController(doub
   }
 #endif
 
-  // Start logging
+  // Set flags
   this->isRunning_ = true;
-  signal_logger::logger->updateLogger();
-  signal_logger::logger->startLogger();
   MELO_INFO_STREAM("[Rocoma][" << this->getControllerName() << "] Successfully initialized!");
 
   return true;
@@ -175,9 +173,6 @@ bool ControllerAdapter<Controller_, State_, Command_>::advanceController(double 
     if(!this->updateCommand(dt)) {
       return false;
     }
-
-    // Collect logger data
-    signal_logger::logger->collectLoggerData();
 
   }
 #ifdef NDEBUG
@@ -241,7 +236,6 @@ bool ControllerAdapter<Controller_, State_, Command_>::resetController(double dt
 
   // Start logging
   this->isRunning_ = true;
-  signal_logger::logger->startLogger();
   MELO_INFO_STREAM("[Rocoma][" << this->getControllerName() << "] Reset successfully!");
 
   return true;
@@ -322,10 +316,6 @@ template<typename Controller_, typename State_, typename Command_>
 bool ControllerAdapter<Controller_,State_, Command_>::preStopController()
 {
 
-  // Collect logger data
-  signal_logger::logger->stopLogger();
-  signal_logger::logger->saveLoggerData( {signal_logger::LogFileType::BINARY} );
-
 #ifdef NDEBUG
   try
 #endif
@@ -397,10 +387,8 @@ bool ControllerAdapter<Controller_, State_, Command_>::swapController(double dt,
   }
 #endif
 
-  // Start logging
+  // Set flags
   this->isRunning_ = true;
-  signal_logger::logger->updateLogger();
-  signal_logger::logger->startLogger();
   MELO_INFO_STREAM("[Rocoma][" << this->getControllerName() << "] Successfully swapped!");
 
   return true;
