@@ -564,7 +564,7 @@ bool ControllerManagerRos<State_,Command_>::emergencyStopService(std_srvs::Trigg
     res.success = true;
   }
   else {
-    res.success = rocoma::ControllerManager::emergencyStop();
+    res.success = this->emergencyStop();
   }
   return true;
 }
@@ -573,7 +573,7 @@ bool ControllerManagerRos<State_,Command_>::emergencyStopService(std_srvs::Trigg
 template<typename State_, typename Command_>
 bool ControllerManagerRos<State_,Command_>::clearEmergencyStopService(std_srvs::Trigger::Request& req,
                                                                       std_srvs::Trigger::Response& res) {
-  rocoma::ControllerManager::clearEmergencyStop();
+  this->clearEmergencyStop();
   res.success = true;
   return true;
 }
@@ -583,7 +583,7 @@ bool ControllerManagerRos<State_,Command_>::switchControllerService(rocoma_msgs:
                                                                     rocoma_msgs::SwitchController::Response& res) {
 
   // This is another ros-thread anyway so this operation can be blocking until controller switched
-  switch(  rocoma::ControllerManager::switchController(req.name) ) {
+  switch(  this->switchController(req.name) ) {
     case rocoma::ControllerManager::SwitchResponse::ERROR:
       res.status = res.STATUS_ERROR;
       break;
