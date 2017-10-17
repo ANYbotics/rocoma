@@ -30,9 +30,17 @@
  * @author  Christian Gehring, Gabriel Hottiger
  * @date    Oct, 2014
  */
+
+// rocoma
 #include "rocoma/ControllerManager.hpp"
 
+// Signal logger
+#include <signal_logger/signal_logger.hpp>
+
+// Message logger
 #include "message_logger/message_logger.hpp"
+
+// STL
 #include <limits>
 #include <algorithm>
 
@@ -256,6 +264,7 @@ bool ControllerManager::updateController() {
       lockController.unlock();
       return emergencyStop();
     }
+    signal_logger::logger->collectLoggerData();
   }
 
   // Controller is in emergency stop
@@ -267,6 +276,7 @@ bool ControllerManager::updateController() {
       lockEmergencyController.unlock();
       return emergencyStop();
     }
+    signal_logger::logger->collectLoggerData();
   }
 
   // Failproof controller is active
@@ -319,6 +329,10 @@ bool ControllerManager::emergencyStop() {
       workerManager_.addWorker(stopWorkerOptions, true);
     }
 
+    // Save logger data
+    signal_logger::logger->stopLogger();
+    signal_logger::logger->saveLoggerData( {signal_logger::LogFileType::BINARY} );
+
     if(activeControllerPair_.emgcyController_ != nullptr &&
         !activeControllerPair_.emgcyController_->isBeingStopped()) {
 
@@ -328,8 +342,10 @@ bool ControllerManager::emergencyStop() {
         std::unique_lock<std::mutex> lockEmergencyController(emergencyControllerMutex_);
         // Init emergency controller fast
         success = activeControllerPair_.emgcyController_->initializeControllerFast(timeStep_);
+        signal_logger::logger->startLogger();
         // only advance if correctly initialized
         success = success && activeControllerPair_.emgcyController_->advanceController(timeStep_);
+        signal_logger::logger->collectLoggerData();
       }
 
       if(success)
@@ -606,6 +622,9 @@ bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
   if(oldController != nullptr) {
     oldController->setIsBeingStopped(true);
     oldController->preStopController();
+    // Save logger data
+    signal_logger::logger->stopLogger();
+    signal_logger::logger->saveLoggerData( {signal_logger::LogFileType::BINARY} );
   }
 
   /** NOTE:
@@ -627,6 +646,10 @@ bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
     response_promise.set_value(SwitchResponse::ERROR);
     return false;
   }
+
+  // Start Logging
+  signal_logger::logger->updateLogger();
+  signal_logger::logger->startLogger();
 
   // Set the newController as active controller as soon as the controller is initialized
   if ( newController->isControllerInitialized() ) {
