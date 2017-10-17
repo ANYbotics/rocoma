@@ -340,11 +340,6 @@ class ControllerManagerRos : public rocoma::ControllerManager {
    */
   void publishActiveController(std::string activeController);
 
-  /*! Publish on the emergency stop topic
-   * @param isOk   publish isOk on topic
-   */
-  void publishEmergencyState(bool isOk);
-
   /*! Publish on the cleared emergency stop topic
    * @param isOk   publish isOk on topic
    */
@@ -370,11 +365,6 @@ class ControllerManagerRos : public rocoma::ControllerManager {
   ros::Publisher activeControllerPublisher_;
   //! Active controller message
   std_msgs::String activeControllerMsg_;
-
-  //! Emergency stop publisher
-  ros::Publisher emergencyStopStatePublisher_;
-  //! Emergency stop message
-  any_msgs::State emergencyStopStateMsg_;
 
   //! Cleared emergency state publisher
   ros::Publisher clearedEmergencyStopStatePublisher_;
