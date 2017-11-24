@@ -6,7 +6,7 @@ This software package provides a C++ robot controller manager that is compatible
 
 A complete documentation of rocoma is available [here](http://docs.leggedrobotics.com/rocoma_doc/).
 
-The software has been tested under ROS Indigo and Ubuntu 14.04.
+The software has been tested under ROS Kinetic and Ubuntu 16.04.
 
 The source code is released under a [BSD 3-Clause license](LICENSE).
 
