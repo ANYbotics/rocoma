@@ -501,7 +501,7 @@ std::vector<std::string> ControllerManager::getAvailableControllerNames() {
 }
 
 std::string ControllerManager::getActiveControllerName() {
-  std::string controllerName = "Failproof";
+  std::string controllerName = "-";
   std::lock_guard<std::mutex> activeControllerLock(activeControllerMutex_);
 
   switch(activeControllerState_) {
@@ -513,6 +513,11 @@ std::string ControllerManager::getActiveControllerName() {
     case State::EMERGENCY:
     {
       controllerName = activeControllerPair_.emgcyControllerName_;
+      break;
+    }
+    case State::FAILURE:
+    {
+      controllerName = "Failproof";
       break;
     }
   }

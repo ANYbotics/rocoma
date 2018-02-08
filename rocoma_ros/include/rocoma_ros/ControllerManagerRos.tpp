@@ -239,6 +239,7 @@ bool ControllerManagerRos<State_,Command_>::setupControllerPair(const ManagedCon
   MELO_INFO_STREAM("[RocomaRos] Successfully added controller pair ( " << options.first.name_ << " / "
                    << emergencyControllerName << " ) to controller manager!");
 
+  return true;
 }
 
 template<typename State_, typename Command_>
@@ -365,7 +366,7 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
 
   if(nodeHandle_.getParam("controller_manager/shared_modules", shared_module_list)) {
     if( shared_module_list.getType() == XmlRpc::XmlRpcValue::TypeArray ) {
-      for( unsigned int i = 0; i < shared_module_list.size(); ++i ) {
+      for( int i = 0; i < shared_module_list.size(); ++i ) {
 
         // Check that shared_module exists
         if(shared_module_list[i].getType() != XmlRpc::XmlRpcValue::TypeStruct ||
@@ -423,7 +424,7 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
   else {
     if(controller_pair_list.getType() == XmlRpc::XmlRpcValue::TypeArray)
     {
-      for (unsigned int i = 0; i < controller_pair_list.size(); ++i)
+      for (int i = 0; i < controller_pair_list.size(); ++i)
       {
         // Check that controller_pair exists
         if(controller_pair_list[i].getType() != XmlRpc::XmlRpcValue::TypeStruct ||
@@ -467,7 +468,7 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
           XmlRpc::XmlRpcValue shared_modules;
           controller_option_pair.first.sharedModuleNames_.clear();
           if(controller.hasMember("shared_modules") && controller["shared_modules"].getType() == XmlRpc::XmlRpcValue::TypeArray) {
-            for (unsigned int j = 0; j < controller["shared_modules"].size(); ++j) {
+            for (int j = 0; j < controller["shared_modules"].size(); ++j) {
               if(controller["shared_modules"][j].getType() == XmlRpc::XmlRpcValue::TypeString) {
                 controller_option_pair.first.sharedModuleNames_.push_back(controller["shared_modules"][j]);
               }
@@ -515,7 +516,7 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
           XmlRpc::XmlRpcValue shared_modules;
           controller_option_pair.second.sharedModuleNames_.clear();
           if(controller.hasMember("shared_modules") && controller["shared_modules"].getType() == XmlRpc::XmlRpcValue::TypeArray) {
-            for (unsigned int j = 0; j < controller["shared_modules"].size(); ++j) {
+            for (int j = 0; j < controller["shared_modules"].size(); ++j) {
               if(controller["shared_modules"][j].getType() == XmlRpc::XmlRpcValue::TypeString) {
                 controller_option_pair.second.sharedModuleNames_.push_back(controller["shared_modules"][j]);
               }

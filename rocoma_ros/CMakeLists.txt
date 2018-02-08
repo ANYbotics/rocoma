@@ -30,6 +30,8 @@ CATKIN_DEPENDS
   std_msgs
 )
 
+add_definitions(-std=c++11 -Wall -Werror)
+
 #############
 ## Install ##
 #############
