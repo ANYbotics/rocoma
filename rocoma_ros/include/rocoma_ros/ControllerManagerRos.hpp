@@ -125,8 +125,9 @@ struct ControllerManagerRosOptions : public rocoma::ControllerManagerOptions
   //! Constructor
   ControllerManagerRosOptions(const double timeStep,
                               const bool isRealRobot,
+                              const bool isCollectingLoggerData,
                               const ros::NodeHandle& nodeHandle):
-        rocoma::ControllerManagerOptions(timeStep, isRealRobot),
+        rocoma::ControllerManagerOptions(timeStep, isRealRobot, isCollectingLoggerData),
         nodeHandle(nodeHandle)
   {
 

@@ -264,7 +264,9 @@ bool ControllerManager::updateController() {
       lockController.unlock();
       return emergencyStop();
     }
-    signal_logger::logger->collectLoggerData();
+    if(isCollectingLoggerData_) {
+      signal_logger::logger->collectLoggerData();
+    }
   }
 
   // Controller is in emergency stop
@@ -276,7 +278,9 @@ bool ControllerManager::updateController() {
       lockEmergencyController.unlock();
       return emergencyStop();
     }
-    signal_logger::logger->collectLoggerData();
+    if(isCollectingLoggerData_) {
+      signal_logger::logger->collectLoggerData();
+    }
   }
 
   // Failproof controller is active
@@ -330,9 +334,10 @@ bool ControllerManager::emergencyStop() {
     }
 
     // Save logger data
-    signal_logger::logger->stopLogger();
-    signal_logger::logger->saveLoggerData( {signal_logger::LogFileType::BINARY} );
-
+    if(isCollectingLoggerData_) {
+      signal_logger::logger->stopLogger();
+      signal_logger::logger->saveLoggerData({signal_logger::LogFileType::BINARY});
+    }
     if(activeControllerPair_.emgcyController_ != nullptr &&
         !activeControllerPair_.emgcyController_->isBeingStopped()) {
 
@@ -342,10 +347,14 @@ bool ControllerManager::emergencyStop() {
         std::unique_lock<std::mutex> lockEmergencyController(emergencyControllerMutex_);
         // Init emergency controller fast
         success = activeControllerPair_.emgcyController_->initializeControllerFast(timeStep_);
-        signal_logger::logger->startLogger();
+        if(isCollectingLoggerData_) {
+          signal_logger::logger->startLogger();
+        }
         // only advance if correctly initialized
         success = success && activeControllerPair_.emgcyController_->advanceController(timeStep_);
-        signal_logger::logger->collectLoggerData();
+        if(isCollectingLoggerData_) {
+          signal_logger::logger->collectLoggerData();
+        }
       }
 
       if(success)
@@ -628,8 +637,10 @@ bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
     oldController->setIsBeingStopped(true);
     oldController->preStopController();
     // Save logger data
-    signal_logger::logger->stopLogger();
-    signal_logger::logger->saveLoggerData( {signal_logger::LogFileType::BINARY} );
+    if(isCollectingLoggerData_) {
+      signal_logger::logger->stopLogger();
+      signal_logger::logger->saveLoggerData({signal_logger::LogFileType::BINARY});
+    }
   }
 
   /** NOTE:
@@ -653,8 +664,10 @@ bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
   }
 
   // Start Logging
-  signal_logger::logger->updateLogger();
-  signal_logger::logger->startLogger();
+  if(isCollectingLoggerData_) {
+    signal_logger::logger->updateLogger();
+    signal_logger::logger->startLogger();
+  }
 
   // Set the newController as active controller as soon as the controller is initialized
   if ( newController->isControllerInitialized() ) {
