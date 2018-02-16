@@ -64,7 +64,7 @@ struct ControllerManagerOptions {
   }
 
   //! Constructor
-  ControllerManagerOptions(const double timeStep, const bool isRealRobot, const bool isCollectingLoggerData = true):
+  ControllerManagerOptions(const double timeStep, const bool isRealRobot, const bool isCollectingLoggerData):
     timeStep(timeStep),
     isRealRobot(isRealRobot),
     isCollectingLoggerData(isCollectingLoggerData)
