@@ -342,14 +342,16 @@ bool ControllerManager::emergencyStop() {
         std::unique_lock<std::mutex> lockEmergencyController(emergencyControllerMutex_);
         // Init emergency controller fast
         success = activeControllerPair_.emgcyController_->initializeControllerFast(timeStep_);
-        signal_logger::logger->startLogger();
         // only advance if correctly initialized
         success = success && activeControllerPair_.emgcyController_->advanceController(timeStep_);
-        signal_logger::logger->collectLoggerData();
       }
 
       if(success)
       {
+        // Start logger
+        signal_logger::logger->startLogger();
+        signal_logger::logger->collectLoggerData();
+
         // Switch to emergency state
         activeControllerState_ = State::EMERGENCY;
         this->notifyControllerChanged(activeControllerPair_.emgcyControllerName_);
@@ -369,6 +371,10 @@ bool ControllerManager::emergencyStop() {
       std::unique_lock<std::mutex> lockWorkerManager(workerManagerMutex_);
       workerManager_.addWorker(stopWorkerOptions, true);
     }
+
+    // Stop the logger
+    signal_logger::logger->stopLogger();
+    signal_logger::logger->saveLoggerData( {signal_logger::LogFileType::BINARY} );
   }
 
   // Advance failproof controller
@@ -627,6 +633,10 @@ bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
   if(oldController != nullptr) {
     oldController->setIsBeingStopped(true);
     oldController->preStopController();
+  }
+
+  // Stop logger if running
+  if(signal_logger::logger->isRunning()) {
     // Save logger data
     signal_logger::logger->stopLogger();
     signal_logger::logger->saveLoggerData( {signal_logger::LogFileType::BINARY} );
