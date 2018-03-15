@@ -625,6 +625,14 @@ bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
                                                roco::ControllerAdapterInterface * oldController,
                                                roco::ControllerAdapterInterface * newController,
                                                std::promise<SwitchResponse> & response_promise) {
+
+  // Stop logger if running
+  if(signal_logger::logger->isRunning()) {
+    // Save logger data
+    signal_logger::logger->stopLogger();
+    signal_logger::logger->saveLoggerData( {signal_logger::LogFileType::BINARY} );
+  }
+
   /** NOTE:
    * 1. The active controller is not blocked -> by definition there can be no data races between advance and preStop
    * 2. Set this oldController to beeing stopped to prevent a switch to it
@@ -633,13 +641,6 @@ bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
   if(oldController != nullptr) {
     oldController->setIsBeingStopped(true);
     oldController->preStopController();
-  }
-
-  // Stop logger if running
-  if(signal_logger::logger->isRunning()) {
-    // Save logger data
-    signal_logger::logger->stopLogger();
-    signal_logger::logger->saveLoggerData( {signal_logger::LogFileType::BINARY} );
   }
 
   /** NOTE:
