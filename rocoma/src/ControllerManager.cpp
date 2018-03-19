@@ -268,7 +268,6 @@ bool ControllerManager::updateController() {
       return emergencyStop();
     }
     if(autoCollectLoggerData_) {
-      MELO_WARN("Autocollect on!");
       signal_logger::logger->collectLoggerData();
     }
   }
@@ -283,7 +282,6 @@ bool ControllerManager::updateController() {
       return emergencyStop();
     }
     if(autoCollectLoggerData_) {
-      MELO_WARN("Autocollect on!");
       signal_logger::logger->collectLoggerData();
     }
   }
