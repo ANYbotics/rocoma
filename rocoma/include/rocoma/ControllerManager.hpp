@@ -57,15 +57,17 @@ struct ControllerManagerOptions {
   //! Default Constructor
   ControllerManagerOptions():
     timeStep(0.01),
-    isRealRobot(false)
+    isRealRobot(false),
+    autoCollectLoggerData(true)
   {
 
   }
 
   //! Constructor
-  ControllerManagerOptions(const double timeStep, const bool isRealRobot):
+  ControllerManagerOptions(const double timeStep, const bool isRealRobot, const bool autoCollectLoggerData=true):
     timeStep(timeStep),
-    isRealRobot(isRealRobot)
+    isRealRobot(isRealRobot),
+    autoCollectLoggerData(autoCollectLoggerData)
   {
 
   }
@@ -74,6 +76,8 @@ struct ControllerManagerOptions {
   double timeStep;
   //! Simulation flag
   bool isRealRobot;
+  //! Signal logger auto-collect flag
+  bool autoCollectLoggerData;
 };
 
 //! Implementation of a controllermanager for adater interfaces
@@ -136,7 +140,8 @@ class ControllerManager
    * @param isRealRobot simulation flag
    */
   ControllerManager(const double timestep,
-                    const bool isRealRobot);
+                    const bool isRealRobot,
+                    const bool autoCollectLoggerData=true);
 
   /**
    * @brief Constructor
@@ -298,6 +303,9 @@ class ControllerManager
 
   //! Flag to differ between simulation and real robot
   std::atomic<bool> isRealRobot_;
+
+  //! Flag to differ between simulation and real robot
+  std::atomic<bool> autoCollectLoggerData_;
 
   //! Current controller state
   std::atomic<State> activeControllerState_;

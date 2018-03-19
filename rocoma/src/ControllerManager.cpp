@@ -47,7 +47,8 @@
 namespace rocoma {
 
 ControllerManager::ControllerManager(const double timestep,
-                                     const bool isRealRobot):
+                                     const bool isRealRobot,
+                                     const bool autoCollectLoggerData):
                                   //    updating_(false),
                                   //    timerStart_(),
                                   //    timerStop_(),
@@ -55,6 +56,7 @@ ControllerManager::ControllerManager(const double timestep,
                                       isInitialized_(true),
                                       timeStep_(timestep),
                                       isRealRobot_(isRealRobot),
+                                      autoCollectLoggerData_(autoCollectLoggerData),
                                       activeControllerState_(State::FAILURE),
                                       workerManager_(),
                                       controllers_(),
@@ -86,13 +88,13 @@ ControllerManager::ControllerManager(const double timestep,
  * @param options Configuration Options of the manager
  */
 ControllerManager::ControllerManager(const ControllerManagerOptions & options):
-        ControllerManager(options.timeStep, options.isRealRobot)
+        ControllerManager(options.timeStep, options.isRealRobot, options.autoCollectLoggerData)
 {
 
 }
 
 ControllerManager::ControllerManager():
-        ControllerManager(0.01, false)
+        ControllerManager(0.01, false, true)
 {
   // Hack
   isInitialized_ = false;
@@ -104,13 +106,14 @@ ControllerManager::~ControllerManager()
 
 void ControllerManager::init(const ControllerManagerOptions & options)
 {
-  if(isInitialized_) {
+  if (isInitialized_) {
     MELO_WARN("[Rocoma] Controller Manager was already initialized. Do nothing.");
     return;
   }
 
   timeStep_ = options.timeStep;
   isRealRobot_ = options.isRealRobot;
+  autoCollectLoggerData_ = options.autoCollectLoggerData;
   isInitialized_ = true;
 }
 
@@ -264,7 +267,10 @@ bool ControllerManager::updateController() {
       lockController.unlock();
       return emergencyStop();
     }
-    signal_logger::logger->collectLoggerData();
+    if(autoCollectLoggerData_) {
+      MELO_WARN("Autocollect on!");
+      signal_logger::logger->collectLoggerData();
+    }
   }
 
   // Controller is in emergency stop
@@ -276,7 +282,10 @@ bool ControllerManager::updateController() {
       lockEmergencyController.unlock();
       return emergencyStop();
     }
-    signal_logger::logger->collectLoggerData();
+    if(autoCollectLoggerData_) {
+      MELO_WARN("Autocollect on!");
+      signal_logger::logger->collectLoggerData();
+    }
   }
 
   // Failproof controller is active
