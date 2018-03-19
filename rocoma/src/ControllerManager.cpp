@@ -663,8 +663,7 @@ bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
   }
 
   // Start Logging
-  signal_logger::logger->updateLogger();
-  signal_logger::logger->startLogger();
+  signal_logger::logger->startLogger(true);
 
   // Set the newController as active controller as soon as the controller is initialized
   if ( newController->isControllerInitialized() ) {
