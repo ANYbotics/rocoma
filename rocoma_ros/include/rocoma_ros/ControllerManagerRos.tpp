@@ -27,10 +27,11 @@ ControllerManagerRos<State_,Command_>::ControllerManagerRos( const std::string &
                                                              const std::string & scopedCommandName,
                                                              const double timeStep,
                                                              const bool isRealRobot,
-                                                             const ros::NodeHandle& nodeHandle):
+                                                             const ros::NodeHandle& nodeHandle,
+                                                             const rocoma::LoggerOptions loggerOptions):
       ControllerManagerRos()
 {
-  this->init(ControllerManagerRosOptions(timeStep, isRealRobot, nodeHandle));
+  this->init(ControllerManagerRosOptions(timeStep, isRealRobot, nodeHandle, loggerOptions));
 }
 
 template<typename State_, typename Command_>
@@ -41,13 +42,6 @@ ControllerManagerRos<State_,Command_>::ControllerManagerRos( const std::string &
 {
   this->init(options);
 }
-
-
-template<typename State_, typename Command_>
-ControllerManagerRos<State_,Command_>::~ControllerManagerRos() {
-
-}
-
 
 template<typename State_, typename Command_>
 void ControllerManagerRos<State_,Command_>::init(const ControllerManagerRosOptions & options) {
@@ -313,7 +307,7 @@ bool ControllerManagerRos<State_,Command_>::setupSharedModules(const std::vector
     }
     sharedModule->setName(sharedModuleOption.name_);
     sharedModule->setParameterPath(sharedModuleOption.parameterPath_);
-    if( sharedModule->create(timeStep_) ) {
+    if( sharedModule->create(options_.timeStep) ) {
       this->addSharedModule( roco::SharedModulePtr(sharedModule) );
     }
     else {
