@@ -46,28 +46,8 @@ namespace rocoma {
 ControllerManager::ControllerManager(const double timestep,
                                      const bool isRealRobot,
                                      const LoggerOptions& loggerOptions):
-                                  //    updating_(false),
-                                  //    timerStart_(),
-                                  //    timerStop_(),
-                                  //    minimalRealtimeFactor_(2.0),
-                                      isInitialized_(true),
-                                      options_{timestep, isRealRobot, loggerOptions},
-                                      activeControllerState_(State::FAILURE),
-                                      workerManager_(),
-                                      controllers_(),
-                                      emergencyControllers_(),
-                                      sharedModules_(),
-                                      controllerPairs_(),
-                                      activeControllerPair_(nullptr, nullptr),
-                                      failproofController_(nullptr),
-                                      controllerMutex_(),
-                                      emergencyControllerMutex_(),
-                                      failproofControllerMutex_(),
-                                      emergencyStopMutex_(),
-                                      updateControllerMutex_(),
-                                      switchControllerMutex_(),
-                                      workerManagerMutex_(),
-                                      activeControllerMutex_()
+  ControllerManager(ControllerManagerOptions{timestep, isRealRobot, loggerOptions})
+
 {
   //  any_worker::WorkerOptions checkTimingWorkerOptions;
   //  checkTimingWorkerOptions.name_ = "check_timing";
@@ -83,7 +63,28 @@ ControllerManager::ControllerManager(const double timestep,
  * @param options Configuration Options of the manager
  */
 ControllerManager::ControllerManager(const ControllerManagerOptions & options):
-        ControllerManager(options.timeStep, options.isRealRobot, options.loggerOptions)
+//    updating_(false),
+//    timerStart_(),
+//    timerStop_(),
+//    minimalRealtimeFactor_(2.0),
+  isInitialized_(true),
+  options_(options),
+  activeControllerState_(State::FAILURE),
+  workerManager_(),
+  controllers_(),
+  emergencyControllers_(),
+  sharedModules_(),
+  controllerPairs_(),
+  activeControllerPair_(nullptr, nullptr),
+  failproofController_(nullptr),
+  controllerMutex_(),
+  emergencyControllerMutex_(),
+  failproofControllerMutex_(),
+  emergencyStopMutex_(),
+  updateControllerMutex_(),
+  switchControllerMutex_(),
+  workerManagerMutex_(),
+  activeControllerMutex_()
 {
 
 }
