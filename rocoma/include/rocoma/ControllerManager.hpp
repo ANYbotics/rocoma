@@ -39,6 +39,9 @@
 // any_worker
 #include <any_worker/WorkerManager.hpp>
 
+// Signal logger
+#include <signal_logger/signal_logger.hpp>
+
 // STL
 #include <vector>
 #include <string>
@@ -51,29 +54,79 @@
 #include <future>
 
 namespace rocoma {
+//! Signal logger options
+struct LoggerOptions {
+  //! Constructor
+  LoggerOptions() = default;
+
+  //! Copy constructor
+  LoggerOptions(const LoggerOptions& other) :
+      enable{other.enable.load()},
+      updateOnStart{other.updateOnStart.load()},
+      fileTypes{other.fileTypes}
+  {
+  }
+
+  //! Copy assignement
+  LoggerOptions& operator=(const LoggerOptions& other) {
+    enable.store(other.enable.load());
+    updateOnStart.store(other.updateOnStart.load());
+    fileTypes = other.fileTypes;
+    return *this;
+  }
+
+  //! Rocoma should handle the logger (start, stop, update)
+  std::atomic<bool> enable{true};
+  //! If true, the logger start is delayed until the logger data is saved and the logger was updated
+  std::atomic<bool> updateOnStart{true};
+  //! Log file types
+  signal_logger::LogFileTypeSet fileTypes{signal_logger::LogFileType::BINARY};
+};
 
 //! Options struct to initialize manager
 struct ControllerManagerOptions {
   //! Default Constructor
   ControllerManagerOptions():
     timeStep(0.01),
-    isRealRobot(false)
+    isRealRobot(false),
+    loggerOptions()
   {
 
   }
 
   //! Constructor
-  ControllerManagerOptions(const double timeStep, const bool isRealRobot):
+  ControllerManagerOptions(const double timeStep,
+                           const bool isRealRobot,
+                           const LoggerOptions loggerOptions = LoggerOptions()):
     timeStep(timeStep),
-    isRealRobot(isRealRobot)
+    isRealRobot(isRealRobot),
+    loggerOptions(loggerOptions)
   {
 
   }
 
+  //! Copy constructor
+  ControllerManagerOptions(const ControllerManagerOptions& other) :
+      timeStep{other.timeStep.load()},
+      isRealRobot{other.isRealRobot.load()},
+      loggerOptions{other.loggerOptions}
+  {
+  }
+
+  //! Copy assignement
+  ControllerManagerOptions& operator=(const ControllerManagerOptions& other) {
+    timeStep.store(other.timeStep.load());
+    isRealRobot.store(other.isRealRobot.load());
+    loggerOptions = other.loggerOptions;
+    return *this;
+  }
+
   //! Controller update rate
-  double timeStep;
+  std::atomic<double> timeStep;
   //! Simulation flag
-  bool isRealRobot;
+  std::atomic<bool> isRealRobot;
+  //! Signal logger options
+  LoggerOptions loggerOptions;
 };
 
 //! Implementation of a controllermanager for adater interfaces
@@ -135,8 +188,9 @@ class ControllerManager
    * @param timestep    controller timestep
    * @param isRealRobot simulation flag
    */
-  ControllerManager(const double timestep,
-                    const bool isRealRobot);
+  ControllerManager(double timestep,
+                    bool isRealRobot,
+                    const LoggerOptions & loggerOptions = LoggerOptions());
 
   /**
    * @brief Constructor
@@ -145,7 +199,7 @@ class ControllerManager
   ControllerManager(const ControllerManagerOptions & options);
 
   //! Destructor
-  virtual ~ControllerManager();
+  virtual ~ControllerManager() = default;
 
   /**
    * @brief Initializes the controller manager
@@ -290,14 +344,11 @@ class ControllerManager
   //  std::condition_variable timerStop_;
   //  std::atomic<double> minimalRealtimeFactor_;
 
-  //! Flag to differ between simulation and real robot
+  //! True, iff initialized
   std::atomic<bool> isInitialized_;
 
-  //! Controller timestep (equal for all controllers)
-  std::atomic<double> timeStep_;
-
-  //! Flag to differ between simulation and real robot
-  std::atomic<bool> isRealRobot_;
+  //! Options
+  ControllerManagerOptions options_;
 
   //! Current controller state
   std::atomic<State> activeControllerState_;

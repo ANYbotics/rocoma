@@ -34,9 +34,6 @@
 // rocoma
 #include "rocoma/ControllerManager.hpp"
 
-// Signal logger
-#include <signal_logger/signal_logger.hpp>
-
 // Message logger
 #include "message_logger/message_logger.hpp"
 
@@ -47,30 +44,10 @@
 namespace rocoma {
 
 ControllerManager::ControllerManager(const double timestep,
-                                     const bool isRealRobot):
-                                  //    updating_(false),
-                                  //    timerStart_(),
-                                  //    timerStop_(),
-                                  //    minimalRealtimeFactor_(2.0),
-                                      isInitialized_(true),
-                                      timeStep_(timestep),
-                                      isRealRobot_(isRealRobot),
-                                      activeControllerState_(State::FAILURE),
-                                      workerManager_(),
-                                      controllers_(),
-                                      emergencyControllers_(),
-                                      sharedModules_(),
-                                      controllerPairs_(),
-                                      activeControllerPair_(nullptr, nullptr),
-                                      failproofController_(nullptr),
-                                      controllerMutex_(),
-                                      emergencyControllerMutex_(),
-                                      failproofControllerMutex_(),
-                                      emergencyStopMutex_(),
-                                      updateControllerMutex_(),
-                                      switchControllerMutex_(),
-                                      workerManagerMutex_(),
-                                      activeControllerMutex_()
+                                     const bool isRealRobot,
+                                     const LoggerOptions& loggerOptions):
+  ControllerManager(ControllerManagerOptions{timestep, isRealRobot, loggerOptions})
+
 {
   //  any_worker::WorkerOptions checkTimingWorkerOptions;
   //  checkTimingWorkerOptions.name_ = "check_timing";
@@ -86,31 +63,46 @@ ControllerManager::ControllerManager(const double timestep,
  * @param options Configuration Options of the manager
  */
 ControllerManager::ControllerManager(const ControllerManagerOptions & options):
-        ControllerManager(options.timeStep, options.isRealRobot)
+//    updating_(false),
+//    timerStart_(),
+//    timerStop_(),
+//    minimalRealtimeFactor_(2.0),
+  isInitialized_(true),
+  options_(options),
+  activeControllerState_(State::FAILURE),
+  workerManager_(),
+  controllers_(),
+  emergencyControllers_(),
+  sharedModules_(),
+  controllerPairs_(),
+  activeControllerPair_(nullptr, nullptr),
+  failproofController_(nullptr),
+  controllerMutex_(),
+  emergencyControllerMutex_(),
+  failproofControllerMutex_(),
+  emergencyStopMutex_(),
+  updateControllerMutex_(),
+  switchControllerMutex_(),
+  workerManagerMutex_(),
+  activeControllerMutex_()
 {
 
 }
 
 ControllerManager::ControllerManager():
-        ControllerManager(0.01, false)
+        ControllerManager(0.01, false, LoggerOptions())
 {
   // Hack
   isInitialized_ = false;
 }
 
-ControllerManager::~ControllerManager()
-{
-}
-
 void ControllerManager::init(const ControllerManagerOptions & options)
 {
-  if(isInitialized_) {
+  if (isInitialized_) {
     MELO_WARN("[Rocoma] Controller Manager was already initialized. Do nothing.");
     return;
   }
-
-  timeStep_ = options.timeStep;
-  isRealRobot_ = options.isRealRobot;
+  options_ = options;
   isInitialized_ = true;
 }
 
@@ -146,10 +138,10 @@ bool ControllerManager::addControllerPair(ControllerPtr&& controller,
   }
 
   // set properties
-  emergencyController->setIsRealRobot(isRealRobot_);
+  emergencyController->setIsRealRobot(options_.isRealRobot);
 
   // create emergency controller
-  if (!emergencyController->createController(timeStep_)) {
+  if (!emergencyController->createController(options_.timeStep)) {
     MELO_WARN_STREAM("[Rocoma][" << emgcyControllerName << "] Could not be created! Use failproof controller on emergency stop!");
     controllerPairs_.insert( std::pair< std::string, ControllerSetPtr >( controllerName,
                                                                          ControllerSetPtr(controllers_.at(controllerName).get(), nullptr) ) );
@@ -228,7 +220,7 @@ bool ControllerManager::setFailproofController(FailproofControllerPtr&& controll
   MELO_DEBUG_STREAM("[Rocoma][" << controllerName << "] Adding failproof controller!");
 
   // create controller
-  if (!controller->createController(timeStep_)) {
+  if (!controller->createController(options_.timeStep)) {
     MELO_ERROR_STREAM("[Rocoma][" << controllerName << "] Could not create failproof controller. Abort!");
     exit(-1);
   }
@@ -259,24 +251,22 @@ bool ControllerManager::updateController() {
   {
     // Advance "normal" controller -> if advance return false treat as emergency stop
     std::unique_lock<std::mutex> lockController(controllerMutex_);
-    if(!activeControllerPair_.controller_->advanceController(timeStep_))
+    if(!activeControllerPair_.controller_->advanceController(options_.timeStep))
     {
       lockController.unlock();
       return emergencyStop();
     }
-    signal_logger::logger->collectLoggerData();
   }
 
   // Controller is in emergency stop
   if(activeControllerState_ == State::EMERGENCY)
   {
     std::unique_lock<std::mutex> lockEmergencyController(emergencyControllerMutex_);
-    if(!activeControllerPair_.emgcyController_->advanceController(timeStep_))
+    if(!activeControllerPair_.emgcyController_->advanceController(options_.timeStep))
     {
       lockEmergencyController.unlock();
       return emergencyStop();
     }
-    signal_logger::logger->collectLoggerData();
   }
 
   // Failproof controller is active
@@ -284,7 +274,7 @@ bool ControllerManager::updateController() {
   {
     // returns void -> can never fail!
     std::unique_lock<std::mutex> lockFailproofCOntroller(failproofControllerMutex_);
-    failproofController_->advanceController(timeStep_);
+    failproofController_->advanceController(options_.timeStep);
   }
 
   //  // stop update
@@ -329,9 +319,11 @@ bool ControllerManager::emergencyStop() {
       workerManager_.addWorker(stopWorkerOptions, true);
     }
 
-    // Save logger data
-    signal_logger::logger->stopLogger();
-    signal_logger::logger->saveLoggerData( {signal_logger::LogFileType::BINARY} );
+    if(options_.loggerOptions.enable) {
+      // Save logger data
+      signal_logger::logger->stopLogger();
+      signal_logger::logger->saveLoggerData( options_.loggerOptions.fileTypes );
+    }
 
     if(activeControllerPair_.emgcyController_ != nullptr &&
         !activeControllerPair_.emgcyController_->isBeingStopped()) {
@@ -341,16 +333,17 @@ bool ControllerManager::emergencyStop() {
       {
         std::unique_lock<std::mutex> lockEmergencyController(emergencyControllerMutex_);
         // Init emergency controller fast
-        success = activeControllerPair_.emgcyController_->initializeControllerFast(timeStep_);
+        success = activeControllerPair_.emgcyController_->initializeControllerFast(options_.timeStep);
         // only advance if correctly initialized
-        success = success && activeControllerPair_.emgcyController_->advanceController(timeStep_);
+        success = success && activeControllerPair_.emgcyController_->advanceController(options_.timeStep);
       }
 
       if(success)
       {
         // Start logger
-        signal_logger::logger->startLogger();
-        signal_logger::logger->collectLoggerData();
+        if(options_.loggerOptions.enable){
+          signal_logger::logger->startLogger(options_.loggerOptions.updateOnStart);
+        }
 
         // Switch to emergency state
         activeControllerState_ = State::EMERGENCY;
@@ -365,23 +358,25 @@ bool ControllerManager::emergencyStop() {
   else {
     // stop emergency controller in a different thread
     stopWorkerOptions.name_ = "stop_controller_" + activeControllerPair_.emgcyControllerName_;
-    stopWorkerOptions.callback_ = std::bind(&ControllerManager::emergencyStopControllerWorker, this, std::placeholders::_1,
-                                            activeControllerPair_.emgcyController_, EmergencyStopType::FAILPROOF);
+    stopWorkerOptions.callback_ =
+        std::bind(&ControllerManager::emergencyStopControllerWorker, this, std::placeholders::_1,
+                  activeControllerPair_.emgcyController_, EmergencyStopType::FAILPROOF);
     {
       std::unique_lock<std::mutex> lockWorkerManager(workerManagerMutex_);
       workerManager_.addWorker(stopWorkerOptions, true);
     }
 
-    // Stop the logger
-    signal_logger::logger->stopLogger();
-    signal_logger::logger->saveLoggerData( {signal_logger::LogFileType::BINARY} );
+    if (options_.loggerOptions.enable) {
+      // Stop the logger
+      signal_logger::logger->stopLogger();
+      signal_logger::logger->saveLoggerData(options_.loggerOptions.fileTypes);
+    }
   }
-
   // Advance failproof controller
   {
     MELO_INFO("[Rocoma] Switched to failproof controller!");
         std::unique_lock<std::mutex> lockFailproofCOntroller(failproofControllerMutex_);
-    failproofController_->advanceController(timeStep_);
+    failproofController_->advanceController(options_.timeStep);
   }
 
   // Switch to failure state
@@ -590,10 +585,10 @@ bool ControllerManager::createController(const ControllerPtr & controller) {
   MELO_DEBUG_STREAM("[Rocoma][" << controllerName << "] Adding controller!");
 
   // Set controller properties
-  controller->setIsRealRobot(isRealRobot_);
+  controller->setIsRealRobot(options_.isRealRobot);
 
   // create controller
-  if (!controller->createController(timeStep_)) {
+  if (!controller->createController(options_.timeStep)) {
     MELO_ERROR_STREAM("[Rocoma][" << controllerName << "] Could not create controller!");
     return false;
   }
@@ -636,10 +631,10 @@ bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
   }
 
   // Stop logger if running
-  if(signal_logger::logger->isRunning()) {
+  if(options_.loggerOptions.enable && signal_logger::logger->isRunning()) {
     // Save logger data
     signal_logger::logger->stopLogger();
-    signal_logger::logger->saveLoggerData( {signal_logger::LogFileType::BINARY} );
+    signal_logger::logger->saveLoggerData( options_.loggerOptions.fileTypes );
   }
 
   /** NOTE:
@@ -656,15 +651,16 @@ bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
   roco::ControllerSwapStateInterfacePtr state(nullptr);
   if(oldController != nullptr) { oldController->getControllerSwapState(state); }
 
-  if(!newController->swapController(timeStep_, state)) {
+  if(!newController->swapController(options_.timeStep, state)) {
     MELO_ERROR_STREAM("[Rocoma][" << newController->getControllerName() << "] Could not swap. Not switching.");
     response_promise.set_value(SwitchResponse::ERROR);
     return false;
   }
 
   // Start Logging
-  signal_logger::logger->updateLogger();
-  signal_logger::logger->startLogger();
+  if(options_.loggerOptions.enable){
+    signal_logger::logger->startLogger(options_.loggerOptions.updateOnStart);
+  }
 
   // Set the newController as active controller as soon as the controller is initialized
   if ( newController->isControllerInitialized() ) {
