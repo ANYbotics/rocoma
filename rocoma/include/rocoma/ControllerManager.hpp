@@ -350,9 +350,6 @@ class ControllerManager
   //! Options
   ControllerManagerOptions options_;
 
-  //! No update call
-  std::atomic<unsigned long> noUpdateCalls_;
-
   //! Current controller state
   std::atomic<State> activeControllerState_;
 
