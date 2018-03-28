@@ -75,8 +75,8 @@ class ControllerImplementation: public Controller_ {
   ControllerImplementation():
     Controller(),
     state_(),
-    command_(),
     mutexState_(),
+    command_(),
     mutexCommand_()
   {
 

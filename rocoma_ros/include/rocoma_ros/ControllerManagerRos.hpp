@@ -125,8 +125,9 @@ struct ControllerManagerRosOptions : public rocoma::ControllerManagerOptions
   //! Constructor
   ControllerManagerRosOptions(const double timeStep,
                               const bool isRealRobot,
-                              const ros::NodeHandle& nodeHandle):
-        rocoma::ControllerManagerOptions(timeStep, isRealRobot),
+                              const ros::NodeHandle& nodeHandle,
+                              const rocoma::LoggerOptions loggerOptions = rocoma::LoggerOptions()):
+        rocoma::ControllerManagerOptions(timeStep, isRealRobot, loggerOptions),
         nodeHandle(nodeHandle)
   {
 
@@ -160,13 +161,15 @@ class ControllerManagerRos : public rocoma::ControllerManager {
    * @param timestep                Controller timestep
    * @param isRealRobot             Simulation flag
    * @param nodeHandle              Ros nodehandle
+   * @param loggerOptions           Logger options
    * @returns object of type ControllerManagerRos
    */
   ControllerManagerRos(const std::string & scopedStateName,
                        const std::string & scopedCommandName,
                        const double timeStep,
                        const bool isRealRobot,
-                       const ros::NodeHandle& nodeHandle);
+                       const ros::NodeHandle& nodeHandle,
+                       const rocoma::LoggerOptions loggerOptions = rocoma::LoggerOptions());
 
   /*! Constructor
    * @param options    Controller manager ros options
@@ -179,7 +182,7 @@ class ControllerManagerRos : public rocoma::ControllerManager {
                         const ControllerManagerRosOptions & options);
 
   //! Default destructor
-  virtual ~ControllerManagerRos();
+  ~ControllerManagerRos() override = default;
 
   //! Init Manager and ROS publishers and services.
   virtual void init(const ControllerManagerRosOptions & options);
