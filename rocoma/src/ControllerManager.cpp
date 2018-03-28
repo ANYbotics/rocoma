@@ -69,6 +69,7 @@ ControllerManager::ControllerManager(const ControllerManagerOptions & options):
 //    minimalRealtimeFactor_(2.0),
   isInitialized_(true),
   options_(options),
+  hasClearedEmergencyStop_(true),
   activeControllerState_(State::FAILURE),
   workerManager_(),
   controllers_(),

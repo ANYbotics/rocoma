@@ -249,6 +249,11 @@ class ControllerManager
   virtual void clearEmergencyStop();
 
   /**
+   * @brief Returns the emergency stop, controller switches are now allowed
+   */
+  bool hasClearedEmergencyStop() { return hasClearedEmergencyStop_; }
+
+  /**
    * @brief Tries to switch to a desired controller
    * @param controllerName    Name of the desired controller
    * @return result of the switching operation
