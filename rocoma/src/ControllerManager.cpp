@@ -232,6 +232,29 @@ bool ControllerManager::setFailproofController(FailproofControllerPtr&& controll
   return true;
 }
 
+bool ControllerManager::resetController() {
+  // Don't reset during update
+  std::unique_lock<std::mutex> lockUpdate(updateControllerMutex_);
+
+  // Controller is running
+  if(activeControllerState_ == State::OK)
+  {
+    // Advance "normal" controller -> if reset return false treat as emergency stop
+    std::unique_lock<std::mutex> lockController(controllerMutex_);
+    return activeControllerPair_.controller_->resetController(options_.timeStep);
+  }
+
+  // Controller is in emergency stop
+  if(activeControllerState_ == State::EMERGENCY)
+  {
+    std::unique_lock<std::mutex> lockEmergencyController(emergencyControllerMutex_);
+    return activeControllerPair_.emgcyController_->resetController(options_.timeStep);
+  }
+
+  // Failproof controller can not be reset
+  return true;
+}
+
 bool ControllerManager::updateController() {
 
   if(failproofController_.get() == nullptr) {

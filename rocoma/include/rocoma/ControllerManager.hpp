@@ -232,6 +232,12 @@ class ControllerManager
   bool setFailproofController(FailproofControllerPtr&& controller);
 
   /**
+   * @brief Reset the currently active controller
+   * @return true, if controller was reset successfully
+   */
+  bool resetController();
+
+  /**
    * @brief Advance the currently active controller
    * @return true, if controller was advanced successfully
    */
