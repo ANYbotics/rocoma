@@ -69,6 +69,7 @@ ControllerManager::ControllerManager(const ControllerManagerOptions & options):
 //    minimalRealtimeFactor_(2.0),
   isInitialized_(true),
   options_(options),
+  emergencyStopMustBeCleared_(false),
   hasClearedEmergencyStop_(true),
   activeControllerState_(State::FAILURE),
   workerManager_(),
@@ -287,7 +288,9 @@ bool ControllerManager::updateController() {
 
 bool ControllerManager::emergencyStop() {
   // Forbid controller switches
-  hasClearedEmergencyStop_.store(false);
+  if(emergencyStopMustBeCleared_){
+    hasClearedEmergencyStop_.store(false);
+  }
 
   MELO_ERROR("[Rocoma] Emergency Stop!");
   // Cannot call emergency stop twice simultaneously
@@ -660,7 +663,7 @@ bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
   roco::ControllerSwapStateInterfacePtr state(nullptr);
   if(oldController != nullptr) { oldController->getControllerSwapState(state); }
 
-  if(hasClearedEmergencyStop_.load()) {
+  if(hasClearedEmergencyStop()) {
     if(!newController->swapController(options_.timeStep, state)) {
       MELO_ERROR_STREAM("[Rocoma][" << newController->getControllerName() << "] Could not swap. Not switching.");
       response_promise.set_value(SwitchResponse::ERROR);
