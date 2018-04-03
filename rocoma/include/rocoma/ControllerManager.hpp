@@ -244,6 +244,21 @@ class ControllerManager
   bool emergencyStop();
 
   /**
+   * @brief Clears the emergency stop, controller switches are now allowed
+   */
+  virtual void clearEmergencyStop();
+
+  /**
+   * @brief Returns the emergency stop, controller switches are now allowed
+   */
+  bool hasClearedEmergencyStop() { return !emergencyStopMustBeCleared_ || hasClearedEmergencyStop_; }
+
+  /**
+   * @brief Sets whether emergency stop must be cleared
+   */
+  void emergencyStopMustBeCleared(bool emergencyStopMustBeCleared) { emergencyStopMustBeCleared_ = emergencyStopMustBeCleared; }
+
+  /**
    * @brief Tries to switch to a desired controller
    * @param controllerName    Name of the desired controller
    * @return result of the switching operation
@@ -349,6 +364,10 @@ class ControllerManager
 
   //! Options
   ControllerManagerOptions options_;
+
+  //! Flag indicating if emergency stop was cleared
+  std::atomic<bool> emergencyStopMustBeCleared_;
+  std::atomic<bool> hasClearedEmergencyStop_;
 
   //! Current controller state
   std::atomic<State> activeControllerState_;

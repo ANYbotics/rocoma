@@ -69,6 +69,8 @@ ControllerManager::ControllerManager(const ControllerManagerOptions & options):
 //    minimalRealtimeFactor_(2.0),
   isInitialized_(true),
   options_(options),
+  emergencyStopMustBeCleared_(false),
+  hasClearedEmergencyStop_(true),
   activeControllerState_(State::FAILURE),
   workerManager_(),
   controllers_(),
@@ -285,9 +287,14 @@ bool ControllerManager::updateController() {
 }
 
 bool ControllerManager::emergencyStop() {
+  // Forbid controller switches
+  if(emergencyStopMustBeCleared_){
+    hasClearedEmergencyStop_.store(false);
+  }
+
   MELO_ERROR("[Rocoma] Emergency Stop!");
-      // Cannot call emergency stop twice simultaniously
-      std::unique_lock<std::mutex> lockEmergencyStop(emergencyStopMutex_);
+  // Cannot call emergency stop twice simultaneously
+  std::unique_lock<std::mutex> lockEmergencyStop(emergencyStopMutex_);
 
   // Clean workers
   {
@@ -384,6 +391,11 @@ bool ControllerManager::emergencyStop() {
   this->notifyControllerChanged(failproofController_->getControllerName());
 
   return true;
+}
+
+void ControllerManager::clearEmergencyStop() {
+  MELO_INFO("[Rocoma] Cleared Emergency Stop.");
+  hasClearedEmergencyStop_.store(true);
 }
 
 ControllerManager::SwitchResponse ControllerManager::switchController(const std::string & controllerName) {
@@ -651,8 +663,14 @@ bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
   roco::ControllerSwapStateInterfacePtr state(nullptr);
   if(oldController != nullptr) { oldController->getControllerSwapState(state); }
 
-  if(!newController->swapController(options_.timeStep, state)) {
-    MELO_ERROR_STREAM("[Rocoma][" << newController->getControllerName() << "] Could not swap. Not switching.");
+  if(hasClearedEmergencyStop()) {
+    if(!newController->swapController(options_.timeStep, state)) {
+      MELO_ERROR_STREAM("[Rocoma][" << newController->getControllerName() << "] Could not swap. Not switching.");
+      response_promise.set_value(SwitchResponse::ERROR);
+      return false;
+    }
+  } else {
+    MELO_ERROR_STREAM("[Rocoma][" << newController->getControllerName() << "] Could not swap. Emergency stop was not cleared. Not switching.");
     response_promise.set_value(SwitchResponse::ERROR);
     return false;
   }
