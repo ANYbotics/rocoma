@@ -606,12 +606,12 @@ bool ControllerManagerRos<State_,Command_>::getActiveControllerService(rocoma_ms
 template<typename State_, typename Command_>
 void ControllerManagerRos<State_,Command_>::clearEmergencyStop() {
   rocoma::ControllerManager::clearEmergencyStop();
-  publishClearedEmergencyState(this->hasClearedEmergencyStop_);
+  publishClearedEmergencyState(this->hasClearedEmergencyStop());
 }
 
 template<typename State_, typename Command_>
 void ControllerManagerRos<State_,Command_>::notifyEmergencyStop(rocoma::ControllerManager::EmergencyStopType type) {
-  publishClearedEmergencyState(false);
+  publishClearedEmergencyState(this->hasClearedEmergencyStop());
 }
 
 template<typename State_, typename Command_>
