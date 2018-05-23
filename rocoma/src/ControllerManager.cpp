@@ -467,6 +467,12 @@ void ControllerManager::switchController(const std::string & controllerName,
                                                             std::placeholders::_1, nullptr, controllerPair->second.controller_, std::ref(response_promise));
         break;
       }
+      case State::NA:
+      {
+        MELO_ERROR_STREAM("[Rocoma] Can not switch controller! In State NA, should never happen!");
+        response_promise.set_value(SwitchResponse::NA);
+        return;
+      }
     }
 
     {
@@ -524,6 +530,11 @@ std::string ControllerManager::getActiveControllerName() {
     case State::FAILURE:
     {
       controllerName = "Failproof";
+      break;
+    }
+    case State::NA:
+    {
+      controllerName = "Not available";
       break;
     }
   }

@@ -137,14 +137,16 @@ class ControllerManager
   enum class SwitchResponse : int {
     NOTFOUND  = -2,
     ERROR     = -1,
-    RUNNING   =  0,
-    SWITCHING =  1
+    NA        =  0,
+    RUNNING   =  1,
+    SWITCHING =  2
   };
 
   //! Enumeration indicating the controller manager state
   enum class State : int {
-    FAILURE   = -1,
-    EMERGENCY =  0,
+    FAILURE   = -2,
+    EMERGENCY = -1,
+    NA        = 0,
     OK        =  1
   };
 

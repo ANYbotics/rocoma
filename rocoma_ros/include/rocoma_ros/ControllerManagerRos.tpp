@@ -586,6 +586,9 @@ bool ControllerManagerRos<State_,Command_>::switchControllerService(rocoma_msgs:
     case rocoma::ControllerManager::SwitchResponse::SWITCHING:
       res.status = res.STATUS_SWITCHED;
       break;
+    case rocoma::ControllerManager::SwitchResponse::NA:
+      res.status = res.STATUS_NA;
+      break;
   }
 
   return true;
