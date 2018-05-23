@@ -286,6 +286,12 @@ class ControllerManager
   std::string getActiveControllerName();
 
   /**
+   * @brief Get the current state of the manager
+   * @return state of the manager
+   */
+  State getControllerManagerState();
+
+  /**
    * @brief Cleanup all controllers
    * @return true, if successful emergency stop and all controllers are cleaned up
    */
@@ -339,6 +345,12 @@ class ControllerManager
    * @param type     Type of the emergency stop
    */
   virtual void notifyControllerChanged(const std::string & newControllerName) { }
+
+  /**
+   * @brief notify others of a controller state change (default: do nothing)
+   * @param state     New state of the emergency stop
+   */
+  virtual void notifyControllerManagerStateChanged(State state) { }
 
   /**
    * @brief Worker callback switching the controller

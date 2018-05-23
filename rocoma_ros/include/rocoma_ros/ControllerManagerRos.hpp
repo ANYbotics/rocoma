@@ -11,9 +11,8 @@
 #include "rocoma_msgs/GetAvailableControllers.h"
 #include "rocoma_msgs/SwitchController.h"
 #include "rocoma_msgs/GetActiveController.h"
-
-// any msgs
-#include "any_msgs/State.h"
+#include "rocoma_msgs/ControllerManagerState.h"
+#include "rocoma_msgs/ClearedEmergencyStopState.h"
 
 // std msgs
 #include "std_msgs/String.h"
@@ -319,12 +318,18 @@ class ControllerManagerRos : public rocoma::ControllerManager {
   /*! Inform other nodes (via message) when an emergency stop was triggered
    * @param type   type of the emergency stop
    */
-  void notifyEmergencyStop(rocoma::ControllerManager::EmergencyStopType type);
+  void notifyEmergencyStop(rocoma::ControllerManager::EmergencyStopType type) override;
+
+  /**
+   * @brief notify others of a controller state change (default: do nothing)
+   * @param state     New state of the emergency stop
+   */
+  void notifyControllerManagerStateChanged(State state) override;
 
   /*! Inform other nodes (via message) that the controller was switched
    * @param newControllerName   name of the "new" controller
    */
-  void notifyControllerChanged(const std::string & newControllerName);
+  void notifyControllerChanged(const std::string & newControllerName) override;
 
   /**
    * @brief Cleanup all controllers and ROS services and publishers.
@@ -343,10 +348,14 @@ class ControllerManagerRos : public rocoma::ControllerManager {
    */
   void publishActiveController(std::string activeController);
 
-  /*! Publish on the cleared emergency stop topic
-   * @param isOk   publish isOk on topic
+  /*! Publish the current controller manager state.
    */
-  void publishClearedEmergencyState(bool isOk);
+  void publishControllerManagerState();
+
+  /*! Publish on the cleared emergency stop topic
+   * @param cleared   publish cleared value on topic
+   */
+  void publishClearedEmergencyState(bool cleared);
 
  private:
   //! Init flag
@@ -369,10 +378,15 @@ class ControllerManagerRos : public rocoma::ControllerManager {
   //! Active controller message
   std_msgs::String activeControllerMsg_;
 
+  //! Controller manager state publisher
+  ros::Publisher controllerManagerStatePublisher_;
+  //! Controller manager state message
+  rocoma_msgs::ControllerManagerState controllerManagerStateMsg_;
+
   //! Cleared emergency state publisher
   ros::Publisher clearedEmergencyStopStatePublisher_;
   //! Cleared emergency state message
-  any_msgs::State clearedEmergencyStopStateMsg_;
+  rocoma_msgs::ClearedEmergencyStopState clearedEmergencyStopStateMsg_;
 
   //! Failproof controller class loader
   pluginlib::ClassLoader< rocoma_plugin::FailproofControllerPluginInterface<State_, Command_> > failproofControllerLoader_;

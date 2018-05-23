@@ -12,7 +12,6 @@
   <depend>rocoma</depend>
   <depend>rocoma_msgs</depend>
   <depend>rocoma_plugin</depend>
-  <depend>any_msgs</depend>
   <depend>pluginlib</depend>
   <depend>roslib</depend>
   <depend>std_srvs</depend>
