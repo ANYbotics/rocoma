@@ -355,6 +355,7 @@ bool ControllerManager::emergencyStop() {
         // Switch to emergency state
         activeControllerState_ = State::EMERGENCY;
         this->notifyControllerChanged(activeControllerPair_.emgcyControllerName_);
+        this->notifyControllerManagerStateChanged(activeControllerState_.load());
 
         // Return here -> do not move on to failproof controller
         return true;
@@ -382,13 +383,14 @@ bool ControllerManager::emergencyStop() {
   // Advance failproof controller
   {
     MELO_INFO("[Rocoma] Switched to failproof controller!");
-        std::unique_lock<std::mutex> lockFailproofCOntroller(failproofControllerMutex_);
+    std::unique_lock<std::mutex> lockFailproofController(failproofControllerMutex_);
     failproofController_->advanceController(options_.timeStep);
   }
 
   // Switch to failure state
   activeControllerState_ = State::FAILURE;
   this->notifyControllerChanged(failproofController_->getControllerName());
+  this->notifyControllerManagerStateChanged(activeControllerState_.load());
 
   return true;
 }
@@ -465,6 +467,12 @@ void ControllerManager::switchController(const std::string & controllerName,
                                                             std::placeholders::_1, nullptr, controllerPair->second.controller_, std::ref(response_promise));
         break;
       }
+      case State::NA:
+      {
+        MELO_ERROR_STREAM("[Rocoma] Can not switch controller! In State NA, should never happen!");
+        response_promise.set_value(SwitchResponse::NA);
+        return;
+      }
     }
 
     {
@@ -524,9 +532,18 @@ std::string ControllerManager::getActiveControllerName() {
       controllerName = "Failproof";
       break;
     }
+    case State::NA:
+    {
+      controllerName = "Not available";
+      break;
+    }
   }
 
   return controllerName;
+}
+
+ControllerManager::State ControllerManager::getControllerManagerState() {
+  return activeControllerState_;
 }
 
 bool ControllerManager::cleanup() {
@@ -703,6 +720,7 @@ bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
 
     MELO_INFO("[Rocoma] Switched to controller %s", activeControllerPair_.controllerName_.c_str());
     this->notifyControllerChanged(activeControllerPair_.controllerName_);
+    this->notifyControllerManagerStateChanged(activeControllerState_.load());
     response_promise.set_value(SwitchResponse::SWITCHING);
     return true;
   }
