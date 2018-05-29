@@ -286,7 +286,7 @@ bool ControllerManager::updateController() {
   return true;
 }
 
-bool ControllerManager::emergencyStop() {
+bool ControllerManager::emergencyStop(EmergencyStopType eStopType) {
   // Forbid controller switches
   if(emergencyStopMustBeCleared_){
     hasClearedEmergencyStop_.store(false);
@@ -317,10 +317,16 @@ bool ControllerManager::emergencyStop() {
 
   // If state ok and emergency controller registered -> switch to emergency controller
   if(activeControllerState_ == State::OK) {
+
+    if(eStopType == EmergencyStopType::EMERGENCY && (activeControllerPair_.emgcyController_ == nullptr ||
+        activeControllerPair_.emgcyController_->isBeingStopped())) {
+      eStopType = EmergencyStopType::FAILPROOF;
+    }
+
     // stop controller in a different thread
     stopWorkerOptions.name_ = "stop_controller_" + activeControllerPair_.controllerName_;
     stopWorkerOptions.callback_ = std::bind(&ControllerManager::emergencyStopControllerWorker, this, std::placeholders::_1,
-                                            activeControllerPair_.controller_, EmergencyStopType::EMERGENCY);
+                                            activeControllerPair_.controller_, eStopType);
     {
       std::unique_lock<std::mutex> lockWorkerManager(workerManagerMutex_);
       workerManager_.addWorker(stopWorkerOptions, true);
@@ -332,11 +338,8 @@ bool ControllerManager::emergencyStop() {
       signal_logger::logger->saveLoggerData( options_.loggerOptions.fileTypes );
     }
 
-    if(activeControllerPair_.emgcyController_ != nullptr &&
-        !activeControllerPair_.emgcyController_->isBeingStopped()) {
-
+    if(eStopType == EmergencyStopType::EMERGENCY) {
       bool success = true;
-
       {
         std::unique_lock<std::mutex> lockEmergencyController(emergencyControllerMutex_);
         // Init emergency controller fast
