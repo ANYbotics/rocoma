@@ -99,8 +99,7 @@ void ControllerManagerRos<State_,Command_>::init(const ControllerManagerRosOptio
   std::string topic_name_notify_controller_manager_state{"notify_controller_manager_state"};
   nodeHandle_.getParam("publishers/notify_controller_manager_state/topic", topic_name_notify_controller_manager_state);
   controllerManagerStatePublisher_ = nodeHandle_.advertise<rocoma_msgs::ControllerManagerState>(topic_name_notify_controller_manager_state, 1, true);
-  publishClearedEmergencyState(true);
-
+  publishControllerManagerState();
 
   std::string topic_name_notify_cleared_emergency_stop{"notify_cleared_emergency_stop"};
   nodeHandle_.getParam("publishers/notify_cleared_emergency_stop/topic", topic_name_notify_cleared_emergency_stop);
