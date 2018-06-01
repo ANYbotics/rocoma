@@ -240,10 +240,16 @@ class ControllerManager
   bool updateController();
 
   /**
-   * @brief Prestop and stop controller
-   * @return true, if both stopping procedures where successful
+   * @brief Go to emergency controller if it exists
+   * @return true, iff successful
    */
-  bool emergencyStop();
+  bool emergencyStop() { return emergencyStop(EmergencyStopType::EMERGENCY); }
+
+  /**
+   * @brief Go to failproof controller
+   * @return true, iff successful
+   */
+  bool failproofStop() { return emergencyStop(EmergencyStopType::FAILPROOF); }
 
   /**
    * @brief Clears the emergency stop, controller switches are now allowed
@@ -318,6 +324,13 @@ class ControllerManager
   //   */
   //  bool checkTimingWorker(const any_worker::WorkerEvent& event);
  protected:
+  /**
+   * @brief Prestop and stop controller
+   * @param failproofStop Should always switch to failproof
+   * @return true, if both stopping procedures where successful
+   */
+  bool emergencyStop(EmergencyStopType eStopType);
+
   /**
    * @brief Try to create controller
    * @param controller  Const reference to unique_ptr to the controller
