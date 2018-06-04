@@ -292,7 +292,16 @@ bool ControllerManager::emergencyStop(EmergencyStopType eStopType) {
     hasClearedEmergencyStop_.store(false);
   }
 
+  if(activeControllerState_ == State::OK &&
+      eStopType == EmergencyStopType::EMERGENCY &&
+      (activeControllerPair_.emgcyController_ == nullptr || activeControllerPair_.emgcyController_->isBeingStopped())) {
+    eStopType = EmergencyStopType::FAILPROOF;
+  }
+
   MELO_ERROR("[Rocoma] Emergency Stop!");
+  // notify emergency stop
+  notifyEmergencyStop(eStopType);
+
   // Cannot call emergency stop twice simultaneously
   std::unique_lock<std::mutex> lockEmergencyStop(emergencyStopMutex_);
 
@@ -317,11 +326,6 @@ bool ControllerManager::emergencyStop(EmergencyStopType eStopType) {
 
   // If state ok and emergency controller registered -> switch to emergency controller
   if(activeControllerState_ == State::OK) {
-
-    if(eStopType == EmergencyStopType::EMERGENCY && (activeControllerPair_.emgcyController_ == nullptr ||
-        activeControllerPair_.emgcyController_->isBeingStopped())) {
-      eStopType = EmergencyStopType::FAILPROOF;
-    }
 
     // stop controller in a different thread
     stopWorkerOptions.name_ = "stop_controller_" + activeControllerPair_.controllerName_;
@@ -633,9 +637,6 @@ bool ControllerManager::emergencyStopControllerWorker(const any_worker::WorkerEv
                                                       EmergencyStopType emgcyStopType)
 {
   bool success = true;
-
-  // notify emergency stop
-  notifyEmergencyStop(emgcyStopType);
 
   {
     // Stop controller and block -> switch controller can not happen while controller is stopped
