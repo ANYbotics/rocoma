@@ -9,8 +9,8 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
   FILES
   ActiveControllerName.msg
-  ClearedEmergencyStopState.msg
   ControllerManagerState.msg
+  EmergencyStop.msg
 )
 
 add_service_files(

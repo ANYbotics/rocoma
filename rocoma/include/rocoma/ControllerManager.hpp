@@ -42,6 +42,9 @@
 // Signal logger
 #include <signal_logger/signal_logger.hpp>
 
+// Boost
+#include <boost/thread/shared_mutex.hpp>
+
 // STL
 #include <vector>
 #include <string>
@@ -54,31 +57,19 @@
 #include <future>
 
 namespace rocoma {
+
 //! Signal logger options
 struct LoggerOptions {
   //! Constructor
   LoggerOptions() = default;
 
   //! Copy constructor
-  LoggerOptions(const LoggerOptions& other) :
-      enable{other.enable.load()},
-      updateOnStart{other.updateOnStart.load()},
-      fileTypes{other.fileTypes}
-  {
-  }
-
-  //! Copy assignement
-  LoggerOptions& operator=(const LoggerOptions& other) {
-    enable.store(other.enable.load());
-    updateOnStart.store(other.updateOnStart.load());
-    fileTypes = other.fileTypes;
-    return *this;
-  }
+  LoggerOptions(const LoggerOptions& other) = default;
 
   //! Rocoma should handle the logger (start, stop, update)
-  std::atomic<bool> enable{true};
+  bool enable{true};
   //! If true, the logger start is delayed until the logger data is saved and the logger was updated
-  std::atomic<bool> updateOnStart{true};
+  bool updateOnStart{true};
   //! Log file types
   signal_logger::LogFileTypeSet fileTypes{signal_logger::LogFileType::BINARY};
 };
@@ -86,47 +77,19 @@ struct LoggerOptions {
 //! Options struct to initialize manager
 struct ControllerManagerOptions {
   //! Default Constructor
-  ControllerManagerOptions():
-    timeStep(0.01),
-    isRealRobot(false),
-    loggerOptions()
-  {
-
-  }
-
-  //! Constructor
-  ControllerManagerOptions(const double timeStep,
-                           const bool isRealRobot,
-                           const LoggerOptions loggerOptions = LoggerOptions()):
-    timeStep(timeStep),
-    isRealRobot(isRealRobot),
-    loggerOptions(loggerOptions)
-  {
-
-  }
+  ControllerManagerOptions() = default;
 
   //! Copy constructor
-  ControllerManagerOptions(const ControllerManagerOptions& other) :
-      timeStep{other.timeStep.load()},
-      isRealRobot{other.isRealRobot.load()},
-      loggerOptions{other.loggerOptions}
-  {
-  }
-
-  //! Copy assignement
-  ControllerManagerOptions& operator=(const ControllerManagerOptions& other) {
-    timeStep.store(other.timeStep.load());
-    isRealRobot.store(other.isRealRobot.load());
-    loggerOptions = other.loggerOptions;
-    return *this;
-  }
+  ControllerManagerOptions(const ControllerManagerOptions& other) = default;
 
   //! Controller update rate
-  std::atomic<double> timeStep;
+  double timeStep{0.01};
   //! Simulation flag
-  std::atomic<bool> isRealRobot;
+  bool isRealRobot{false};
   //! Signal logger options
-  LoggerOptions loggerOptions;
+  LoggerOptions loggerOptions{};
+  //! Emergency stop has to cleared
+  bool emergencyStopMustBeCleared{false};
 };
 
 //! Implementation of a controllermanager for adater interfaces
@@ -142,7 +105,7 @@ class ControllerManager
     SWITCHING =  2
   };
 
-  //! Enumeration indicating the controller manager state
+  //! Enumeration indicating the state of control
   enum class State : int {
     FAILURE   = -2,
     EMERGENCY = -1,
@@ -152,8 +115,9 @@ class ControllerManager
 
   //! Enumeration indicating the emergency stop type
   enum class EmergencyStopType : int {
-    FAILPROOF   = -1,
-    EMERGENCY   =  0
+    FAILPROOF   = -2,
+    EMERGENCY   = -1,
+    NA          = 0
   };
 
  protected:
@@ -163,8 +127,8 @@ class ControllerManager
                      roco::EmergencyControllerAdapterInterface * emgcyController):
                        controller_(controller),
                        emgcyController_(emgcyController),
-                       controllerName_(controller?controller->getControllerName():"none"),
-                       emgcyControllerName_(emgcyController?emgcyController->getControllerName():"none")
+                       controllerName_(controller ? controller->getControllerName().c_str() : "none"),
+                       emgcyControllerName_(emgcyController ? emgcyController->getControllerName().c_str() : "none")
     {
     }
 
@@ -187,18 +151,9 @@ class ControllerManager
 
   /**
    * @brief Constructor
-   * @param timestep    controller timestep
-   * @param isRealRobot simulation flag
-   */
-  ControllerManager(double timestep,
-                    bool isRealRobot,
-                    const LoggerOptions & loggerOptions = LoggerOptions());
-
-  /**
-   * @brief Constructor
    * @param options Configuration Options of the manager
    */
-  ControllerManager(const ControllerManagerOptions & options);
+  explicit ControllerManager(const ControllerManagerOptions & options);
 
   //! Destructor
   virtual ~ControllerManager() = default;
@@ -259,12 +214,7 @@ class ControllerManager
   /**
    * @brief Returns the emergency stop, controller switches are now allowed
    */
-  bool hasClearedEmergencyStop() { return !emergencyStopMustBeCleared_ || hasClearedEmergencyStop_; }
-
-  /**
-   * @brief Sets whether emergency stop must be cleared
-   */
-  void emergencyStopMustBeCleared(bool emergencyStopMustBeCleared) { emergencyStopMustBeCleared_ = emergencyStopMustBeCleared; }
+  bool hasClearedEmergencyStop() const;
 
   /**
    * @brief Tries to switch to a desired controller
@@ -285,19 +235,19 @@ class ControllerManager
    * @brief Get a vector of all available controller names
    * @return vector of the available controller names
    */
-  std::vector<std::string> getAvailableControllerNames();
+  std::vector<std::string> getAvailableControllerNames() const;
 
   /**
    * @brief Get the current controller name
    * @return name of the currently active controller
    */
-  std::string getActiveControllerName();
+  std::string getActiveControllerName() const;
 
   /**
    * @brief Get the current state of the manager
    * @return state of the manager
    */
-  State getControllerManagerState();
+  State getControllerManagerState() const;
 
   /**
    * @brief Cleanup all controllers
@@ -317,12 +267,8 @@ class ControllerManager
    * @param moduleName The name of the shared module
    * @return true if a module with this name was already added
    */
-  bool hasSharedModule(const std::string & moduleName);
+  bool hasSharedModule(const std::string & moduleName) const;
 
-  //  /**
-  //   * @brief Check timing and perform emergency stop on violation
-  //   */
-  //  bool checkTimingWorker(const any_worker::WorkerEvent& event);
  protected:
   /**
    * @brief Prestop and stop controller
@@ -356,48 +302,44 @@ class ControllerManager
   virtual void notifyEmergencyStop(EmergencyStopType type) { }
 
   /**
-   * @brief notify others of the emergency stop (default: do nothing)
-   * @param type     Type of the emergency stop
+   * @brief notify others of a controller change (default: do nothing)
+   * @param newControllerName  Name of the new controller
    */
   virtual void notifyControllerChanged(const std::string & newControllerName) { }
 
   /**
    * @brief notify others of a controller state change (default: do nothing)
-   * @param state     New state of the emergency stop
+   * @param state     New state of the manager
+   * @param clearedEmergencyStop     Emergency stop is cleared
    */
-  virtual void notifyControllerManagerStateChanged(State state) { }
+  virtual void notifyControllerManagerStateChanged(State state, bool clearedEmergencyStop) { }
 
   /**
    * @brief Worker callback switching the controller
    * @param event        Worker event
    * @param oldController   Pointer to the controller that is currently active
    * @param newController   Pointer to the controller that shall be switched to
+   * @param previousState   To check if eStop was encountered
    * @return true, if controller switching was successful
    */
   bool switchControllerWorker(const any_worker::WorkerEvent& event,
                               roco::ControllerAdapterInterface * oldController,
                               roco::ControllerAdapterInterface * newController,
+                              State previousState,
                               std::promise<SwitchResponse> & response_promise);
 
  protected:
-  //! Conditional variables for measuring execution time
-  //  std::atomic_bool updating_;
-  //  std::condition_variable timerStart_;
-  //  std::condition_variable timerStop_;
-  //  std::atomic<double> minimalRealtimeFactor_;
-
   //! True, iff initialized
   std::atomic<bool> isInitialized_;
 
   //! Options
   ControllerManagerOptions options_;
 
-  //! Flag indicating if emergency stop was cleared
-  std::atomic<bool> emergencyStopMustBeCleared_;
-  std::atomic<bool> hasClearedEmergencyStop_;
-
-  //! Current controller state
-  std::atomic<State> activeControllerState_;
+  //! Controller manager state
+  mutable boost::shared_mutex stateMutex_;
+  State state_;
+  mutable boost::shared_mutex clearedEmergencyStopMutex_;
+  bool clearedEmergencyStop_;
 
   //! Stopping controllers
   any_worker::WorkerManager workerManager_;
@@ -420,16 +362,21 @@ class ControllerManager
   std::mutex emergencyControllerMutex_;
   //! Failproof Controller Mutex
   std::mutex failproofControllerMutex_;
+  //! Mutex protecting active controller
+  mutable std::mutex activeControllerMutex_;
+  //! Mutex protecting shared modules
+  mutable std::mutex sharedModulesMutex_;
+
   //! Mutex protecting emergency stop function call
-  std::mutex emergencyStopMutex_;
+  mutable std::mutex emergencyStopMutex_;
   //! Mutex protecting update Controller function call
   std::mutex updateControllerMutex_;
   //! Mutex protecting switch Controller function call
   std::mutex switchControllerMutex_;
+
   //! Mutex protecting worker manager
   std::mutex workerManagerMutex_;
-  //! Mutex protecting active controller
-  std::mutex activeControllerMutex_;
+
 
 };
 

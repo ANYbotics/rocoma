@@ -6,3 +6,4 @@ int8 STATE_OK = 1           # Controller is active
 
 time stamp
 int8 state
+bool estop_cleared

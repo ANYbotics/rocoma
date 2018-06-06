@@ -12,7 +12,7 @@
 #include "rocoma_msgs/SwitchController.h"
 #include "rocoma_msgs/GetActiveController.h"
 #include "rocoma_msgs/ControllerManagerState.h"
-#include "rocoma_msgs/ClearedEmergencyStopState.h"
+#include "rocoma_msgs/EmergencyStop.h"
 
 // std msgs
 #include "std_msgs/String.h"
@@ -40,70 +40,32 @@ namespace rocoma_ros {
 
 //! Struct to simplify the adding of a module (controller / shared module)
 struct ManagedModuleOptions {
+  //! Default Constructor
+  ManagedModuleOptions() = default;
 
-  ManagedModuleOptions():
-      pluginName_(""),
-      name_(""),
-      parameterPath_(""),
-      isRos_(false)
-  {
+  //! Copy Constructor
+  ManagedModuleOptions(const ManagedModuleOptions& other) = default;
 
-  }
-
-  /*! Constructor
-   * @param pluginName          Name of the module plugin
-   * @param name                Name of the module
-   * @param parameterPath       Path from which module loads parameters
-   * @param isRos               True if the module is ros dependent
-   * @returns object of type    ManagedModuleOptions
-   */
-  ManagedModuleOptions(const std::string & pluginName,
-                       const std::string & name,
-                       const std::string & parameterPath,
-                       const bool isRos):
-      pluginName_(pluginName),
-      name_(name),
-      parameterPath_(parameterPath),
-      isRos_(isRos)
-  {
-
-  }
-
+  //! Name of the plugin
   std::string pluginName_;
+  //! Name of the controller within rocoma
   std::string name_;
+  //! Path of the parameter files
   std::string parameterPath_;
+  //! Flag if controller is of ros type
   bool isRos_;
 };
 
 
 //! Struct to simplify the adding of a controller pair
 struct ManagedControllerOptions : public ManagedModuleOptions {
+  //! Default Constructor
+  ManagedControllerOptions() = default;
 
-  ManagedControllerOptions():
-    ManagedModuleOptions(),
-    sharedModuleNames_{ }
-  {
+  //! Copy Constructor
+  ManagedControllerOptions(const ManagedControllerOptions& other) = default;
 
-  }
-  /*! Constructor
-   * @param pluginName          Name of the controller plugin
-   * @param name                Name of the controller
-   * @param parameterPath       Path from which controller loads parameters
-   * @param isRos               True if the controller is of type ControllerRosPlugin
-   * @param sharedModuleNames   Plugin names of the shared modules to be added to this controller
-   * @returns object of type ManagedControllerOptions
-   */
-  ManagedControllerOptions(const std::string & pluginName,
-                           const std::string & name,
-                           const std::string & parameterPath,
-                           const bool isRos,
-                           const std::vector<std::string> & sharedModuleNames = { }):
-    ManagedModuleOptions(pluginName, name, parameterPath, isRos),
-    sharedModuleNames_(sharedModuleNames)
-  {
-
-  }
-
+  //! Names of shared modules
   std::vector<std::string> sharedModuleNames_;
 };
 
@@ -114,26 +76,13 @@ using ManagedControllerOptionsPair = std::pair<ManagedControllerOptions, Managed
 struct ControllerManagerRosOptions : public rocoma::ControllerManagerOptions
 {
   //! Default Constructor
-  ControllerManagerRosOptions():
-        rocoma::ControllerManagerOptions(),
-        nodeHandle(ros::NodeHandle())
-  {
+  ControllerManagerRosOptions() = default;
 
-  }
-
-  //! Constructor
-  ControllerManagerRosOptions(const double timeStep,
-                              const bool isRealRobot,
-                              const ros::NodeHandle& nodeHandle,
-                              const rocoma::LoggerOptions loggerOptions = rocoma::LoggerOptions()):
-        rocoma::ControllerManagerOptions(timeStep, isRealRobot, loggerOptions),
-        nodeHandle(nodeHandle)
-  {
-
-  }
+  //! Copy Constructor
+  ControllerManagerRosOptions(const ControllerManagerRosOptions& other) = default;
 
   //! Ros node handle
-  ros::NodeHandle nodeHandle;
+  ros::NodeHandle nodeHandle{};
 };
 
 //! Extension of the Controller Manager to ROS
@@ -153,22 +102,6 @@ class ControllerManagerRos : public rocoma::ControllerManager {
    */
   ControllerManagerRos( const std::string & scopedStateName,
                         const std::string & scopedCommandName);
-
-  /*! Constructor
-   * @param scopedStateName         Name of the robot state class, including namespaces  (e.g. "myStatePkg::State")
-   * @param scopedCommandName       Name of the robot command class, including namespaces  (e.g. "myCommandPkg::Command")
-   * @param timestep                Controller timestep
-   * @param isRealRobot             Simulation flag
-   * @param nodeHandle              Ros nodehandle
-   * @param loggerOptions           Logger options
-   * @returns object of type ControllerManagerRos
-   */
-  ControllerManagerRos(const std::string & scopedStateName,
-                       const std::string & scopedCommandName,
-                       const double timeStep,
-                       const bool isRealRobot,
-                       const ros::NodeHandle& nodeHandle,
-                       const rocoma::LoggerOptions loggerOptions = rocoma::LoggerOptions());
 
   /*! Constructor
    * @param options    Controller manager ros options
@@ -324,7 +257,7 @@ class ControllerManagerRos : public rocoma::ControllerManager {
    * @brief notify others of a controller state change (default: do nothing)
    * @param state     New state of the emergency stop
    */
-  void notifyControllerManagerStateChanged(State state) override;
+  void notifyControllerManagerStateChanged(State state, bool emergencyStopCleared) override;
 
   /*! Inform other nodes (via message) that the controller was switched
    * @param newControllerName   name of the "new" controller
@@ -335,7 +268,7 @@ class ControllerManagerRos : public rocoma::ControllerManager {
    * @brief Cleanup all controllers and ROS services and publishers.
    * @return true, if successful emergency stop and all controllers are cleaned up
    */
-  virtual bool cleanup();
+  bool cleanup() override;
 
   /**
    * @brief Clears the emergency stop, controller switches are now allowed
@@ -350,12 +283,12 @@ class ControllerManagerRos : public rocoma::ControllerManager {
 
   /*! Publish the current controller manager state.
    */
-  void publishControllerManagerState();
+  void publishControllerManagerState(State state, bool emergencyStopCleared);
 
-  /*! Publish on the cleared emergency stop topic
-   * @param cleared   publish cleared value on topic
+  /*! Publish on the emergency stop topic
+   * @param type type of emergency stop
    */
-  void publishClearedEmergencyState(bool cleared);
+  void publishEmergencyState(rocoma::ControllerManager::EmergencyStopType type);
 
  private:
   //! Init flag
@@ -383,10 +316,10 @@ class ControllerManagerRos : public rocoma::ControllerManager {
   //! Controller manager state message
   rocoma_msgs::ControllerManagerState controllerManagerStateMsg_;
 
-  //! Cleared emergency state publisher
-  ros::Publisher clearedEmergencyStopStatePublisher_;
-  //! Cleared emergency state message
-  rocoma_msgs::ClearedEmergencyStopState clearedEmergencyStopStateMsg_;
+  //! Emergency state publisher
+  ros::Publisher emergencyStopStatePublisher_;
+  //! Emergency state message
+  rocoma_msgs::EmergencyStop emergencyStopStateMsg_;
 
   //! Failproof controller class loader
   pluginlib::ClassLoader< rocoma_plugin::FailproofControllerPluginInterface<State_, Command_> > failproofControllerLoader_;
