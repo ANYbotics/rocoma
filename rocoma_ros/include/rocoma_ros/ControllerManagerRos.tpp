@@ -13,6 +13,7 @@ ControllerManagerRos<State_,Command_>::ControllerManagerRos( const std::string &
                                                              nodeHandle_(),
                                                              switchControllerService_(),
                                                              emergencyStopService_(),
+                                                             failproofStopService_(),
                                                              clearEmergencyStopService_(),
                                                              getAvailableControllersService_(),
                                                              getActiveControllerService_(),
@@ -73,6 +74,10 @@ void ControllerManagerRos<State_,Command_>::init(const ControllerManagerRosOptio
   nodeHandle_.getParam("servers/emergency_stop/service", service_name_emergency_stop);
   emergencyStopService_ = nodeHandle_.advertiseService(service_name_emergency_stop, &ControllerManagerRos::emergencyStopService, this);
 
+  std::string service_name_failproof_stop{"controller_manager/failproof_stop"};
+  nodeHandle_.getParam("servers/failproof_stop/service", service_name_failproof_stop);
+  failproofStopService_ = nodeHandle_.advertiseService(service_name_failproof_stop, &ControllerManagerRos::failproofStopService, this);
+
   std::string service_name_clear_emergency_stop{"controller_manager/clear_emergency_stop"};
   nodeHandle_.getParam("servers/clear_emergency_stop/service", service_name_clear_emergency_stop);
   clearEmergencyStopService_ = nodeHandle_.advertiseService(service_name_clear_emergency_stop, &ControllerManagerRos::clearEmergencyStopService, this);
@@ -103,6 +108,7 @@ void ControllerManagerRos<State_,Command_>::shutdown() {
   getAvailableControllersService_.shutdown();
   getActiveControllerService_.shutdown();
   emergencyStopService_.shutdown();
+  failproofStopService_.shutdown();
   clearEmergencyStopService_.shutdown();
   controllerManagerStatePublisher_.shutdown();
   emergencyStopStatePublisher_.shutdown();
@@ -545,6 +551,14 @@ bool ControllerManagerRos<State_,Command_>::emergencyStopService(std_srvs::Trigg
   res.success = this->emergencyStop();
   return true;
 }
+
+template<typename State_, typename Command_>
+bool ControllerManagerRos<State_,Command_>::failproofStopService(std_srvs::Trigger::Request& req,
+                                                                 std_srvs::Trigger::Response& res) {
+  res.success = this->failproofStop();
+  return true;
+}
+
 
 template<typename State_, typename Command_>
 bool ControllerManagerRos<State_,Command_>::clearEmergencyStopService(std_srvs::Trigger::Request& req,

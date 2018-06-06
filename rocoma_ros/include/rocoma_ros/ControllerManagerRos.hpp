@@ -214,6 +214,15 @@ class ControllerManagerRos : public rocoma::ControllerManager {
   bool emergencyStopService(std_srvs::Trigger::Request  &req,
                             std_srvs::Trigger::Response &res);
 
+  /*! Failproof stop service callback, triggers an emergency stop of the current controller
+   * @param req   empty request
+   * @param res   empty response
+   * @return true iff successful
+   */
+  bool failproofStopService(std_srvs::Trigger::Request  &req,
+                            std_srvs::Trigger::Response &res);
+
+
   /*! Clear emergency stop service callback
    * @param req   empty request
    * @param res   empty response
@@ -299,6 +308,8 @@ class ControllerManagerRos : public rocoma::ControllerManager {
   ros::ServiceServer switchControllerService_;
   //! Emergency stop service
   ros::ServiceServer emergencyStopService_;
+  //! Failproof stop service
+  ros::ServiceServer failproofStopService_;
   //! Clear emergency stop service
   ros::ServiceServer clearEmergencyStopService_;
   //! Get available controllers service
