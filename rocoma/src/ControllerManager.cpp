@@ -388,10 +388,13 @@ bool ControllerManager::emergencyStop(EmergencyStopType eStopType) {
 
 void ControllerManager::clearEmergencyStop() {
   //! Important order (deadlocks!!!)
-  std::unique_lock<std::mutex> lockEmergencyStop(emergencyStopMutex_);
-  boost::unique_lock<boost::shared_mutex> lockClearEstop(clearedEmergencyStopMutex_);
+  {
+    std::unique_lock<std::mutex> lockEmergencyStop(emergencyStopMutex_);
+    boost::unique_lock<boost::shared_mutex> lockClearEstop(clearedEmergencyStopMutex_);
+    clearedEmergencyStop_ = true;
+  }
   MELO_INFO("[Rocoma] Cleared Emergency Stop.");
-  clearedEmergencyStop_ = true;
+  notifyControllerManagerStateChanged(this->getControllerManagerState(), this->hasClearedEmergencyStop());
 }
 
 bool ControllerManager::hasClearedEmergencyStop() const {
@@ -660,11 +663,9 @@ bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
                                                std::promise<SwitchResponse> & response_promise) {
   /** NOTE:
    * 1. The active controller is not blocked -> by definition there can be no data races between advance and preStop
-   * 2. Set this oldController to beeing stopped to prevent a switch to it
    */
   // shutdown communication for active controller
   if(oldController != nullptr) {
-    oldController->setIsBeingStopped(true);
     oldController->preStopController();
   }
 
@@ -677,7 +678,7 @@ bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
 
   /** NOTE:
    * 1. newController is not running (we would have returned in switchController already)
-   * 2. newController can not be and emergency controller of the currently running controller
+   * 2. newController can not be an emergency controller of the currently running controller
    * 3. newController could be being stopped by a different thread at the moment (wait for completion)
    */
   if(newController->isBeingStopped()) {
@@ -694,11 +695,15 @@ bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
     MELO_ERROR_STREAM("[Rocoma][" << newController->getControllerName() <<
                                   "] Could not swap. Not switching, current controller is running in pre-stopped mode.");
     // Note controller will continue to run in prestop mode, assuming that this is still valid
-    if(oldController != nullptr) { oldController->stopController(); }
+    // Stop new controller could have messed up internal state
+    newController->preStopController();
+    newController->stopController();
+
     // Start Logging
     if(options_.loggerOptions.enable){
       signal_logger::logger->startLogger(options_.loggerOptions.updateOnStart);
     }
+
     response_promise.set_value(SwitchResponse::ERROR);
     return false;
   }
@@ -722,9 +727,11 @@ bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
         activeControllerPair_ = controllerPairs_.at(newController->getControllerName());
         state_ = State::OK;
       } else {
+        // Stop the new controller
+        newController->preStopController();
+        newController->stopController();
         MELO_ERROR_STREAM("[Rocoma][" << newController->getControllerName() <<
                                       "] Could not switch. Emergency stop detected.");
-        if(oldController != nullptr) { oldController->stopController(); }
         response_promise.set_value(SwitchResponse::ERROR);
         return false;
       }
@@ -733,7 +740,6 @@ bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
     // stop old controller
     if(oldController != nullptr) {
       oldController->stopController();
-      oldController->setIsBeingStopped(false);
     }
 
     MELO_INFO("[Rocoma] Switched to controller %s", activeControllerPair_.controllerName_.c_str());
@@ -744,6 +750,9 @@ bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
     return true;
   }
   else {
+    // Stop the new controller
+    newController->preStopController();
+    newController->stopController();
     // switch to freeze controller
     emergencyStop();
     MELO_ERROR_STREAM("[Rocoma][" << newController->getControllerName() <<
