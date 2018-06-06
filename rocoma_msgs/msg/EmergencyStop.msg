@@ -1,7 +1,3 @@
-# E-Stop States
-int8 ESTOP_FAILURE = -2     # Failproof stop
-int8 ESTOP_EMERGENCY = -1   # Emergency stop
-int8 ESTOP_NA = 0           # Not available (init state)
-
+# Set to true and false to trigger estop
 time stamp
-int8 estop_state
+bool trigger

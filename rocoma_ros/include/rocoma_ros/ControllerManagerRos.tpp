@@ -91,7 +91,7 @@ void ControllerManagerRos<State_,Command_>::init(const ControllerManagerRosOptio
   std::string topic_name_notify_emergency_stop{"notify_emergency_stop"};
   nodeHandle_.getParam("publishers/notify_emergency_stop/topic", topic_name_notify_emergency_stop);
   emergencyStopStatePublisher_ = nodeHandle_.advertise<rocoma_msgs::EmergencyStop>(topic_name_notify_emergency_stop, 1, true);
-  publishEmergencyState(ControllerManager::EmergencyStopType::NA);
+  publishEmergencyState(false);
 
   // Set init flag
   isInitializedRos_ = true;
@@ -602,7 +602,8 @@ void ControllerManagerRos<State_,Command_>::clearEmergencyStop() {
 
 template<typename State_, typename Command_>
 void ControllerManagerRos<State_,Command_>::notifyEmergencyStop(rocoma::ControllerManager::EmergencyStopType type) {
-  publishEmergencyState(type);
+  publishEmergencyState(true);
+  publishEmergencyState(false);
 }
 
 template<typename State_, typename Command_>
@@ -637,10 +638,10 @@ void ControllerManagerRos<State_,Command_>::publishControllerManagerState(State 
 }
 
 template<typename State_, typename Command_>
-void ControllerManagerRos<State_,Command_>::publishEmergencyState(rocoma::ControllerManager::EmergencyStopType type) {
+void ControllerManagerRos<State_,Command_>::publishEmergencyState(bool trigger) {
   // Fill msg
   emergencyStopStateMsg_.stamp = ros::Time::now();
-  emergencyStopStateMsg_.estop_state = static_cast<int8_t>(type);
+  emergencyStopStateMsg_.trigger = trigger;
 
   // Publish message
   emergencyStopStatePublisher_.publish( emergencyStopStateMsg_ );

@@ -288,7 +288,7 @@ class ControllerManagerRos : public rocoma::ControllerManager {
   /*! Publish on the emergency stop topic
    * @param type type of emergency stop
    */
-  void publishEmergencyState(rocoma::ControllerManager::EmergencyStopType type);
+  void publishEmergencyState(bool type);
 
  private:
   //! Init flag
