@@ -279,11 +279,6 @@ class ControllerManagerRos : public rocoma::ControllerManager {
    */
   bool cleanup() override;
 
-  /**
-   * @brief Clears the emergency stop, controller switches are now allowed
-   */
-  void clearEmergencyStop() override;
-
  private:
   /*! Publish the active controller.
    * @param activeController   active controller name

@@ -56,7 +56,7 @@ ControllerManager::ControllerManager(const ControllerManagerOptions & options):
   stateMutex_(),
   state_{State::FAILURE},
   clearedEmergencyStopMutex_(),
-  clearedEmergencyStop_{false},
+  clearedEmergencyStop_{!options.emergencyStopMustBeCleared},
   workerManager_(),
   controllers_(),
   emergencyControllers_(),
@@ -84,6 +84,10 @@ void ControllerManager::init(const ControllerManagerOptions & options)
     return;
   }
   options_ = options;
+
+  boost::unique_lock<boost::shared_mutex> lock(clearedEmergencyStopMutex_);
+  clearedEmergencyStop_ = !options.emergencyStopMustBeCleared;
+
   isInitialized_ = true;
 }
 
@@ -388,13 +392,15 @@ bool ControllerManager::emergencyStop(EmergencyStopType eStopType) {
 
 void ControllerManager::clearEmergencyStop() {
   //! Important order (deadlocks!!!)
-  {
-    std::unique_lock<std::mutex> lockEmergencyStop(emergencyStopMutex_);
-    boost::unique_lock<boost::shared_mutex> lockClearEstop(clearedEmergencyStopMutex_);
+  std::unique_lock<std::mutex> lockEmergencyStop(emergencyStopMutex_);
+  boost::shared_lock<boost::shared_mutex> lockState(stateMutex_);
+  boost::unique_lock<boost::shared_mutex> lockClearEstop(clearedEmergencyStopMutex_);
+
+  if(!clearedEmergencyStop_) {
     clearedEmergencyStop_ = true;
+    MELO_INFO("[Rocoma] Cleared Emergency Stop.");
+    notifyControllerManagerStateChanged(state_, clearedEmergencyStop_);
   }
-  MELO_INFO("[Rocoma] Cleared Emergency Stop.");
-  notifyControllerManagerStateChanged(this->getControllerManagerState(), this->hasClearedEmergencyStop());
 }
 
 bool ControllerManager::hasClearedEmergencyStop() const {
