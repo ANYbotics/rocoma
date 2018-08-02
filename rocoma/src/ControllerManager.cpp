@@ -296,6 +296,7 @@ bool ControllerManager::emergencyStop(EmergencyStopType eStopType) {
   if(state_ == State::FAILURE)
   {
     MELO_DEBUG("[Rocoma] Failproof controller is already running on emergency stop!");
+    this->notifyControllerManagerStateChanged(state_, clearedEmergencyStop_);
     return true;
   }
 
