@@ -13,6 +13,7 @@ ControllerManagerRos<State_,Command_>::ControllerManagerRos( const std::string &
                                                              nodeHandle_(),
                                                              switchControllerService_(),
                                                              emergencyStopService_(),
+                                                             failproofStopService_(),
                                                              clearEmergencyStopService_(),
                                                              getAvailableControllersService_(),
                                                              getActiveControllerService_(),
@@ -20,8 +21,8 @@ ControllerManagerRos<State_,Command_>::ControllerManagerRos( const std::string &
                                                              activeControllerMsg_(),
                                                              controllerManagerStatePublisher_(),
                                                              controllerManagerStateMsg_(),
-                                                             clearedEmergencyStopStatePublisher_(),
-                                                             clearedEmergencyStopStateMsg_(),
+                                                             emergencyStopStatePublisher_(),
+                                                             emergencyStopStateMsg_(),
                                                              failproofControllerLoader_("rocoma_plugin", "rocoma_plugin::FailproofControllerPluginInterface<" + scopedStateName + ", " + scopedCommandName + ">"),
                                                              emergencyControllerLoader_("rocoma_plugin", "rocoma_plugin::EmergencyControllerPluginInterface<" + scopedStateName + ", " + scopedCommandName + ">"),
                                                              emergencyControllerRosLoader_("rocoma_plugin", "rocoma_plugin::EmergencyControllerRosPluginInterface<" + scopedStateName + ", " + scopedCommandName + ">"),
@@ -31,18 +32,6 @@ ControllerManagerRos<State_,Command_>::ControllerManagerRos( const std::string &
                                                              sharedModuleRosLoader_("rocoma_plugin", "rocoma_plugin::SharedModuleRosPluginInterface")
 {
 
-}
-
-template<typename State_, typename Command_>
-ControllerManagerRos<State_,Command_>::ControllerManagerRos( const std::string & scopedStateName,
-                                                             const std::string & scopedCommandName,
-                                                             const double timeStep,
-                                                             const bool isRealRobot,
-                                                             const ros::NodeHandle& nodeHandle,
-                                                             const rocoma::LoggerOptions loggerOptions):
-      ControllerManagerRos()
-{
-  this->init(ControllerManagerRosOptions(timeStep, isRealRobot, nodeHandle, loggerOptions));
 }
 
 template<typename State_, typename Command_>
@@ -85,10 +74,13 @@ void ControllerManagerRos<State_,Command_>::init(const ControllerManagerRosOptio
   nodeHandle_.getParam("servers/emergency_stop/service", service_name_emergency_stop);
   emergencyStopService_ = nodeHandle_.advertiseService(service_name_emergency_stop, &ControllerManagerRos::emergencyStopService, this);
 
+  std::string service_name_failproof_stop{"controller_manager/failproof_stop"};
+  nodeHandle_.getParam("servers/failproof_stop/service", service_name_failproof_stop);
+  failproofStopService_ = nodeHandle_.advertiseService(service_name_failproof_stop, &ControllerManagerRos::failproofStopService, this);
+
   std::string service_name_clear_emergency_stop{"controller_manager/clear_emergency_stop"};
   nodeHandle_.getParam("servers/clear_emergency_stop/service", service_name_clear_emergency_stop);
   clearEmergencyStopService_ = nodeHandle_.advertiseService(service_name_clear_emergency_stop, &ControllerManagerRos::clearEmergencyStopService, this);
-
 
   // initialize publishers
   std::string topic_name_notify_active_controller{"notify_active_controller"};
@@ -99,12 +91,12 @@ void ControllerManagerRos<State_,Command_>::init(const ControllerManagerRosOptio
   std::string topic_name_notify_controller_manager_state{"notify_controller_manager_state"};
   nodeHandle_.getParam("publishers/notify_controller_manager_state/topic", topic_name_notify_controller_manager_state);
   controllerManagerStatePublisher_ = nodeHandle_.advertise<rocoma_msgs::ControllerManagerState>(topic_name_notify_controller_manager_state, 1, true);
-  publishControllerManagerState();
+  publishControllerManagerState(this->getControllerManagerState(), this->hasClearedEmergencyStop());
 
-  std::string topic_name_notify_cleared_emergency_stop{"notify_cleared_emergency_stop"};
-  nodeHandle_.getParam("publishers/notify_cleared_emergency_stop/topic", topic_name_notify_cleared_emergency_stop);
-  clearedEmergencyStopStatePublisher_ = nodeHandle_.advertise<rocoma_msgs::ClearedEmergencyStopState>(topic_name_notify_cleared_emergency_stop, 1, true);
-  publishClearedEmergencyState(true);
+  std::string topic_name_notify_emergency_stop{"notify_emergency_stop"};
+  nodeHandle_.getParam("publishers/notify_emergency_stop/topic", topic_name_notify_emergency_stop);
+  emergencyStopStatePublisher_ = nodeHandle_.advertise<rocoma_msgs::EmergencyStop>(topic_name_notify_emergency_stop, 1, true);
+  publishEmergencyState(false);
 
   // Set init flag
   isInitializedRos_ = true;
@@ -116,9 +108,10 @@ void ControllerManagerRos<State_,Command_>::shutdown() {
   getAvailableControllersService_.shutdown();
   getActiveControllerService_.shutdown();
   emergencyStopService_.shutdown();
+  failproofStopService_.shutdown();
   clearEmergencyStopService_.shutdown();
   controllerManagerStatePublisher_.shutdown();
-  clearedEmergencyStopStatePublisher_.shutdown();
+  emergencyStopStatePublisher_.shutdown();
   activeControllerPublisher_.shutdown();
 }
 
@@ -560,6 +553,14 @@ bool ControllerManagerRos<State_,Command_>::emergencyStopService(std_srvs::Trigg
 }
 
 template<typename State_, typename Command_>
+bool ControllerManagerRos<State_,Command_>::failproofStopService(std_srvs::Trigger::Request& req,
+                                                                 std_srvs::Trigger::Response& res) {
+  res.success = this->failproofStop();
+  return true;
+}
+
+
+template<typename State_, typename Command_>
 bool ControllerManagerRos<State_,Command_>::clearEmergencyStopService(std_srvs::Trigger::Request& req,
                                                                       std_srvs::Trigger::Response& res) {
   this->clearEmergencyStop();
@@ -608,19 +609,14 @@ bool ControllerManagerRos<State_,Command_>::getActiveControllerService(rocoma_ms
 }
 
 template<typename State_, typename Command_>
-void ControllerManagerRos<State_,Command_>::clearEmergencyStop() {
-  rocoma::ControllerManager::clearEmergencyStop();
-  publishClearedEmergencyState(this->hasClearedEmergencyStop());
-}
-
-template<typename State_, typename Command_>
 void ControllerManagerRos<State_,Command_>::notifyEmergencyStop(rocoma::ControllerManager::EmergencyStopType type) {
-  publishClearedEmergencyState(this->hasClearedEmergencyStop());
+  publishEmergencyState(true);
+  publishEmergencyState(false);
 }
 
 template<typename State_, typename Command_>
-void ControllerManagerRos<State_,Command_>::notifyControllerManagerStateChanged(rocoma::ControllerManager::State state) {
-  publishControllerManagerState();
+void ControllerManagerRos<State_,Command_>::notifyControllerManagerStateChanged(rocoma::ControllerManager::State state, bool emergencyStopCleared) {
+  publishControllerManagerState(state, emergencyStopCleared);
 }
 
 template<typename State_, typename Command_>
@@ -639,23 +635,24 @@ void ControllerManagerRos<State_,Command_>::publishActiveController(
 };
 
 template<typename State_, typename Command_>
-void ControllerManagerRos<State_,Command_>::publishControllerManagerState() {
+void ControllerManagerRos<State_,Command_>::publishControllerManagerState(State state, bool emergencyStopCleared) {
   // Fill msg
   controllerManagerStateMsg_.stamp = ros::Time::now();
-  controllerManagerStateMsg_.state = static_cast<int8_t>(this->getControllerManagerState());
+  controllerManagerStateMsg_.state = static_cast<int8_t>(state);
+  controllerManagerStateMsg_.estop_cleared = emergencyStopCleared;
 
   // Publish message
   controllerManagerStatePublisher_.publish( controllerManagerStateMsg_ );
 }
 
 template<typename State_, typename Command_>
-void ControllerManagerRos<State_,Command_>::publishClearedEmergencyState(bool cleared) {
+void ControllerManagerRos<State_,Command_>::publishEmergencyState(bool trigger) {
   // Fill msg
-  clearedEmergencyStopStateMsg_.stamp = ros::Time::now();
-  clearedEmergencyStopStateMsg_.cleared = cleared;
+  emergencyStopStateMsg_.stamp = ros::Time::now();
+  emergencyStopStateMsg_.trigger = trigger;
 
   // Publish message
-  clearedEmergencyStopStatePublisher_.publish( clearedEmergencyStopStateMsg_ );
+  emergencyStopStatePublisher_.publish( emergencyStopStateMsg_ );
 }
 
 }
