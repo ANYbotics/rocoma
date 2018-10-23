@@ -107,6 +107,8 @@ class ControllerImplementation: public Controller_ {
 
   //! @returns the state of the robot.
   virtual const State& getState() const           { return *state_; }
+  //! @returns the command.
+  virtual State& getState()                       { return *state_; }
   //! @returns a mutex to protect access to the state.
   virtual boost::shared_mutex& getStateMutex()    { return *mutexState_; }
 
