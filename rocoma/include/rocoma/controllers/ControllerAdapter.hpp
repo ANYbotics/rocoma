@@ -42,9 +42,9 @@
 #pragma once
 
 // Roco
+#include "roco/controllers/controllers.hpp"
 #include "roco/model/CommandInterface.hpp"
 #include "roco/model/StateInterface.hpp"
-#include "roco/controllers/controllers.hpp"
 
 // Rocoma
 #include "rocoma/controllers/ControllerExtensionImplementation.hpp"
@@ -53,18 +53,17 @@
 #include <boost/thread.hpp>
 
 // STL
-#include <exception>
-#include <type_traits>
 #include <assert.h>
-#include <memory>
 #include <atomic>
-
+#include <exception>
+#include <memory>
+#include <type_traits>
 
 namespace rocoma {
 
-template<typename Controller_, typename State_, typename Command_>
-class ControllerAdapter: virtual public roco::ControllerAdapterInterface, public ControllerExtensionImplementation<Controller_, State_, Command_>
-{
+template <typename Controller_, typename State_, typename Command_>
+class ControllerAdapter : virtual public roco::ControllerAdapterInterface,
+                          public ControllerExtensionImplementation<Controller_, State_, Command_> {
  public:
   //! Convenience typedefs
   using Base = ControllerExtensionImplementation<Controller_, State_, Command_>;
@@ -74,102 +73,103 @@ class ControllerAdapter: virtual public roco::ControllerAdapterInterface, public
 
  public:
   //! Default constructor
-  ControllerAdapter():isBeingStopped_(false) { }
+  ControllerAdapter() = default;
 
   //! Default destructor
-  virtual ~ControllerAdapter() { }
+  ~ControllerAdapter() override = default;
 
   //! Implementation of the adapter interface (roco::ControllerAdapterInterface)
   /*! Adapts the adaptees create(dt) function.
    * @param dt  time step [s]
    * @returns true if successful
    */
-  virtual bool createController(double dt);
+  bool createController(double dt) override;
 
   /*! Adapts the adaptees initialize(dt) function.
    * @param dt  time step [s]
    * @returns true if successful
    */
-  virtual bool initializeController(double dt);
+  bool initializeController(double dt) override;
 
   /*! Adapts the adaptees advance(dt) function.
    * @param dt  time step [s]
    * @returns true if successful
    */
-  virtual bool advanceController(double dt);
+  bool advanceController(double dt) override;
 
   /*! Adapts the adaptees reset(dt) function.
    * @param dt  time step [s]
    * @returns true if successful
    */
-  virtual bool resetController(double dt);
+  bool resetController(double dt) override;
 
   /*! Adapts the adaptees prestop(dt) function.
    * @returns true if successful
    */
-  virtual bool preStopController();
+  bool preStopController() override;
 
   /*! Adapts the adaptees stop(dt) function.
    * @returns true if successful
    */
-  virtual bool stopController();
+  bool stopController() override;
 
   /*! Adapts the adaptees cleanup() function.
    * @returns true if successful
    */
-  virtual bool cleanupController();
+  bool cleanupController() override;
 
   /*! Adapts the adaptees swap() function.
    * @param dt  time step [s]
    * @param state  state of the previous controller
    * @returns true if successful
    */
-  virtual bool swapController(double dt, const roco::ControllerSwapStateInterfacePtr& swapState);
+  bool swapController(double dt, const roco::ControllerSwapStateInterfacePtr& swapState) override;
 
   /*! Use this method to get the state of the controller. Must be thread-safe parallel to advance.
    * @returns state
    */
-  virtual bool getControllerSwapState(roco::ControllerSwapStateInterfacePtr& swapState);
+  bool getControllerSwapState(roco::ControllerSwapStateInterfacePtr& swapState) override;
 
   /*! Use this method to set a shared module to the controller.
    * @param   module reference to module to be set
    * @returns true if successful
    */
-  virtual bool addControllerSharedModule(const roco::SharedModulePtr& module);
+  bool addControllerSharedModule(const roco::SharedModulePtr& module) override;
 
   /*! Sets if the real robot is controlled or only a simulated version.
    * @param flag indicating robot type
    */
-  virtual void setIsRealRobot(bool isRealRobot)
-  {
-    this->isRealRobot_ = isRealRobot;
-  }
+  void setIsRealRobot(bool isRealRobot) override { this->isRealRobot_ = isRealRobot; }
 
   /*! This function gets the name of the controller.
    * @returns controller name
    */
-  virtual const std::string& getControllerName() const
-  {
-    return this->getName();
-  }
+  const std::string& getControllerName() const override { return this->getName(); }
 
   /*! This function indicates whether the controller was initialized.
    * @returns true iff controller is initialized
    */
-  virtual bool isControllerInitialized() const
-  {
-    return this->isInitialized();
-  }
+  bool isControllerInitialized() const override { return this->isInitialized(); }
 
-  virtual void setIsBeingStopped(bool isBeingStopped)
-  {
-    isBeingStopped_ = isBeingStopped;
-  }
+  /*! This function indicates whether the controller is being stopped
+   * @returns true iff controller is being stopped
+   */
+  bool isBeingStopped() const override { return isBeingStopped_; }
 
-  virtual bool isBeingStopped() const
-  {
-    return isBeingStopped_;
-  }
+  /*! This function sets whether the controller is being stopped
+   * @param isBeeingStopped flag indicating whether controller is being stopped
+   */
+  void setIsBeingStopped(bool isBeingStopped) override { isBeingStopped_ = isBeingStopped; }
+
+  /*! This function indicates whether the controller is running (meaning it is the currently advanced controller)
+   * @returns true iff controller is being stopped
+   */
+  bool isRunning() const override { return this->isRunning_; }
+
+  /*! This function sets whether the controller is running (meaning it is the currently advanced controller)
+   * @param isRunning flag indicating whether controller is running
+   */
+  void setIsRunning(bool isRunning) override { this->isRunning_ = isRunning; }
 
  protected:
   /*! Update the robot state. (Check for limits)
@@ -186,11 +186,9 @@ class ControllerAdapter: virtual public roco::ControllerAdapterInterface, public
   bool updateCommand(double dt);
 
  protected:
-  std::atomic_bool isBeingStopped_;
-
+  std::atomic_bool isBeingStopped_{false};
 };
 
-} // namespace rocoma
-
+}  // namespace rocoma
 
 #include <rocoma/controllers/ControllerAdapter.tpp>
