@@ -126,19 +126,19 @@ bool ControllerManager::addControllerPair(ControllerPtr&& controller,
   // set properties
   emergencyController->setIsRealRobot(options_.isRealRobot);
 
-  // create emergency controller
-  if (!emergencyController->createController(options_.timeStep)) {
-    MELO_WARN_STREAM("[Rocoma][" << emgcyControllerName << "] Could not be created! Use failproof controller on emergency stop!");
-    controllerPairs_.insert( std::pair< std::string, ControllerSetPtr >( controllerName,
-                                                                         ControllerSetPtr(controllers_.at(controllerName).get(), nullptr) ) );
-    return false;
-  }
-
   // check if emergency controller already exists
   if(emergencyControllers_.find(emgcyControllerName) != emergencyControllers_.end()) {
     MELO_INFO_STREAM("[Rocoma][" << emgcyControllerName << "] An emergency controller with the name already exists. Using same instance.");
   }
   else {
+    // create emergency controller
+    if (!emergencyController->createController(options_.timeStep)) {
+      MELO_WARN_STREAM("[Rocoma][" << emgcyControllerName << "] Could not be created! Use failproof controller on emergency stop!");
+      controllerPairs_.insert( std::pair< std::string, ControllerSetPtr >( controllerName,
+                                                                           ControllerSetPtr(controllers_.at(controllerName).get(), nullptr) ) );
+      return false;
+    }
+
     // insert emergency controller (move ownership to controller / controller is set to nullptr)
     emergencyControllers_.insert( std::pair<std::string, EmgcyControllerPtr>(emgcyControllerName, std::move(emergencyController) ) );
     MELO_DEBUG_STREAM("[Rocoma][" << emgcyControllerName << "] Successfully added emergency controller!");
