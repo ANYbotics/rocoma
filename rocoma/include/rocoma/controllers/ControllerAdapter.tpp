@@ -140,7 +140,6 @@ bool ControllerAdapter<Controller_, State_, Command_>::initializeController(doub
 #endif
 
   // Set flags
-  this->isRunning_ = true;
   MELO_INFO_STREAM("[Rocoma][" << this->getControllerName() << "] Successfully initialized!");
 
   return true;
@@ -234,8 +233,6 @@ bool ControllerAdapter<Controller_, State_, Command_>::resetController(double dt
   }
 #endif
 
-  // Start logging
-  this->isRunning_ = true;
   MELO_INFO_STREAM("[Rocoma][" << this->getControllerName() << "] Reset successfully!");
 
   return true;
@@ -284,9 +281,6 @@ bool ControllerAdapter<Controller_,State_, Command_>::cleanupController()
 template<typename Controller_, typename State_, typename Command_>
 bool ControllerAdapter<Controller_, State_, Command_>::stopController()
 {
-  // Set flag
-  this->isRunning_ = false;
-
   // Stop controller
 #ifdef NDEBUG
   try
@@ -387,8 +381,6 @@ bool ControllerAdapter<Controller_, State_, Command_>::swapController(double dt,
   }
 #endif
 
-  // Set flags
-  this->isRunning_ = true;
   MELO_INFO_STREAM("[Rocoma][" << this->getControllerName() << "] Successfully swapped!");
 
   return true;

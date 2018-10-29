@@ -345,6 +345,8 @@ bool ControllerManager::emergencyStop(EmergencyStopType eStopType) {
           boost::upgrade_to_unique_lock<boost::shared_mutex> uniqueLockState(lockState);
           state_ = State::EMERGENCY;
         }
+        activeControllerPair_.controller_->setIsRunning(false);
+        activeControllerPair_.emgcyController_->setIsRunning(true);
         this->notifyControllerChanged(activeControllerPair_.emgcyControllerName_);
         boost::shared_lock<boost::shared_mutex> lockClearEstop(clearedEmergencyStopMutex_);
         this->notifyControllerManagerStateChanged(state_, clearedEmergencyStop_);
@@ -384,6 +386,8 @@ bool ControllerManager::emergencyStop(EmergencyStopType eStopType) {
     boost::upgrade_to_unique_lock<boost::shared_mutex> uniqueLockState(lockState);
     state_ = State::FAILURE;
   }
+  activeControllerPair_.controller_->setIsRunning(false);
+  if(activeControllerPair_.emgcyController_ != nullptr) { activeControllerPair_.emgcyController_->setIsRunning(false); }
   this->notifyControllerChanged(failproofController_->getControllerName());
   boost::shared_lock<boost::shared_mutex> lockClearEstop(clearedEmergencyStopMutex_);
   this->notifyControllerManagerStateChanged(state_, clearedEmergencyStop_);
@@ -731,6 +735,8 @@ bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
       std::unique_lock<std::mutex> lockActiveController(activeControllerMutex_);
 
       if(state_ == previousState) {
+        if(oldController != nullptr) { oldController->setIsRunning(false); }
+        newController->setIsRunning(true);
         activeControllerPair_ = controllerPairs_.at(newController->getControllerName());
         state_ = State::OK;
       } else {
