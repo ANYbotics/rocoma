@@ -486,7 +486,7 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
         }
         else
         {
-          MELO_WARN("[RocomaRos] Controllerpair no %d has no member emergency_controller. Add failproof controller instead.", i);
+          MELO_INFO("[RocomaRos] Controllerpair no %d has no member emergency_controller. Add failproof controller instead.", i);
           controller_option_pair.second = ManagedControllerOptions();
           controller_option_pairs.push_back(controller_option_pair);
           continue;
