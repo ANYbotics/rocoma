@@ -353,13 +353,6 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
     return false;
   }
 
-  // Parse warning flag, default to true without warning
-  bool warnForNoEmergencyController;
-  nodeHandle_.param("controller_manager/warn_for_no_emergency_controller", warnForNoEmergencyController, true);
-  if (!warnForNoEmergencyController) {
-    MELO_INFO("[RocomaRos] Adding failproof controller if no emergency controller is specified without warning.");
-  }
-
   // Parse shared module list
   std::vector<ManagedModuleOptions> shared_module_option_list;
   ManagedModuleOptions shared_module_option;
@@ -493,11 +486,7 @@ bool ControllerManagerRos<State_,Command_>::setupControllersFromParameterServer(
         }
         else
         {
-          if (warnForNoEmergencyController) {
-            MELO_WARN("[RocomaRos] Controllerpair no %d has no member emergency_controller. Add failproof controller instead.", i);
-          } else {
-            MELO_INFO("[RocomaRos] Controllerpair no %d has no member emergency_controller. Add failproof controller instead.", i);
-          }
+          MELO_INFO("[RocomaRos] Controllerpair no %d has no member emergency_controller. Add failproof controller instead.", i);
           controller_option_pair.second = ManagedControllerOptions();
           controller_option_pairs.push_back(controller_option_pair);
           continue;
