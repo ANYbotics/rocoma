@@ -2,7 +2,7 @@
 <package format="2">
 
   <name>rocoma_plugin</name>
-  <version>0.2.1</version>
+  <version>0.3.0</version>
   <description>Contains implementations of rocoma controllers with common plugin base classes.</description>
   <maintainer email="gabriel.hottiger@mavt.ethz.ch">Gabriel Hottiger</maintainer>
   <author email="gabriel.hottiger@mavt.ethz.ch">Gabriel Hottiger</author>
