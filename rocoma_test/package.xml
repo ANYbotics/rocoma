@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>rocoma_test</name>
+  <version>0.3.0</version>
+  <description>The rocoma test package</description>
+
+  <license>Proprietary</license>
+  <url type="website">https://bitbucket.org/leggedrobotics/rocoma</url>
+  <maintainer email="ghottiger@anybotics.com">Gabriel Hottiger</maintainer>
+  <author email="ghottiger@anybotics.com">Gabriel Hottiger</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>rocoma</depend>
+  <depend>message_logger</depend>
+
+</package>

@@ -242,6 +242,7 @@ bool ControllerManager::updateController() {
       lockController.unlock();
       return emergencyStop();
     }
+    return true;
   } else if(currentState == State::EMERGENCY) {
     // Controller is in emergency stop
     std::unique_lock<std::mutex> lockEmergencyController(emergencyControllerMutex_);
@@ -250,6 +251,7 @@ bool ControllerManager::updateController() {
       lockEmergencyController.unlock();
       return emergencyStop();
     }
+    return true;
   } else if(currentState == State::FAILURE) {
     // Failproof controller is active
     std::unique_lock<std::mutex> lockFailproofController(failproofControllerMutex_);
@@ -553,7 +555,7 @@ std::string ControllerManager::getActiveControllerName() const {
       break;
     }
     case State::FAILURE: {
-      controllerName = "Failproof";
+      controllerName = failproofController_->getControllerName();
       break;
     }
     case State::NA: {
@@ -794,6 +796,11 @@ bool ControllerManager::addSharedModule(roco::SharedModulePtr&& sharedModule) {
 bool ControllerManager::hasSharedModule(const std::string & moduleName) const {
   std::unique_lock<std::mutex> lockSM(sharedModulesMutex_);
   return sharedModules_.find(moduleName) != sharedModules_.end();
+}
+
+void ControllerManager::stopWorkers() {
+  std::unique_lock<std::mutex> lockWM(workerManagerMutex_);
+  workerManager_.stopWorkers(true);
 }
 
 } /* namespace rocoma */
