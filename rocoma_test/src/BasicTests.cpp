@@ -92,6 +92,12 @@ TEST_F(TestControllerManager, canSwitchFromEmergencyControllerToControllerA) {
   clearEstopAndSwitchController(simpleControllerB_);
 }
 
+TEST_F(TestControllerManager, doesNotSwitchIfControllerAlreadyRunning) {
+  clearEstopAndSwitchController(simpleControllerA_);
+  ASSERT_EQ(rocoma::ControllerManager::SwitchResponse::RUNNING, controllerManager_.switchController(simpleControllerA_));
+  ASSERT_EQ(simpleControllerA_, controllerManager_.getActiveControllerName());
+}
+
 TEST_F(TestControllerManager, updatesSuccessfullyFor2s) {
   clearEstopAndSwitchController(simpleControllerA_);
   runControllerManagerUpdateFor(2.0);

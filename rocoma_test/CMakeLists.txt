@@ -31,6 +31,7 @@ include_directories(
 if(CATKIN_ENABLE_TESTING)
   catkin_add_gtest(test_${PROJECT_NAME}
     src/BasicTests.cpp
+    src/BehaviourTests.cpp
     src/test_main.cpp)
 
   if(TARGET test_${PROJECT_NAME})
