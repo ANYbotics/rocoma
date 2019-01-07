@@ -269,6 +269,11 @@ class ControllerManager
    */
   bool hasSharedModule(const std::string & moduleName) const;
 
+  /**
+   * Stops all worker currently added to the worker manager.
+   */
+  void stopWorkers();
+
  protected:
   /**
    * @brief Prestop and stop controller
