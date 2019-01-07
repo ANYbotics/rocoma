@@ -555,7 +555,8 @@ std::string ControllerManager::getActiveControllerName() const {
       break;
     }
     case State::FAILURE: {
-      controllerName = failproofController_->getControllerName();
+      std::lock_guard<std::mutex> lockFailproofController(failproofControllerMutex_);
+      controllerName = failproofController_ != nullptr ? failproofController_->getControllerName() : "";
       break;
     }
     case State::NA: {

@@ -102,6 +102,23 @@ class TestControllerManager : public ::testing::Test {
     ASSERT_EQ(controllerName, controllerManager_.getActiveControllerName());
   }
 
+  void startSwitchController(const std::string& controllerName) {
+    //! Join old thread, but warn user
+    if (switchThread_.joinable()) {
+      MELO_WARN("[TestControllerManager] Old switch thread is still running. Try to join it.");
+      switchThread_.join();
+    }
+    switchThread_ =
+        std::thread([this, controllerName]() { controllerManager_.switchController(controllerName, std::ref(switchPromise_)); });
+  }
+
+  rocoma::ControllerManager::SwitchResponse cancelSwitchController() {
+    std::future<rocoma::ControllerManager::SwitchResponse> f = switchPromise_.get_future();
+    auto result = f.get();
+    switchThread_.join();
+    return result;
+  }
+
   void clearEstopAndSwitchController(const std::string& controllerName) {
     controllerManager_.clearEmergencyStop();
     switchController(controllerName);
@@ -147,6 +164,8 @@ class TestControllerManager : public ::testing::Test {
 
   // Update thread
   std::thread updateThread_;
+  std::thread switchThread_;
+  std::promise<rocoma::ControllerManager::SwitchResponse> switchPromise_;
 
   //! Controller names
   const std::string simpleFailProofController_ = std::string{"SimpleFailProofController"};

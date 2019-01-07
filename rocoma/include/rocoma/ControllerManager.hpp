@@ -366,7 +366,7 @@ class ControllerManager
   //! Emergency Controller Mutex
   std::mutex emergencyControllerMutex_;
   //! Failproof Controller Mutex
-  std::mutex failproofControllerMutex_;
+  mutable std::mutex failproofControllerMutex_;
   //! Mutex protecting active controller
   mutable std::mutex activeControllerMutex_;
   //! Mutex protecting shared modules
