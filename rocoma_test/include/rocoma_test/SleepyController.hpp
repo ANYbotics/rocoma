@@ -25,10 +25,7 @@ class SleepyController : virtual public roco::Controller<rocoma_test::RocoState,
     usleep(sleepDuration_);
     return true;
   }
-  bool advance(double dt) override {
-    MELO_INFO("UPDATE2!");
-    return true;
-  }
+  bool advance(double dt) override { return true; }
   bool reset(double dt) override {
     usleep(sleepDuration_);
     return true;

@@ -33,7 +33,7 @@ TEST_F(TestControllerManager, allowsSecondEstopsWhileStopping) {
 }
 
 TEST_F(TestControllerManager, doesNotCallPrestopTwice) {
-  clearEstopAndSwitchController(dangerouslyAllocatingControllerA_);
+  clearEstopAndSwitchController(preStopCheckControllerA_);
   startSwitchController(sleepyControllerA_);
   emergencyStop();
   ASSERT_EQ(rocoma::ControllerManager::SwitchResponse::ERROR, cancelSwitchController());

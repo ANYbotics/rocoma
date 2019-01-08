@@ -22,7 +22,7 @@ class SimpleController : virtual public roco::Controller<rocoma_test::RocoState,
  protected:
   bool create(double dt) override { return true; }
   bool initialize(double dt) override { return true; }
-  bool advance(double dt) override { MELO_INFO("UPDATE!"); return true; }
+  bool advance(double dt) override { return true; }
   bool reset(double dt) override { return true; }
   bool preStop() override { return true; }
   bool stop() override { return true; }

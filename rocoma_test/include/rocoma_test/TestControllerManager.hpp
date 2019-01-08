@@ -16,7 +16,7 @@
 #include <rocoma/ControllerManager.hpp>
 #include <rocoma/controllers/adapters.hpp>
 
-#include "rocoma_test/DangerouslyAllocatingController.hpp"
+#include "rocoma_test/PreStopCheckController.hpp"
 #include "rocoma_test/EmergencyController.hpp"
 #include "rocoma_test/FailProofController.hpp"
 #include "rocoma_test/SimpleController.hpp"
@@ -28,7 +28,7 @@ class TestControllerManager : public ::testing::Test {
  protected:
   using SimpleCtrl = rocoma::ControllerAdapter<SimpleController, RocoState, RocoCommand>;
   using SleepyCtrl = rocoma::ControllerAdapter<SleepyController, RocoState, RocoCommand>;
-  using DangerouslyAllocatingCtrl = rocoma::ControllerAdapter<DangerouslyAllocatingController, RocoState, RocoCommand>;
+  using PreStopCheckCtrl = rocoma::ControllerAdapter<PreStopCheckController, RocoState, RocoCommand>;
   using EmergencyCtrl = rocoma::EmergencyControllerAdapter<EmergencyController, RocoState, RocoCommand>;
   using FailProofCtrl = rocoma::FailproofControllerAdapter<FailProofController, RocoState, RocoCommand>;
 
@@ -83,11 +83,11 @@ class TestControllerManager : public ::testing::Test {
     controllerManager_.addControllerPairWithExistingEmergencyController(std::move(sleepyControllerA), simpleEmergencyController_);
 
     //! Setup dangerously allocation controller A
-    std::unique_ptr<DangerouslyAllocatingCtrl> dangerouslyAllocatingControllerA(new DangerouslyAllocatingCtrl());
-    dangerouslyAllocatingControllerA->setName(dangerouslyAllocatingControllerA_);
-    dangerouslyAllocatingControllerA->setStateAndCommand(state_, mutexState_, command_, mutexCommand_);
-    dangerouslyAllocatingControllerA->setParameterPath(dangerouslyAllocatingControllerA_ + "/Parameters.xml");
-    controllerManager_.addControllerPair(std::move(dangerouslyAllocatingControllerA), nullptr);
+    std::unique_ptr<PreStopCheckCtrl> preStopCheckControllerA(new PreStopCheckCtrl());
+    preStopCheckControllerA->setName(preStopCheckControllerA_);
+    preStopCheckControllerA->setStateAndCommand(state_, mutexState_, command_, mutexCommand_);
+    preStopCheckControllerA->setParameterPath(preStopCheckControllerA_ + "/Parameters.xml");
+    controllerManager_.addControllerPair(std::move(preStopCheckControllerA), nullptr);
   }
 
   void setupSimpleControllerManager() {
@@ -194,10 +194,10 @@ class TestControllerManager : public ::testing::Test {
   const std::string simpleControllerA_ = std::string{"SimpleControllerA"};
   const std::string simpleControllerB_ = std::string{"SimpleControllerB"};
   const std::string sleepyControllerA_ = std::string{"SleepyControllerA"};
-  const std::string dangerouslyAllocatingControllerA_ = std::string{"DangerouslyAllocatingControllerA"};
+  const std::string preStopCheckControllerA_ = std::string{"PreStopCheckControllerA"};
 
   // Constants
-  const int threadStartupTimeInUS_ = 1000;
+  const __useconds_t threadStartupTimeInUS_{1000};
 
 };
 

@@ -15,11 +15,11 @@
 
 namespace rocoma_test {
 
-class DangerouslyAllocatingController : virtual public roco::Controller<rocoma_test::RocoState, rocoma_test::RocoCommand> {
+class PreStopCheckController : virtual public roco::Controller<rocoma_test::RocoState, rocoma_test::RocoCommand> {
  public:
   using Base = roco::Controller<rocoma_test::RocoState, rocoma_test::RocoCommand>;
-  DangerouslyAllocatingController() : Base() { setName("SleepyController"); }
-  ~DangerouslyAllocatingController() override = default;
+  PreStopCheckController() : Base() { setName("PreStopCheckController"); }
+  ~PreStopCheckController() override = default;
 
  protected:
   bool create(double dt) override { return true; }
