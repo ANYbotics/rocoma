@@ -98,9 +98,9 @@ TEST_F(TestControllerManager, doesNotSwitchIfControllerAlreadyRunning) {
   ASSERT_EQ(simpleControllerA_, controllerManager_.getActiveControllerName());
 }
 
-TEST_F(TestControllerManager, updatesSuccessfullyFor2s) {
+TEST_F(TestControllerManager, updatesSuccessfullyFor10ms) {
   clearEstopAndSwitchController(simpleControllerA_);
-  runControllerManagerUpdateFor(2.0);
+  runControllerManagerUpdateFor(0.01);
   cancelControllerManagerUpdate();
 }
 

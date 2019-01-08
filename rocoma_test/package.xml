@@ -11,6 +11,7 @@
 
   <buildtool_depend>catkin</buildtool_depend>
   <depend>rocoma</depend>
+  <depend>rocoma_plugin</depend>
   <depend>message_logger</depend>
 
 </package>

@@ -140,7 +140,7 @@ bool ControllerAdapter<Controller_, State_, Command_>::initializeController(doub
 #endif
 
   // Set flags
-  MELO_INFO_STREAM("[Rocoma][" << this->getControllerName() << "] Successfully initialized!");
+  MELO_DEBUG_STREAM("[Rocoma][" << this->getControllerName() << "] Successfully initialized!");
 
   return true;
 }
@@ -233,7 +233,7 @@ bool ControllerAdapter<Controller_, State_, Command_>::resetController(double dt
   }
 #endif
 
-  MELO_INFO_STREAM("[Rocoma][" << this->getControllerName() << "] Reset successfully!");
+  MELO_DEBUG_STREAM("[Rocoma][" << this->getControllerName() << "] Reset successfully!");
 
   return true;
 }
@@ -381,7 +381,7 @@ bool ControllerAdapter<Controller_, State_, Command_>::swapController(double dt,
   }
 #endif
 
-  MELO_INFO_STREAM("[Rocoma][" << this->getControllerName() << "] Successfully swapped!");
+  MELO_DEBUG_STREAM("[Rocoma][" << this->getControllerName() << "] Successfully swapped!");
 
   return true;
 }

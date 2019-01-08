@@ -71,8 +71,7 @@ ControllerManager::ControllerManager(const ControllerManagerOptions & options):
   sharedModulesMutex_(),
   emergencyStopMutex_(),
   updateControllerMutex_(),
-  switchControllerMutex_(),
-  workerManagerMutex_()
+  switchControllerMutex_()
 {
 
 }
@@ -264,135 +263,126 @@ bool ControllerManager::updateController() {
 }
 
 bool ControllerManager::emergencyStop(EmergencyStopType eStopType) {
-  // Cannot call emergency stop twice simultaneously
-  std::unique_lock<std::mutex> lockEmergencyStop(emergencyStopMutex_);
-  // Only E-stop holds upgradable lock to state
-  boost::upgrade_lock<boost::shared_mutex> lockState(stateMutex_);
+  roco::ControllerAdapterInterface *controllerToStop = nullptr;
 
-  // Clean workers
+  // This section can only be executed simultaneously once!
   {
-    std::unique_lock<std::mutex> lockWorkerManager(workerManagerMutex_);
-    workerManager_.cleanDestructibleWorkers();
-  }
+    // Cannot call emergency stop twice simultaneously
+    std::unique_lock<std::mutex> lockEmergencyStop(emergencyStopMutex_);
 
-  // Set flag that emergency stop occurred
-  if(options_.emergencyStopMustBeCleared){
-    boost::unique_lock<boost::shared_mutex> uniqueLockClearEstop(clearedEmergencyStopMutex_);
-    clearedEmergencyStop_ = false;
-  }
+    // Only E-stop holds upgradable lock to state
+    boost::upgrade_lock<boost::shared_mutex> lockState(stateMutex_);
 
-  // Failproof estop if no emgcy controller available
-  const bool emgcyStopControllerNotAvailable = activeControllerPair_.emgcyController_ == nullptr ||
-      activeControllerPair_.emgcyController_->isBeingStopped();
-  const bool inEmergencyOrFailproof = (state_ == State::EMERGENCY) || (state_ == State::FAILURE);
-
-  if(inEmergencyOrFailproof || emgcyStopControllerNotAvailable) {
-    eStopType = EmergencyStopType::FAILPROOF;
-  }
-
-  // notify emergency stop
-  MELO_ERROR_STREAM("[Rocoma] " << (eStopType == EmergencyStopType::FAILPROOF ? "Failproof" : "Emergency") << " Stop!");
-  notifyEmergencyStop(eStopType);
-
-  // Check if controller is in failproof state already
-  if(state_ == State::FAILURE)
-  {
-    MELO_DEBUG("[Rocoma] Failproof controller is already running on emergency stop!");
-    this->notifyControllerManagerStateChanged(state_, clearedEmergencyStop_);
-    return true;
-  }
-
-  // Stop worker options
-  any_worker::WorkerOptions stopWorkerOptions;
-  stopWorkerOptions.timeStep_ = std::numeric_limits<double>::infinity();
-  stopWorkerOptions.defaultPriority_ = 0;
-  stopWorkerOptions.destructWhenDone_ = true;
-
-  // If state ok and emergency controller registered -> switch to emergency controller
-  if(state_ == State::OK) {
-    // stop controller in a different thread
-    stopWorkerOptions.name_ = "stop_controller_" + activeControllerPair_.controllerName_;
-    stopWorkerOptions.callback_ = std::bind(&ControllerManager::emergencyStopControllerWorker, this, std::placeholders::_1,
-                                            activeControllerPair_.controller_, eStopType);
-    {
-      std::unique_lock<std::mutex> lockWorkerManager(workerManagerMutex_);
-      workerManager_.addWorker(stopWorkerOptions, true);
+    // Set flag that emergency stop occurred
+    if (options_.emergencyStopMustBeCleared) {
+      boost::unique_lock<boost::shared_mutex> uniqueLockClearEstop(clearedEmergencyStopMutex_);
+      clearedEmergencyStop_ = false;
     }
 
-    if (options_.loggerOptions.enable) {
-      // Save logger data
-      signal_logger::logger->stopLogger();
-      signal_logger::logger->saveLoggerData(options_.loggerOptions.fileTypes);
+    // Failproof estop if no emgcy controller available
+    const bool emgcyStopControllerNotAvailable = activeControllerPair_.emgcyController_ == nullptr ||
+                                                 activeControllerPair_.emgcyController_->isBeingStopped();
+    const bool inEmergencyOrFailproof = (state_ == State::EMERGENCY) || (state_ == State::FAILURE);
+
+    if (inEmergencyOrFailproof || emgcyStopControllerNotAvailable) {
+      eStopType = EmergencyStopType::FAILPROOF;
     }
 
-    if(eStopType == EmergencyStopType::EMERGENCY) {
-      bool success = true;
-      {
-        std::unique_lock<std::mutex> lockEmergencyController(emergencyControllerMutex_);
-        // Init emergency controller fast
-        success = activeControllerPair_.emgcyController_->initializeControllerFast(options_.timeStep);
-        // only advance if correctly initialized
-        success = success && activeControllerPair_.emgcyController_->advanceController(options_.timeStep);
+    // notify emergency stop
+    MELO_ERROR_STREAM("[Rocoma] " << (eStopType == EmergencyStopType::FAILPROOF ? "Failproof" : "Emergency") << " Stop!");
+    notifyEmergencyStop(eStopType);
+
+    // Check if controller is in failproof state already
+    if (state_ == State::FAILURE) {
+      MELO_DEBUG("[Rocoma] Failproof controller is already running on emergency stop!");
+      this->notifyControllerManagerStateChanged(state_, clearedEmergencyStop_);
+      return true;
+    }
+
+    // If state ok and emergency controller registered -> switch to emergency controller
+    if (state_ == State::OK) {
+      // Set controller that must be stopped
+      controllerToStop = activeControllerPair_.controller_;
+
+      if (options_.loggerOptions.enable) {
+        // Save logger data
+        signal_logger::logger->stopLogger();
+        signal_logger::logger->saveLoggerData(options_.loggerOptions.fileTypes);
       }
 
-      if(success)
-      {
-        // Start logger
-        if(options_.loggerOptions.enable){
-          signal_logger::logger->startLogger(options_.loggerOptions.updateOnStart);
-        }
-
-        // Switch to emergency state
+      if (eStopType == EmergencyStopType::EMERGENCY) {
+        bool success = true;
         {
-          boost::upgrade_to_unique_lock<boost::shared_mutex> uniqueLockState(lockState);
-          state_ = State::EMERGENCY;
+          std::unique_lock<std::mutex> lockEmergencyController(emergencyControllerMutex_);
+          // Init emergency controller fast
+          success = activeControllerPair_.emgcyController_->initializeControllerFast(options_.timeStep);
+          // only advance if correctly initialized
+          success = success && activeControllerPair_.emgcyController_->advanceController(options_.timeStep);
         }
-        activeControllerPair_.controller_->setIsRunning(false);
-        activeControllerPair_.emgcyController_->setIsRunning(true);
-        this->notifyControllerChanged(activeControllerPair_.emgcyControllerName_);
-        boost::shared_lock<boost::shared_mutex> lockClearEstop(clearedEmergencyStopMutex_);
-        this->notifyControllerManagerStateChanged(state_, clearedEmergencyStop_);
 
-        // Return here -> do not move on to failproof controller
-        return true;
+        if (success) {
+          // Start logger
+          if (options_.loggerOptions.enable) {
+            signal_logger::logger->startLogger(options_.loggerOptions.updateOnStart);
+          }
+
+          // Switch to emergency state
+          {
+            boost::upgrade_to_unique_lock<boost::shared_mutex> uniqueLockState(lockState);
+            state_ = State::EMERGENCY;
+          }
+
+          // Notify caller
+          activeControllerPair_.controller_->setIsRunning(false);
+          activeControllerPair_.emgcyController_->setIsRunning(true);
+          this->notifyControllerChanged(activeControllerPair_.emgcyControllerName_);
+          boost::shared_lock<boost::shared_mutex> lockClearEstop(clearedEmergencyStopMutex_);
+          this->notifyControllerManagerStateChanged(state_, clearedEmergencyStop_);
+        } else {
+          // No success, move on to failproof controller
+          eStopType = EmergencyStopType::FAILPROOF;
+        }
       }
     }
 
-  }
-  else {
-    // stop emergency controller in a different thread
-    stopWorkerOptions.name_ = "stop_controller_" + activeControllerPair_.emgcyControllerName_;
-    stopWorkerOptions.callback_ =
-        std::bind(&ControllerManager::emergencyStopControllerWorker, this, std::placeholders::_1,
-                  activeControllerPair_.emgcyController_, EmergencyStopType::FAILPROOF);
-    {
-      std::unique_lock<std::mutex> lockWorkerManager(workerManagerMutex_);
-      workerManager_.addWorker(stopWorkerOptions, true);
-    }
+    if (eStopType == EmergencyStopType::FAILPROOF) {
+      // Set controller that must be stopped
+      controllerToStop = activeControllerPair_.emgcyController_;
 
-    if (options_.loggerOptions.enable) {
-      // Stop the logger
-      signal_logger::logger->stopLogger();
-      signal_logger::logger->saveLoggerData(options_.loggerOptions.fileTypes);
+      if (options_.loggerOptions.enable) {
+        // Stop the logger
+        signal_logger::logger->stopLogger();
+        signal_logger::logger->saveLoggerData(options_.loggerOptions.fileTypes);
+      }
+
+      // Advance failproof controller
+      {
+        MELO_INFO("[Rocoma] Switched to failproof controller!");
+        std::unique_lock<std::mutex> lockFailproofController(failproofControllerMutex_);
+        failproofController_->advanceController(options_.timeStep);
+      }
+
+      // Switch to failure state
+      {
+        boost::upgrade_to_unique_lock<boost::shared_mutex> uniqueLockState(lockState);
+        state_ = State::FAILURE;
+      }
+
+      // Notify caller
+      activeControllerPair_.controller_->setIsRunning(false);
+      if (activeControllerPair_.emgcyController_ != nullptr) {
+        activeControllerPair_.emgcyController_->setIsRunning(false);
+      }
+      this->notifyControllerChanged(failproofController_->getControllerName());
+      boost::shared_lock<boost::shared_mutex> lockClearEstop(clearedEmergencyStopMutex_);
+      this->notifyControllerManagerStateChanged(state_, clearedEmergencyStop_);
     }
   }
-  // Advance failproof controller
-  {
-    MELO_INFO("[Rocoma] Switched to failproof controller!");
-    std::unique_lock<std::mutex> lockFailproofController(failproofControllerMutex_);
-    failproofController_->advanceController(options_.timeStep);
-  }
 
-  // Switch to failure state
-  {
-    boost::upgrade_to_unique_lock<boost::shared_mutex> uniqueLockState(lockState);
-    state_ = State::FAILURE;
+  if(controllerToStop != nullptr) {
+    // TODO what happens if this returns false
+    this->stopController(controllerToStop);
   }
-  activeControllerPair_.controller_->setIsRunning(false);
-  if(activeControllerPair_.emgcyController_ != nullptr) { activeControllerPair_.emgcyController_->setIsRunning(false); }
-  this->notifyControllerChanged(failproofController_->getControllerName());
-  boost::shared_lock<boost::shared_mutex> lockClearEstop(clearedEmergencyStopMutex_);
-  this->notifyControllerManagerStateChanged(state_, clearedEmergencyStop_);
 
   return true;
 }
@@ -435,7 +425,12 @@ void ControllerManager::switchController(const std::string & controllerName,
                                          std::promise<SwitchResponse> & response_promise) {
 
   // Allow only sequential calls to switch controller
-  std::unique_lock<std::mutex> lockSwitchController(switchControllerMutex_);
+  std::unique_lock<std::mutex> lockSwitchController(switchControllerMutex_, std::try_to_lock);
+  if(!lockSwitchController.owns_lock()){
+    MELO_ERROR_STREAM("[Rocoma] Can not switch controller! Already switching!");
+    response_promise.set_value(SwitchResponse::ERROR);
+    return;
+  }
 
   // Emergency stop must be cleared
   if(!hasClearedEmergencyStop()) {
@@ -476,26 +471,17 @@ void ControllerManager::switchController(const std::string & controllerName,
     switch(currentState) {
       case State::OK:
       {
-        switchControllerWorkerOptions.name_ = "switch_from_" + activeControllerPair_.controllerName_ + "_to_" + controllerPair->second.controllerName_;
-        switchControllerWorkerOptions.callback_ = std::bind(&ControllerManager::switchControllerWorker, this,
-                                                            std::placeholders::_1, activeControllerPair_.controller_,
-                                                            controllerPair->second.controller_, currentState, std::ref(response_promise));
+        this->switchFromOldToNewController(activeControllerPair_.controller_, controllerPair->second.controller_, currentState, response_promise);
         break;
       }
       case State::EMERGENCY:
       {
-        switchControllerWorkerOptions.name_ = "switch_from_" + activeControllerPair_.emgcyControllerName_ + "_to_" + controllerPair->second.controllerName_;
-        switchControllerWorkerOptions.callback_ = std::bind(&ControllerManager::switchControllerWorker, this,
-                                                            std::placeholders::_1, activeControllerPair_.emgcyController_,
-                                                            controllerPair->second.controller_, currentState, std::ref(response_promise));
+        this->switchFromOldToNewController(activeControllerPair_.emgcyController_, controllerPair->second.controller_, currentState, response_promise);
         break;
       }
       case State::FAILURE:
       {
-        switchControllerWorkerOptions.name_ = "switch_from_failproof_to_" + controllerPair->second.controller_->getControllerName();
-        switchControllerWorkerOptions.callback_ = std::bind(&ControllerManager::switchControllerWorker, this,
-                                                            std::placeholders::_1, nullptr, controllerPair->second.controller_,
-                                                            currentState, std::ref(response_promise));
+        this->switchFromOldToNewController(nullptr, controllerPair->second.controller_, currentState, response_promise);
         break;
       }
       case State::NA:
@@ -505,17 +491,6 @@ void ControllerManager::switchController(const std::string & controllerName,
         return;
       }
     }
-
-    {
-      // Add worker to switch to new controller
-      std::unique_lock<std::mutex> lockWorkerManager(workerManagerMutex_);
-      workerManager_.cleanDestructibleWorkers();
-      if( !workerManager_.addWorker(switchControllerWorkerOptions, true) ) {
-        MELO_ERROR_STREAM("[Rocoma] Can not create worker! Already running a switch thread with the same name?");
-        response_promise.set_value(SwitchResponse::ERROR);
-      }
-    }
-
     return;
   }
   else {
@@ -527,7 +502,7 @@ void ControllerManager::switchController(const std::string & controllerName,
 }
 
 std::vector<std::string> ControllerManager::getAvailableControllerNames() const {
-  // fill vector of controller names
+  // Fill vector of controller names
   std::vector<std::string> controllerNames;
   for( auto & controller : controllers_ )
   {
@@ -589,10 +564,7 @@ bool ControllerManager::cleanup() {
 
     // stop all workers
     MELO_DEBUG("[Rocoma] Stopping all workers.");
-    {
-      std::unique_lock<std::mutex> lockWorkerManager(workerManagerMutex_);
-      workerManager_.stopWorkers(true);
-    }
+    workerManager_.stopWorkers(true);
 
     // cleanup all controllers
     // TODO wait for controllers to be finished initializing
@@ -653,13 +625,11 @@ bool ControllerManager::createController(const ControllerPtr & controller) {
   return true;
 }
 
-bool ControllerManager::emergencyStopControllerWorker(const any_worker::WorkerEvent& e,
-                                                      roco::ControllerAdapterInterface * controller,
-                                                      EmergencyStopType emgcyStopType)
+bool ControllerManager::stopController(roco::ControllerAdapterInterface * controller)
 {
   bool success = true;
 
-  {
+  if(!controller->isBeingStopped()) {
     // Stop controller and block -> switch controller can not happen while controller is stopped
     controller->setIsBeingStopped(true);
     success = controller->preStopController();
@@ -670,17 +640,23 @@ bool ControllerManager::emergencyStopControllerWorker(const any_worker::WorkerEv
   return success;
 }
 
-bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
-                                               roco::ControllerAdapterInterface * oldController,
-                                               roco::ControllerAdapterInterface * newController,
-                                               State previousState,
-                                               std::promise<SwitchResponse> & response_promise) {
+bool ControllerManager::switchFromOldToNewController(roco::ControllerAdapterInterface * oldController,
+                                                     roco::ControllerAdapterInterface * newController,
+                                                     State previousState,
+                                                     std::promise<SwitchResponse> & response_promise) {
   /** NOTE:
    * 1. The active controller is not blocked -> by definition there can be no data races between advance and preStop
    */
   // shutdown communication for active controller
   if(oldController != nullptr) {
-    oldController->preStopController();
+    oldController->setIsBeingStopped(true);
+    if(!oldController->preStopController()) {
+      emergencyStop(); // Estop will not stop this controller
+      oldController->stopController();
+      oldController->setIsBeingStopped(false);
+      response_promise.set_value(SwitchResponse::ERROR);
+      return false;
+    }
   }
 
   // Stop logger if running
@@ -706,8 +682,12 @@ bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
   if(oldController != nullptr) { oldController->getControllerSwapState(state); }
 
   if(!newController->swapController(options_.timeStep, state)) {
-    MELO_ERROR_STREAM("[Rocoma][" << newController->getControllerName() <<
-                                  "] Could not swap. Not switching, current controller is running in pre-stopped mode.");
+    emergencyStop(); // Estop will not stop this controller
+    if(oldController != nullptr) {
+      oldController->stopController();
+      oldController->setIsBeingStopped(false);
+    }
+
     // Note controller will continue to run in prestop mode, assuming that this is still valid
     // Stop new controller could have messed up internal state
     newController->preStopController();
@@ -718,6 +698,7 @@ bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
       signal_logger::logger->startLogger(options_.loggerOptions.updateOnStart);
     }
 
+    MELO_ERROR_STREAM("[Rocoma][" << newController->getControllerName() << "] Could not swap. E-stop.");
     response_promise.set_value(SwitchResponse::ERROR);
     return false;
   }
@@ -742,26 +723,35 @@ bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
         newController->setIsRunning(true);
         activeControllerPair_ = controllerPairs_.at(newController->getControllerName());
         state_ = State::OK;
+        MELO_INFO("[Rocoma] Switched to controller %s", activeControllerPair_.controllerName_.c_str());
       } else {
+        MELO_ERROR_STREAM("[Rocoma][" << newController->getControllerName() <<
+                                      "] Could not switch. Emergency stop detected.");
+
+        // Stop old controller
+        if(oldController != nullptr) {
+          oldController->stopController();
+          oldController->setIsBeingStopped(false);
+        }
         // Stop the new controller
         newController->preStopController();
         newController->stopController();
-        MELO_ERROR_STREAM("[Rocoma][" << newController->getControllerName() <<
-                                      "] Could not switch. Emergency stop detected.");
+
         response_promise.set_value(SwitchResponse::ERROR);
         return false;
       }
     }
 
-    // stop old controller
-    if(oldController != nullptr) {
-      oldController->stopController();
-    }
-
-    MELO_INFO("[Rocoma] Switched to controller %s", activeControllerPair_.controllerName_.c_str());
     this->notifyControllerChanged(activeControllerPair_.controllerName_);
     boost::shared_lock<boost::shared_mutex> lockClearEstop(clearedEmergencyStopMutex_);
     this->notifyControllerManagerStateChanged(State::OK, clearedEmergencyStop_);
+
+    // stop old controller
+    if(oldController != nullptr) {
+      oldController->stopController();
+      oldController->setIsBeingStopped(false);
+    }
+
     response_promise.set_value(SwitchResponse::SWITCHING);
     return true;
   }
@@ -770,13 +760,16 @@ bool ControllerManager::switchControllerWorker(const any_worker::WorkerEvent& e,
     newController->preStopController();
     newController->stopController();
     // switch to freeze controller
-    emergencyStop();
+    emergencyStop(); // Estop will not stop this controller
+    if(oldController != nullptr) {
+      oldController->stopController();
+      oldController->setIsBeingStopped(false);
+    }
     MELO_ERROR_STREAM("[Rocoma][" << newController->getControllerName() <<
                                   "] Controller initialization was unsuccessful. Not switching.");
     response_promise.set_value(SwitchResponse::ERROR);
     return false;
   }
-
 }
 
 bool ControllerManager::addSharedModule(roco::SharedModulePtr&& sharedModule) {
@@ -797,11 +790,6 @@ bool ControllerManager::addSharedModule(roco::SharedModulePtr&& sharedModule) {
 bool ControllerManager::hasSharedModule(const std::string & moduleName) const {
   std::unique_lock<std::mutex> lockSM(sharedModulesMutex_);
   return sharedModules_.find(moduleName) != sharedModules_.end();
-}
-
-void ControllerManager::stopWorkers() {
-  std::unique_lock<std::mutex> lockWM(workerManagerMutex_);
-  workerManager_.stopWorkers(true);
 }
 
 } /* namespace rocoma */
