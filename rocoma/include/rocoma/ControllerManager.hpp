@@ -322,6 +322,14 @@ class ControllerManager
                                     State previousState,
                                     std::promise<SwitchResponse> & response_promise);
 
+private:
+  /**
+   * Checks if controller manager is initialized and failproof controller is setup.
+   * @param message Additional message to use in printouts.
+   * @return true, iff conditions are met
+   */
+  bool checkInitializationAndFailproofController(const char* message) const;
+
  protected:
   //! True, iff initialized
   std::atomic<bool> isInitialized_;
@@ -330,10 +338,10 @@ class ControllerManager
   ControllerManagerOptions options_;
 
   //! Controller manager state
-  mutable boost::shared_mutex stateMutex_;
   State state_;
-  mutable boost::shared_mutex clearedEmergencyStopMutex_;
-  bool clearedEmergencyStop_;
+
+  //! Cleared emergency stop flag
+  std::atomic_bool clearedEmergencyStop_;
 
   //! Stopping controllers
   any_worker::WorkerManager workerManager_;
@@ -347,19 +355,11 @@ class ControllerManager
   std::unordered_map< std::string, ControllerSetPtr > controllerPairs_;
   ControllerSetPtr activeControllerPair_;
 
-  //! Emergency stop controller
+  //! Failproof Controller
   FailproofControllerPtr failproofController_;
 
-  //! Controller Mutex
-  std::mutex controllerMutex_;
-  //! Emergency Controller Mutex
-  std::mutex emergencyControllerMutex_;
-  //! Failproof Controller Mutex
-  mutable std::mutex failproofControllerMutex_;
-  //! Mutex protecting active controller
-  mutable std::mutex activeControllerMutex_;
-  //! Mutex protecting shared modules
-  mutable std::mutex sharedModulesMutex_;
+  //! Mutex protecting state and active controller
+  mutable boost::shared_mutex controllerMutex_;
 
   //! Mutex protecting emergency stop function call
   mutable std::mutex emergencyStopMutex_;
