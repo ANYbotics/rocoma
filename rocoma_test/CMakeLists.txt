@@ -5,6 +5,7 @@ project(rocoma_test)
 # Find Catkin
 find_package(catkin REQUIRED COMPONENTS
   rocoma
+  rocoma_plugin
   message_logger
 )
 
@@ -15,6 +16,7 @@ catkin_package(
   INCLUDE_DIRS include
   CATKIN_DEPENDS
     rocoma
+    rocoma_plugin
     message_logger
 )
 

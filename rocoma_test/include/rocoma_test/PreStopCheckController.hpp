@@ -1,10 +1,12 @@
 /**
  * @authors     Gabriel Hottiger
  * @affiliation ANYbotics
- * @brief       Controller implementation with sleeps for testing.
+ * @brief       Controller implementation with allocations for testing.
  */
 
 #pragma once
+
+#include <ros/ros.h>
 
 #include <roco/controllers/controllers.hpp>
 
@@ -13,35 +15,26 @@
 
 namespace rocoma_test {
 
-class SleepyController : virtual public roco::Controller<rocoma_test::RocoState, rocoma_test::RocoCommand> {
+class PreStopCheckController : virtual public roco::Controller<rocoma_test::RocoState, rocoma_test::RocoCommand> {
  public:
   using Base = roco::Controller<rocoma_test::RocoState, rocoma_test::RocoCommand>;
-  SleepyController() : Base() { setName("SleepyController"); }
-  ~SleepyController() override = default;
+  PreStopCheckController() : Base() { setName("PreStopCheckController"); }
+  ~PreStopCheckController() override = default;
 
  protected:
   bool create(double dt) override { return true; }
   bool initialize(double dt) override {
-    usleep(sleepDuration_);
+    getCommand().setValue(0.0);
     return true;
   }
   bool advance(double dt) override { return true; }
-  bool reset(double dt) override {
-    usleep(sleepDuration_);
-    return true;
-  }
+  bool reset(double dt) override { return initialize(dt); }
   bool preStop() override {
-    usleep(sleepDuration_);
+    getCommand().setValue(getCommand().getValue() + 1.0);
     return true;
   }
-  bool stop() override {
-    usleep(sleepDuration_);
-    return true;
-  }
+  bool stop() override { return true; }
   bool cleanup() override { return true; }
-
- private:
-  static constexpr int sleepDuration_ = 5000;
 };
 
 }  // namespace rocoma_test

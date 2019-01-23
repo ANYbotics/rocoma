@@ -6,6 +6,9 @@
 
 #pragma once
 
+#include <thread>
+#include <future>
+
 #include <gtest/gtest.h>
 #include <boost/asio.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -13,6 +16,7 @@
 #include <rocoma/ControllerManager.hpp>
 #include <rocoma/controllers/adapters.hpp>
 
+#include "rocoma_test/PreStopCheckController.hpp"
 #include "rocoma_test/EmergencyController.hpp"
 #include "rocoma_test/FailProofController.hpp"
 #include "rocoma_test/SimpleController.hpp"
@@ -24,18 +28,21 @@ class TestControllerManager : public ::testing::Test {
  protected:
   using SimpleCtrl = rocoma::ControllerAdapter<SimpleController, RocoState, RocoCommand>;
   using SleepyCtrl = rocoma::ControllerAdapter<SleepyController, RocoState, RocoCommand>;
+  using PreStopCheckCtrl = rocoma::ControllerAdapter<PreStopCheckController, RocoState, RocoCommand>;
   using EmergencyCtrl = rocoma::EmergencyControllerAdapter<EmergencyController, RocoState, RocoCommand>;
   using FailProofCtrl = rocoma::FailproofControllerAdapter<FailProofController, RocoState, RocoCommand>;
 
  public:
   TestControllerManager()
-      : timeStep_(0.1),
+      : timeStep_(0.001),
         controllerManager_(),
         state_(new RocoState()),
         command_(new RocoCommand()),
         mutexState_(new boost::shared_mutex()),
         mutexCommand_(new boost::shared_mutex()),
-        updateThread_{} {
+        updateThread_{},
+        switchThread_{},
+        estopFuture_{} {
     setupSimpleControllerManager();
     setupSimpleControllers();
   }
@@ -73,7 +80,14 @@ class TestControllerManager : public ::testing::Test {
     sleepyControllerA->setName(sleepyControllerA_);
     sleepyControllerA->setStateAndCommand(state_, mutexState_, command_, mutexCommand_);
     sleepyControllerA->setParameterPath(sleepyControllerA_ + "/Parameters.xml");
-    controllerManager_.addControllerPair(std::move(sleepyControllerA), nullptr);
+    controllerManager_.addControllerPairWithExistingEmergencyController(std::move(sleepyControllerA), simpleEmergencyController_);
+
+    //! Setup dangerously allocation controller A
+    std::unique_ptr<PreStopCheckCtrl> preStopCheckControllerA(new PreStopCheckCtrl());
+    preStopCheckControllerA->setName(preStopCheckControllerA_);
+    preStopCheckControllerA->setStateAndCommand(state_, mutexState_, command_, mutexCommand_);
+    preStopCheckControllerA->setParameterPath(preStopCheckControllerA_ + "/Parameters.xml");
+    controllerManager_.addControllerPair(std::move(preStopCheckControllerA), nullptr);
   }
 
   void setupSimpleControllerManager() {
@@ -87,15 +101,20 @@ class TestControllerManager : public ::testing::Test {
     controllerManager_.init(managerOptions);
   }
 
-  void failproofStop() {
-    ASSERT_TRUE(controllerManager_.failproofStop());
-    controllerManager_.stopWorkers();  // Joins stop threads
+  void failproofStop() { ASSERT_TRUE(controllerManager_.failproofStop()); }
+
+  void emergencyStop() { ASSERT_TRUE(controllerManager_.emergencyStop()); }
+
+  void startEmergencyStop() {
+    estopFuture_ = std::async(std::launch::async, [this]() { emergencyStop(); });
+    usleep(threadStartupTimeInUS_);  // Give thread time to start
   }
 
-  void emergencyStop() {
-    ASSERT_TRUE(controllerManager_.emergencyStop());
-    controllerManager_.stopWorkers();  // Joins stop threads
+  bool isEmergencyStopRunning() {
+    return estopFuture_.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready;
   }
+
+  void cancelEmergencyStop() { estopFuture_.wait(); }
 
   void switchController(const std::string& controllerName) {
     ASSERT_EQ(rocoma::ControllerManager::SwitchResponse::SWITCHING, controllerManager_.switchController(controllerName));
@@ -106,10 +125,11 @@ class TestControllerManager : public ::testing::Test {
     //! Join old thread, but warn user
     if (switchThread_.joinable()) {
       MELO_WARN("[TestControllerManager] Old switch thread is still running. Try to join it.");
-      switchThread_.join();
+      cancelSwitchController();
     }
     switchThread_ =
         std::thread([this, controllerName]() { controllerManager_.switchController(controllerName, std::ref(switchPromise_)); });
+    usleep(threadStartupTimeInUS_);  // Give thread time to start
   }
 
   rocoma::ControllerManager::SwitchResponse cancelSwitchController() {
@@ -146,7 +166,7 @@ class TestControllerManager : public ::testing::Test {
     boost::asio::io_service io;
     unsigned int counter = 0;
     while ((counter * timeStep_) < seconds) {
-      boost::asio::deadline_timer t(io, boost::posix_time::milliseconds(timeStep_ * 1000));
+      boost::asio::deadline_timer t(io, boost::posix_time::microseconds(timeStep_ * 1000000));
       ASSERT_TRUE(controllerManager_.updateController());
       t.wait();
       counter++;
@@ -165,6 +185,7 @@ class TestControllerManager : public ::testing::Test {
   // Update thread
   std::thread updateThread_;
   std::thread switchThread_;
+  std::future<void> estopFuture_;
   std::promise<rocoma::ControllerManager::SwitchResponse> switchPromise_;
 
   //! Controller names
@@ -173,7 +194,11 @@ class TestControllerManager : public ::testing::Test {
   const std::string simpleControllerA_ = std::string{"SimpleControllerA"};
   const std::string simpleControllerB_ = std::string{"SimpleControllerB"};
   const std::string sleepyControllerA_ = std::string{"SleepyControllerA"};
-  const std::string sleepyControllerB_ = std::string{"SleepyControllerA"};
+  const std::string preStopCheckControllerA_ = std::string{"PreStopCheckControllerA"};
+
+  // Constants
+  const __useconds_t threadStartupTimeInUS_{1000};
+
 };
 
 }  // namespace rocoma_test

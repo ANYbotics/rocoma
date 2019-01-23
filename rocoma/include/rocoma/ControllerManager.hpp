@@ -269,11 +269,6 @@ class ControllerManager
    */
   bool hasSharedModule(const std::string & moduleName) const;
 
-  /**
-   * Stops all worker currently added to the worker manager.
-   */
-  void stopWorkers();
-
  protected:
   /**
    * @brief Prestop and stop controller
@@ -290,15 +285,11 @@ class ControllerManager
   bool createController(const ControllerPtr & controller);
 
   /**
-   * @brief Worker callback stopping the previous controller and notify emergency stop
-   * @param event        Worker event
-   * @param controller   Pointer to the controller that was active when the emergency stop occured
-   * @param stopType     Type of the emergency stop
+   * @brief Stop the previous controller
+   * @param controller   Pointer to the controller to stop
    * @return true, if controller was stopped successfully
    */
-  bool emergencyStopControllerWorker(const any_worker::WorkerEvent& event,
-                                     roco::ControllerAdapterInterface * controller,
-                                     EmergencyStopType stopType);
+  bool stopController(roco::ControllerAdapterInterface * controller);
 
   /**
    * @brief notify others of the emergency stop (default: do nothing)
@@ -321,17 +312,23 @@ class ControllerManager
 
   /**
    * @brief Worker callback switching the controller
-   * @param event        Worker event
    * @param oldController   Pointer to the controller that is currently active
    * @param newController   Pointer to the controller that shall be switched to
    * @param previousState   To check if eStop was encountered
    * @return true, if controller switching was successful
    */
-  bool switchControllerWorker(const any_worker::WorkerEvent& event,
-                              roco::ControllerAdapterInterface * oldController,
-                              roco::ControllerAdapterInterface * newController,
-                              State previousState,
-                              std::promise<SwitchResponse> & response_promise);
+  bool switchFromOldToNewController(roco::ControllerAdapterInterface * oldController,
+                                    roco::ControllerAdapterInterface * newController,
+                                    State previousState,
+                                    std::promise<SwitchResponse> & response_promise);
+
+private:
+  /**
+   * Checks if controller manager is initialized and failproof controller is setup.
+   * @param message Additional message to use in printouts.
+   * @return true, iff conditions are met
+   */
+  bool checkInitializationAndFailproofController(const char* message) const;
 
  protected:
   //! True, iff initialized
@@ -341,10 +338,10 @@ class ControllerManager
   ControllerManagerOptions options_;
 
   //! Controller manager state
-  mutable boost::shared_mutex stateMutex_;
   State state_;
-  mutable boost::shared_mutex clearedEmergencyStopMutex_;
-  bool clearedEmergencyStop_;
+
+  //! Cleared emergency stop flag
+  std::atomic_bool clearedEmergencyStop_;
 
   //! Stopping controllers
   any_worker::WorkerManager workerManager_;
@@ -358,19 +355,11 @@ class ControllerManager
   std::unordered_map< std::string, ControllerSetPtr > controllerPairs_;
   ControllerSetPtr activeControllerPair_;
 
-  //! Emergency stop controller
+  //! Failproof Controller
   FailproofControllerPtr failproofController_;
 
-  //! Controller Mutex
-  std::mutex controllerMutex_;
-  //! Emergency Controller Mutex
-  std::mutex emergencyControllerMutex_;
-  //! Failproof Controller Mutex
-  mutable std::mutex failproofControllerMutex_;
-  //! Mutex protecting active controller
-  mutable std::mutex activeControllerMutex_;
-  //! Mutex protecting shared modules
-  mutable std::mutex sharedModulesMutex_;
+  //! Mutex protecting state and active controller
+  mutable boost::shared_mutex controllerMutex_;
 
   //! Mutex protecting emergency stop function call
   mutable std::mutex emergencyStopMutex_;
@@ -378,10 +367,6 @@ class ControllerManager
   std::mutex updateControllerMutex_;
   //! Mutex protecting switch Controller function call
   std::mutex switchControllerMutex_;
-
-  //! Mutex protecting worker manager
-  std::mutex workerManagerMutex_;
-
 
 };
 
