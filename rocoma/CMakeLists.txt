@@ -27,6 +27,7 @@ catkin_package(
 ###########
 
 add_definitions(-std=c++11 -Wall -Werror)
+add_definitions(-DMELO_MIN_SEVERITY=MELO_SEVERITY_INFO)
 
 include_directories(
   include
