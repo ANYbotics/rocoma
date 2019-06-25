@@ -5,6 +5,7 @@
   <description>The rocoma_msgs package</description>
   <maintainer email="ghottiger@anybotics.com">Gabriel Hottiger</maintainer>
   <license>BSD</license>
+  <url>https://github.com/anybotics/rocoma</url>
 
   <buildtool_depend>catkin</buildtool_depend>
   <depend>std_msgs</depend>

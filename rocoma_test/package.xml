@@ -5,9 +5,9 @@
   <description>The rocoma test package</description>
 
   <license>Proprietary</license>
-  <url type="website">https://bitbucket.org/leggedrobotics/rocoma</url>
   <maintainer email="ghottiger@anybotics.com">Gabriel Hottiger</maintainer>
   <author email="ghottiger@anybotics.com">Gabriel Hottiger</author>
+  <url>https://github.com/anybotics/rocoma</url>
 
   <buildtool_depend>catkin</buildtool_depend>
   <depend>rocoma</depend>

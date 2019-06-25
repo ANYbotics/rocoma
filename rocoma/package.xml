@@ -6,6 +6,7 @@
   <maintainer email="cgehring@anybotics.com">Christian Gehring</maintainer>
   <license>BSD</license>
   <author email="cgehring@anybotics.com">Christian Gehring</author>
+  <url>https://github.com/anybotics/rocoma</url>
 
   <buildtool_depend>catkin</buildtool_depend>
   <depend>roco</depend>

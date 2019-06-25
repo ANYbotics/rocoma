@@ -2,7 +2,7 @@
 
 ## Overview
 
-This software package provides a C++ robot controller manager that is compatible with the [roco](https://bitbucket.org/leggedrobotics/roco) interface.
+This software package provides a C++ robot controller manager that is compatible with the [roco](https://github.com/anybotics/roco) interface.
 
 A complete documentation of rocoma is available [here](http://docs.leggedrobotics.com/rocoma_doc/).
 
@@ -20,16 +20,11 @@ In order to install, clone the latest version from this repository into your cat
 
 ### Dependencies
 
-* **[roco](https://bitbucket.org/leggedrobotics/roco):** Robot controller interface
-* **[message_logger](https://bitbucket.org/leggedrobotics/message_logger):** Logger for messages
-* **[signal_logger](https://bitbucket.org/leggedrobotics/signal_logger):** Logger for variables
+* **[roco](https://github.com/anybotics/roco):** Robot controller interface
+* **[message_logger](https://github.com/anybotics/message_logger):** Logger for messages
+* **[signal_logger](https://github.com/anybotics/signal_logger):** Logger for variables
 * **[any_common](https://bitbucket.org/leggedrobotics/any_common):** Common tools (workers)
 
 ## Usage
 
-An example on how to use this library is given here: [rocoma_example](https://bitbucket.org/leggedrobotics/rocoma_example).
-
-
-## Bugs & Feature Requests
-
-Please report bugs and request features using the [Issue Tracker](https://github.com/ethz-asl/ros_best_practices/issues).
+An example on how to use this library is given here: [rocoma_example](https://github.com/anybotics/rocoma_example).
