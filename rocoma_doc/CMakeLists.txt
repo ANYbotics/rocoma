@@ -31,50 +31,15 @@ IF(DOXYGEN)
     DEPENDS doxygen
   )
 
-  # Find roco for documentation
-  find_path (SOURCE_ROCO_DIR NAMES roco/controllers/Controller.hpp PATHS ${roco_INCLUDE_DIRS}... NO_DEFAULT_PATH)
-  if(EXISTS "${SOURCE_ROCO_DIR}")
-    message (STATUS "Found roco at: ${SOURCE_ROCO_DIR}")
-  else()
-    message (FATAL_ERROR "Couldn't find roco! ${SOURCE_ROCO_DIR}")
-  endif()
-
-  # Find roco_ros for documentation
-  find_path (SOURCE_ROCO_ROS_DIR NAMES roco_ros/controllers/ControllerRos.hpp PATHS ${roco_ros_INCLUDE_DIRS}... NO_DEFAULT_PATH)
-  if(EXISTS "${SOURCE_ROCO_ROS_DIR}")
-    message (STATUS "Found roco_ros at: ${SOURCE_ROCO_ROS_DIR}")
-  else()
-    message (FATAL_ERROR "Couldn't find roco_ros! ${SOURCE_ROCO_ROS_DIR}")
-  endif()
-
-  # Find rocoma for documentation
-  find_path (SOURCE_ROCOMA_DIR NAMES rocoma/ControllerManager.hpp PATHS ${rocoma_INCLUDE_DIRS}... NO_DEFAULT_PATH)
-  if(EXISTS "${SOURCE_ROCOMA_DIR}")
-    message (STATUS "Found rocoma at: ${SOURCE_ROCOMA_DIR}")
-  else()
-    message (FATAL_ERROR "Couldn't find rocoma! ${SOURCE_ROCOMA_DIR}")
-  endif()
-
-  # Find rocoma_ros for documentation
-  find_path (SOURCE_ROCOMA_ROS_DIR NAMES rocoma_ros/ControllerManagerRos.hpp PATHS ${rocoma_ros_INCLUDE_DIRS}... NO_DEFAULT_PATH)
-  if(EXISTS "${SOURCE_ROCOMA_ROS_DIR}")
-    message (STATUS "Found rocoma_ros at: ${SOURCE_ROCOMA_ROS_DIR}")
-  else()
-    message (FATAL_ERROR "Couldn't find rocoma_ros! ${SOURCE_ROCOMA_ROS_DIR}")
-  endif()
-
-  # Find rocoma_plugin for documentation
-  find_path (SOURCE_ROCOMA_PLUGIN_DIR NAMES rocoma_plugin/plugins/ControllerPlugin.hpp PATHS ${rocoma_plugin_INCLUDE_DIRS}... NO_DEFAULT_PATH)
-  if(EXISTS "${SOURCE_ROCOMA_PLUGIN_DIR}")
-    message (STATUS "Found rocoma_plugin at: ${SOURCE_ROCOMA_PLUGIN_DIR}")
-  else()
-    message (FATAL_ERROR "Couldn't find rocoma_plugin! ${SOURCE_ROCOMA_PLUGIN_DIR}")
-  endif()
-
   # Set some environment variables
+  set(DOXYGEN_SOURCE_DIRS "\"${CMAKE_CURRENT_SOURCE_DIR}/\"")
+  set(DOXYGEN_SOURCE_DIRS "${DOXYGEN_SOURCE_DIRS} \"${CMAKE_CURRENT_SOURCE_DIR}/../rocoma/\"")
+  set(DOXYGEN_SOURCE_DIRS "${DOXYGEN_SOURCE_DIRS} \"${CMAKE_CURRENT_SOURCE_DIR}/../rocoma_plugin/\"")
+  set(DOXYGEN_SOURCE_DIRS "${DOXYGEN_SOURCE_DIRS} \"${CMAKE_CURRENT_SOURCE_DIR}/../rocoma_ros/\"")
+  set(DOXYGEN_SOURCE_DIRS "${DOXYGEN_SOURCE_DIRS} \"${CMAKE_CURRENT_SOURCE_DIR}/../../roco/roco/\"")
+  set(DOXYGEN_SOURCE_DIRS "${DOXYGEN_SOURCE_DIRS} \"${CMAKE_CURRENT_SOURCE_DIR}/../../roco/roco_ros/\"")
   Set(DOCSOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/doc)
   Set(DOXYGEN_IMAGE_DIRS "\"${CMAKE_CURRENT_SOURCE_DIR}/figures/\"" )
-  Set(DOXYGEN_SOURCE_DIRS "${DOXYGEN_SOURCE_DIRS} \"${SOURCE_ROCO_DIR}/../\" \"${SOURCE_ROCO_ROS_DIR}/../\" \"${SOURCE_ROCOMA_DIR}/../\" \"${SOURCE_ROCOMA_ROS_DIR}/../\" \"${SOURCE_ROCOMA_PLUGIN_DIR}/../\" \"${CMAKE_CURRENT_SOURCE_DIR}/\" ")
   Set(HTML_DIR ${CMAKE_CURRENT_SOURCE_DIR}/doc/html)
   MAKE_DIRECTORY(${HTML_DIR})
 
@@ -86,11 +51,8 @@ IF(DOXYGEN)
   #ADD_CUSTOM_TARGET(doc ${DOXYGEN} ${DOCSOURCE_DIR}/doxygen.config)
 
   # Unset cache files
-  unset(${SOURCE_ROCO_DIR} CACHE)
-  unset(${SOURCE_ROCO_ROS_DIR} CACHE)
-  unset(${SOURCE_ROCOMA_DIR} CACHE)
-  unset(${SOURCE_ROCOMA_ROS_DIR} CACHE)
-  unset(${SOURCE_ROCOMA_PLUGIN_DIR} CACHE)
+  unset(${DOXYGEN_SOURCE_DIRS} CACHE)
+
 ELSE(DOXYGEN)
   message(FATAL_ERROR "Doxygen not found")
 ENDIF(DOXYGEN)
