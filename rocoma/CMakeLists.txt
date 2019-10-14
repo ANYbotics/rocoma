@@ -31,8 +31,8 @@ add_definitions(-DMELO_MIN_SEVERITY=MELO_SEVERITY_INFO)
 
 include_directories(
   include
-  ${Boost_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
+  ${Boost_INCLUDE_DIRS}
 )
 
 add_library(${PROJECT_NAME}
