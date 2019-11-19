@@ -3,7 +3,8 @@
   <name>rocoma</name>
   <version>0.4.0</version>
   <description>The robot controller manager package</description>
-  <maintainer email="cgehring@anybotics.com">Christian Gehring</maintainer>
+  <maintainer email="avijayan@anybotics.com">Aravind Vijayan</maintainer>
+  <maintainer email="fgiraldez@anybotics.com">Francisco Giráldez Gámez</maintainer>
   <license>BSD</license>
   <author email="cgehring@anybotics.com">Christian Gehring</author>
   <url>https://github.com/anybotics/rocoma</url>

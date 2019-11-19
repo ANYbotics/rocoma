@@ -40,6 +40,12 @@ if(CATKIN_ENABLE_TESTING)
     target_link_libraries( test_${PROJECT_NAME}
       ${catkin_LIBRARIES} )
   endif()
+
+  find_package(cmake_code_coverage QUIET)
+  if(cmake_code_coverage_FOUND)
+    add_gtest_coverage()
+  endif(cmake_code_coverage_FOUND)
+
 endif()
 
 #############
