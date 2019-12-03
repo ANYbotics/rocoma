@@ -42,9 +42,9 @@
 #pragma once
 
 // roco
-#include "roco/workers/WorkerOptions.hpp"
 #include "roco/workers/WorkerEventInterface.hpp"
 #include "roco/workers/WorkerEventStd.hpp"
+#include "roco/workers/WorkerOptions.hpp"
 
 // any_worker
 #include "any_worker/Worker.hpp"
@@ -62,23 +62,14 @@ class WrapperWorkerEvent : public roco::WorkerEventStd, public any_worker::Worke
    * @param event  any_worker event
    * @returns wrapped worker event
    */
-  WrapperWorkerEvent(const any_worker::WorkerEvent& event ):
-    any_worker::WorkerEvent(event)
-  {
-
-  }
+  explicit WrapperWorkerEvent(const any_worker::WorkerEvent& event) : any_worker::WorkerEvent(event){};
 
   //! Default destructor
-  virtual ~WrapperWorkerEvent()
-  {
-
-  }
-
+  ~WrapperWorkerEvent() override = default;
 };
 
 //!  Wrapper for roco workers using the any_worker package.
-class WorkerWrapper
-{
+class WorkerWrapper {
  public:
   //! Delete default constructor
   WorkerWrapper() = delete;
@@ -87,24 +78,16 @@ class WorkerWrapper
    * @param options  roco worker options
    * @returns wrapped worker
    */
-  WorkerWrapper(roco::WorkerOptions options):
-    options_(options)
-  {
-
-  }
+  explicit WorkerWrapper(roco::WorkerOptions options) : options_(options) {}
 
   //! Default destructor
-  virtual ~WorkerWrapper()
-  {
-
-  }
+  virtual ~WorkerWrapper() = default;
 
   /*! Wrap the worker callback function
    * @param workerEvent  any worker event
    * @returns true if successful
    */
-  inline bool workerCallback(const any_worker::WorkerEvent& workerEvent)
-  {
+  inline bool workerCallback(const any_worker::WorkerEvent& workerEvent) {
     WrapperWorkerEvent event(workerEvent);
     return options_.callback_(event);
   }
@@ -114,4 +97,4 @@ class WorkerWrapper
   roco::WorkerOptions options_;
 };
 
-}
+}  // namespace rocoma

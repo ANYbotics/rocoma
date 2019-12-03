@@ -33,16 +33,16 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 /*!
-* @file     EmergencyControllerPluginInterface.hpp
-* @author   Gabriel Hottiger
-* @date     Jul, 2016
-*/
+ * @file     EmergencyControllerPluginInterface.hpp
+ * @author   Gabriel Hottiger
+ * @date     Jul, 2016
+ */
 
 #pragma once
 
 // roco
-#include "roco/controllers/adapters/EmergencyControllerAdapterInterface.hpp"
 #include "roco/controllers/Controller.hpp"
+#include "roco/controllers/adapters/EmergencyControllerAdapterInterface.hpp"
 
 namespace rocoma_plugin {
 
@@ -51,11 +51,8 @@ namespace rocoma_plugin {
  *   Controller is needed for the initialization of state, command, name , ...
  *   EmergencyControllerAdapterInterface is used by the ControllerManager to interface with the emergency controllers.
  */
-template<typename State_, typename Command_>
-class EmergencyControllerPluginInterface: virtual public roco::EmergencyControllerAdapterInterface,
-                                          virtual public roco::Controller<State_, Command_>
-{
-
-};
+template <typename State_, typename Command_>
+class EmergencyControllerPluginInterface : virtual public roco::EmergencyControllerAdapterInterface,
+                                           virtual public roco::Controller<State_, Command_> {};
 
 } /* namespace rocoma_plugin */

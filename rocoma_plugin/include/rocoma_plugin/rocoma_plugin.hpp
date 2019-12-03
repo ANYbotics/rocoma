@@ -38,7 +38,6 @@
  * @date     Aug, 2016
  */
 
-
 #include "rocoma_plugin/interfaces/ControllerPluginInterface.hpp"
 #include "rocoma_plugin/interfaces/ControllerRosPluginInterface.hpp"
 #include "rocoma_plugin/interfaces/EmergencyControllerPluginInterface.hpp"

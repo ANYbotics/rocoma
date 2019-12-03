@@ -53,15 +53,15 @@
 #include <message_logger/message_logger.hpp>
 
 // STL
-#include <type_traits>
-#include <assert.h>
+#include <cassert>
 #include <memory>
+#include <type_traits>
 
 namespace rocoma {
 
-template<typename Controller_, typename State_, typename Command_>
-class EmergencyControllerAdapter: virtual public roco::EmergencyControllerAdapterInterface, public ControllerAdapter<Controller_, State_, Command_>
-{
+template <typename Controller_, typename State_, typename Command_>
+class EmergencyControllerAdapter : virtual public roco::EmergencyControllerAdapterInterface,
+                                   public ControllerAdapter<Controller_, State_, Command_> {
   //! Check if Controller_ template parameter inherits from roco::EmergencyControllerAdapteeInterface
   static_assert(std::is_base_of<roco::EmergencyControllerAdapteeInterface, Controller_>::value,
                 "[EmergencyControllerAdapter]: The Controller class does not implement the EmergencyControllerAdatpeeInterface.");
@@ -75,17 +75,16 @@ class EmergencyControllerAdapter: virtual public roco::EmergencyControllerAdapte
 
  public:
   //! Default constructor
-  EmergencyControllerAdapter() { }
+  EmergencyControllerAdapter() = default;
 
   //! Default destructor
-  virtual ~EmergencyControllerAdapter() { }
+  ~EmergencyControllerAdapter() override = default;
 
   /*! Adapts the adaptees initializeFast(dt) function.
    * @param dt  time step [s]
    * @returns true if successful
    */
-  virtual bool initializeControllerFast(double dt) {
-
+  bool initializeControllerFast(double dt) override {
     // Check if the controller was created.
     if (!this->isCreated()) {
       MELO_WARN_STREAM("[Rocoma][" << this->getName() << "] Was not created!");
@@ -98,7 +97,7 @@ class EmergencyControllerAdapter: virtual public roco::EmergencyControllerAdapte
 #endif
     {
       // Update the state.
-      if(!this->updateState(dt, false)) {
+      if (!this->updateState(dt, false)) {
         return false;
       }
 
@@ -109,7 +108,7 @@ class EmergencyControllerAdapter: virtual public roco::EmergencyControllerAdapte
       }
 
       // Update command
-      if(!this->updateCommand(dt)) {
+      if (!this->updateCommand(dt)) {
         return false;
       }
 
@@ -121,8 +120,7 @@ class EmergencyControllerAdapter: virtual public roco::EmergencyControllerAdapte
       MELO_WARN_STREAM("[Rocoma][" << this->getName() << "] Exception caught while fast initializing:\n" << e.what());
       this->isInitialized_ = false;
       return false;
-    }
-    catch (...) {
+    } catch (...) {
       MELO_WARN_STREAM("[Rocoma][" << this->getName() << "] Exception caught while fast initializing!\n");
       this->isInitialized_ = false;
       return false;
@@ -135,7 +133,6 @@ class EmergencyControllerAdapter: virtual public roco::EmergencyControllerAdapte
 
     return true;
   }
-
 };
 
-} // namespace rocoma
+}  // namespace rocoma

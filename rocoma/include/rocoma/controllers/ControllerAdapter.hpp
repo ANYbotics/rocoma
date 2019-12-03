@@ -53,8 +53,8 @@
 #include <boost/thread.hpp>
 
 // STL
-#include <assert.h>
 #include <atomic>
+#include <cassert>
 #include <exception>
 #include <memory>
 #include <type_traits>

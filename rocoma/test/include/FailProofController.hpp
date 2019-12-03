@@ -8,10 +8,10 @@
 
 #include <roco/controllers/FailproofController.hpp>
 
-#include "rocoma_test/RocoCommand.hpp"
-#include "rocoma_test/RocoState.hpp"
+#include "RocoCommand.hpp"
+#include "RocoState.hpp"
 
-namespace rocoma_test {
+namespace rocoma {
 
 class FailProofController : virtual public roco::FailproofController<RocoState, RocoCommand> {
  public:
@@ -20,9 +20,9 @@ class FailProofController : virtual public roco::FailproofController<RocoState, 
   ~FailProofController() override = default;
 
  protected:
-  bool create(double dt) override { return true; }
-  void advance(double dt) override {}
+  bool create(double /*dt*/) override { return true; }
+  void advance(double /*dt*/) override {}
   bool cleanup() override { return true; }
 };
 
-}  // namespace rocoma_test
+}  // namespace rocoma

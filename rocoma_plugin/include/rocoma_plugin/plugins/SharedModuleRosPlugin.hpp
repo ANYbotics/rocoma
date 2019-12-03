@@ -51,10 +51,10 @@
  *   This macro is a wrapper to PLUGINLIB_EXPORT_CLASS.
  *   Protects typedefs in internal namespace.
  */
-#define ROCOMA_EXPORT_SHARED_MODULE_ROS(name, module)                       \
-  namespace plugin_##name_internal {                                    \
-      using name = module;                                              \
-      PLUGINLIB_EXPORT_CLASS(name, rocoma_plugin::SharedModuleRosPlugin)   \
+#define ROCOMA_EXPORT_SHARED_MODULE_ROS(name, module)                  \
+  namespace plugin_##name_internal {                                   \
+    using name = module;                                               \
+    PLUGINLIB_EXPORT_CLASS(name, rocoma_plugin::SharedModuleRosPlugin) \
   }
 
 namespace rocoma_plugin {

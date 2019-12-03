@@ -34,32 +34,32 @@
  */
 
 /*!
-* @file     FailproofControllerAdapter.hpp
-* @author   Christian Gehring, Gabriel Hottiger
-* @date     Dec, 2014
-* @note     Restructured, June 2016
-*/
+ * @file     FailproofControllerAdapter.hpp
+ * @author   Christian Gehring, Gabriel Hottiger
+ * @date     Dec, 2014
+ * @note     Restructured, June 2016
+ */
 #pragma once
 
 // Roco
-#include "roco/controllers/adapters/FailproofControllerAdapterInterface.hpp"
 #include "roco/controllers/FailproofController.hpp"
+#include "roco/controllers/adapters/FailproofControllerAdapterInterface.hpp"
 
 // Rocoma
 #include <rocoma/controllers/ControllerImplementation.hpp>
 
 // STL
+#include <cassert>
 #include <type_traits>
-#include <assert.h>
 
 namespace rocoma {
 
-template<typename Controller_, typename State_, typename Command_>
-class FailproofControllerAdapter: virtual public roco::FailproofControllerAdapterInterface, public ControllerImplementation<Controller_, State_, Command_>
-{
+template <typename Controller_, typename State_, typename Command_>
+class FailproofControllerAdapter : virtual public roco::FailproofControllerAdapterInterface,
+                                   public ControllerImplementation<Controller_, State_, Command_> {
   //! Check if template parameters implement the required interfaces
   static_assert(std::is_base_of<roco::FailproofController<State_, Command_>, Controller_>::value,
-                "[FailproofControllerAdapter]: The Controller class does not inherit from roco::FailproofController<State_, Command_>!" );
+                "[FailproofControllerAdapter]: The Controller class does not inherit from roco::FailproofController<State_, Command_>!");
 
  public:
   //! Convenience typedefs
@@ -68,49 +68,33 @@ class FailproofControllerAdapter: virtual public roco::FailproofControllerAdapte
   using Command = Command_;
   using Base = ControllerImplementation<Controller, State, Command>;
 
-
  public:
   //! Default constructor
-  FailproofControllerAdapter() { }
+  FailproofControllerAdapter() = default;
 
   //! Default destructor
-  virtual ~FailproofControllerAdapter() { }
+  ~FailproofControllerAdapter() override = default;
 
   /*! Adapts the adaptees create(dt) function.
    * @param dt  time step [s]
    * @returns true if successful
    */
-  virtual bool createController(double dt)
-  {
-    return this->create(dt);
-  }
+  bool createController(double dt) override { return this->create(dt); }
 
   /*! Adapts the adaptees advance(dt) function.
    * @param dt  time step [s]
    */
-  virtual void advanceController(double dt)
-  {
-    this->advance(dt);
-    return;
-  }
+  void advanceController(double dt) override { this->advance(dt); }
 
   /*! Adapts the adaptees cleanup() function.
    * @returns true if successful
    */
-  virtual bool cleanupController()
-  {
-    return this->cleanup();
-  }
+  bool cleanupController() override { return this->cleanup(); }
 
   /*! This function gets the name of the controller.
    * @returns controller name
    */
-  virtual const std::string& getControllerName() const
-  {
-    return this->getName();
-  }
-
-
+  const std::string& getControllerName() const override { return this->getName(); }
 };
 
-} // namespace rocoma
+}  // namespace rocoma

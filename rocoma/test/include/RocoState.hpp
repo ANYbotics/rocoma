@@ -9,13 +9,13 @@
 #include <message_logger/message_logger.hpp>
 #include <roco/model/StateInterface.hpp>
 
-namespace rocoma_test {
+namespace rocoma {
 
 class RocoState : public roco::StateInterface {
  public:
   bool checkState() const override {
     if (value_ > maxValue_) {
-      MELO_ERROR("[rocoma_test::RocoState]: Checking State Error. Value %f bigger than maximum allowed %f", value_, maxValue_);
+      MELO_ERROR("[rocoma::RocoState]: Checking State Error. Value %f bigger than maximum allowed %f", value_, maxValue_);
       return false;
     }
     return true;
@@ -27,7 +27,7 @@ class RocoState : public roco::StateInterface {
   static constexpr double maxValue_ = 5.0;
 
  private:
-  double value_;
+  double value_ = 0.0;
 };
 
-}  // namespace rocoma_test
+}  // namespace rocoma

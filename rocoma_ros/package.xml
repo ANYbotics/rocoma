@@ -1,14 +1,20 @@
 <?xml version="1.0"?>
 <package format="2">
+
   <name>rocoma_ros</name>
   <version>0.4.0</version>
   <description>The rocoma_ros package</description>
-  <maintainer email="avijayan@anybotics.com">Aravind Vijayan</maintainer>
-  <maintainer email="fgiraldez@anybotics.com">Francisco Giráldez Gámez</maintainer>
-  <license>BSD</license>
   <url>https://github.com/anybotics/rocoma</url>
 
+  <license>BSD</license>
+  <author email="ghottiger@anybotics.com">Gabriel Hottiger</author>
+  <maintainer email="avijayan@anybotics.com">Aravind Vijayan</maintainer>
+  <maintainer email="fgiraldez@anybotics.com">Francisco Giráldez Gámez</maintainer>
+
   <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>cmake_clang_tools</build_depend>
+
   <depend>roscpp</depend>
   <depend>roco</depend>
   <depend>rocoma</depend>
@@ -18,4 +24,5 @@
   <depend>roslib</depend>
   <depend>std_srvs</depend>
   <depend>std_msgs</depend>
+
 </package>

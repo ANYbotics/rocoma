@@ -54,17 +54,16 @@
 #include "any_worker/WorkerManager.hpp"
 
 // STL
-#include <memory>
 #include <atomic>
+#include <memory>
 
 namespace rocoma {
 
-template<typename Controller_, typename State_, typename Command_>
-class ControllerExtensionImplementation: public ControllerImplementation<Controller_, State_, Command_> {
-
+template <typename Controller_, typename State_, typename Command_>
+class ControllerExtensionImplementation : public ControllerImplementation<Controller_, State_, Command_> {
   //! Check if Controller_ template parameter inherits from roco::Controller<State_, Command_>
   static_assert(std::is_base_of<roco::Controller<State_, Command_>, Controller_>::value,
-                "[ControllerExtensionImplementation]: The Controller class does not inherit from roco::Controller<State_, Command_>!" );
+                "[ControllerExtensionImplementation]: The Controller class does not inherit from roco::Controller<State_, Command_>!");
 
  public:
   //! Convenience typedefs
@@ -75,86 +74,78 @@ class ControllerExtensionImplementation: public ControllerImplementation<Control
 
  public:
   //! Default Constructor
-  ControllerExtensionImplementation():
-    Base(),
-    isRealRobot_(true),
-    isCheckingCommand_(true),
-    isCheckingState_(true),
-    time_(),
-    workerManager_()
-  {
-
-  }
+  ControllerExtensionImplementation()
+      : Base(), isRealRobot_(true), isCheckingCommand_(true), isCheckingState_(true), time_(), workerManager_() {}
 
   //! Default Destructor
-  virtual ~ControllerExtensionImplementation() { }
+  ~ControllerExtensionImplementation() override = default;
 
   /*! Indicates if the real robot is controller or only a simulated version.
    * @returns true if real robot
    */
-  virtual bool isRealRobot() const                      { return isRealRobot_; }
+  bool isRealRobot() const override { return isRealRobot_; }
 
   /*! Gets the controller time
    * @returns controller time
    */
-  virtual const roco::time::Time& getTime() const       { return static_cast<const roco::time::Time&>(time_); }
+  const roco::time::Time& getTime() const override { return static_cast<const roco::time::Time&>(time_); }
 
   /*! Sets the controller time
    * @param time  controller time
    */
-  virtual void setTime(const roco::time::Time& time)    { time_ = time;}
+  void setTime(const roco::time::Time& time) override { time_ = time; }
 
   /*! Indicates if command is checked against its limits
    * @returns true iff command is checked
    */
-  virtual bool isCheckingCommand() const                { return isCheckingCommand_; }
+  bool isCheckingCommand() const override { return isCheckingCommand_; }
 
   /*! Set if command is checked against its limits
    * @param isChecking  flag indicating whether command should be checked against limits
    */
-  virtual void setIsCheckingCommand(bool isChecking)    { isCheckingCommand_ = isChecking; }
+  void setIsCheckingCommand(bool isChecking) override { isCheckingCommand_ = isChecking; }
 
   /*! Indicates if state is checked against its limits
    * @returns true iff state is checked
    */
-  virtual bool isCheckingState() const                  { return isCheckingState_; }
+  bool isCheckingState() const override { return isCheckingState_; }
 
   /*! Set if state is checked against its limits
    * @param isChecking  flag indicating whether state should be checked against limits
    */
-  virtual void setIsCheckingState(bool isChecking)      { isCheckingState_ = isChecking; }
+  void setIsCheckingState(bool isChecking) override { isCheckingState_ = isChecking; }
 
   /*! Add a worker to the worker queue via options
    * @param options  worker options (priority, timestep, ...)
    * @returns worker handle for the added worker
    */
-  virtual roco::WorkerHandle addWorker(const roco::WorkerOptions& options);
+  roco::WorkerHandle addWorker(const roco::WorkerOptions& options) override;
 
   /*! Add a worker to the worker queue
    * @param worker  worker to be added
    * @returns worker handle for the added worker
    */
-  virtual roco::WorkerHandle addWorker(roco::Worker& worker);
+  roco::WorkerHandle addWorker(roco::Worker& worker) override;
 
   /*! Start a given worker
    * @param workerHandle  handle to the worker to be started
    * @returns true iff was started successfully
    */
-  virtual bool startWorker(const roco::WorkerHandle& workerHandle);
+  bool startWorker(const roco::WorkerHandle& workerHandle) override;
 
   /*! Stop a given worker
    * @param workerHandle  handle to the worker to be stopped
    * @param block  flag indicating whether this should block until thread can be joined (default = false)
    * @returns true iff was stopped successfully
    */
-  virtual bool stopWorker(const roco::WorkerHandle& workerHandle, bool block = false);
+  bool stopWorker(const roco::WorkerHandle& workerHandle, bool block) override;
 
   /*! Cancel a given worker
    * @param workerHandle  handle to the worker to be cancelled
    * @param block  flag indicating whether this should block until thread can be joined (default = false)
    * @returns true iff was cancelled successfully
    */
-  virtual bool cancelWorker(const roco::WorkerHandle& workerHandle, bool block = false);
+  bool cancelWorker(const roco::WorkerHandle& workerHandle, bool block) override;
 
  protected:
   //! Indicates if the real robot is controller or only a simulated version.
@@ -169,9 +160,8 @@ class ControllerExtensionImplementation: public ControllerImplementation<Control
   any_worker::WorkerManager workerManager_;
   //! Worker Manager Mutex
   std::mutex mutexWorkerManager_;
-
 };
 
-} /** namespace rocoma */
+}  // namespace rocoma
 
 #include <rocoma/controllers/ControllerExtensionImplementation.tpp>

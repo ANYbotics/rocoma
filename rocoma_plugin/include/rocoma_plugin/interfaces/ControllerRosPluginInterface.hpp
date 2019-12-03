@@ -33,10 +33,10 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 /*!
-* @file     ControllerRosPluginInterface.hpp
-* @author   Gabriel Hottiger
-* @date     Jul, 2016
-*/
+ * @file     ControllerRosPluginInterface.hpp
+ * @author   Gabriel Hottiger
+ * @date     Jul, 2016
+ */
 
 #pragma once
 
@@ -54,11 +54,8 @@ namespace rocoma_plugin {
  *   and used by the ControllerManager to interface with the controllers.
  *   ControllerRos is used to init the ros specific stuff.
  */
-template<typename State_, typename Command_>
-class ControllerRosPluginInterface: virtual public rocoma_plugin::ControllerPluginInterface<State_, Command_>,
-                                    virtual public roco_ros::ControllerRos<State_, Command_>
-{
-
-};
+template <typename State_, typename Command_>
+class ControllerRosPluginInterface : virtual public rocoma_plugin::ControllerPluginInterface<State_, Command_>,
+                                     virtual public roco_ros::ControllerRos<State_, Command_> {};
 
 } /* namespace rocoma_plugin */

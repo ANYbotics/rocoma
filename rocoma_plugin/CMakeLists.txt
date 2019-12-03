@@ -1,25 +1,32 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.5.1)
 project(rocoma_plugin)
 
-add_definitions(-std=c++11 -Wall -Werror)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_CXX_STANDARD 11)
+add_compile_options(-Wall -Wextra -Wpedantic)
+
+set(CATKIN_PACKAGE_DEPENDENCIES
+  pluginlib
+  roco
+  roco_ros
+  rocoma
+)
 
 find_package(catkin REQUIRED
   COMPONENTS
-    roco
-    roco_ros
-    rocoma
-    pluginlib
+    ${CATKIN_PACKAGE_DEPENDENCIES}
 )
 
+###################################
+## catkin specific configuration ##
+###################################
+
 catkin_package(
-  INCLUDE_DIRS include
+  INCLUDE_DIRS
+    include
   LIBRARIES
   CATKIN_DEPENDS
-    roco
-    roco_ros
-    rocoma
-    pluginlib
-  DEPENDS
+    ${CATKIN_PACKAGE_DEPENDENCIES}
 )
 
 #############
@@ -29,3 +36,12 @@ install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
   PATTERN ".svn" EXCLUDE
 )
+
+#################
+## Clang Tools ##
+#################
+
+find_package(cmake_clang_tools QUIET)
+if(cmake_clang_tools_FOUND)
+  add_default_clang_tooling()
+endif(cmake_clang_tools_FOUND)

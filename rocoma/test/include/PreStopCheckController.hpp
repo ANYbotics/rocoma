@@ -10,24 +10,24 @@
 
 #include <roco/controllers/controllers.hpp>
 
-#include "rocoma_test/RocoCommand.hpp"
-#include "rocoma_test/RocoState.hpp"
+#include "RocoCommand.hpp"
+#include "RocoState.hpp"
 
-namespace rocoma_test {
+namespace rocoma {
 
-class PreStopCheckController : virtual public roco::Controller<rocoma_test::RocoState, rocoma_test::RocoCommand> {
+class PreStopCheckController : virtual public roco::Controller<RocoState, RocoCommand> {
  public:
-  using Base = roco::Controller<rocoma_test::RocoState, rocoma_test::RocoCommand>;
+  using Base = roco::Controller<RocoState, RocoCommand>;
   PreStopCheckController() : Base() { setName("PreStopCheckController"); }
   ~PreStopCheckController() override = default;
 
  protected:
-  bool create(double dt) override { return true; }
-  bool initialize(double dt) override {
+  bool create(double /*dt*/) override { return true; }
+  bool initialize(double /*dt*/) override {
     getCommand().setValue(0.0);
     return true;
   }
-  bool advance(double dt) override { return true; }
+  bool advance(double /*dt*/) override { return true; }
   bool reset(double dt) override { return initialize(dt); }
   bool preStop() override {
     getCommand().setValue(getCommand().getValue() + 1.0);
@@ -37,4 +37,4 @@ class PreStopCheckController : virtual public roco::Controller<rocoma_test::Roco
   bool cleanup() override { return true; }
 };
 
-}  // namespace rocoma_test
+}  // namespace rocoma

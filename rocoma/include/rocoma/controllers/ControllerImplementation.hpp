@@ -53,15 +53,14 @@ namespace rocoma {
 /*! Implements the abstract methods introduced by the roco::ControllerBase class.
  *
  */
-template<typename Controller_, typename State_, typename Command_>
-class ControllerImplementation: public Controller_ {
-
+template <typename Controller_, typename State_, typename Command_>
+class ControllerImplementation : public Controller_ {
   //! Check if State_ template parameter implements the roco::StateInterface
   static_assert(std::is_base_of<roco::StateInterface, State_>::value,
-                "[ControllerImplementation]: The State class does not implement roco::StateInterface!" );
+                "[ControllerImplementation]: The State class does not implement roco::StateInterface!");
   //! Check if Command_ template parameter implements the roco::CommandInterface
   static_assert(std::is_base_of<roco::CommandInterface, Command_>::value,
-                "[ControllerImplementation]: The Command class does not implement roco::CommandInterface!" );
+                "[ControllerImplementation]: The Command class does not implement roco::CommandInterface!");
 
  public:
   //! Convenience typedefs
@@ -70,23 +69,11 @@ class ControllerImplementation: public Controller_ {
   using Command = Command_;
 
  public:
-
   //! Default constructor
-  ControllerImplementation():
-    Controller(),
-    state_(),
-    mutexState_(),
-    command_(),
-    mutexCommand_()
-  {
-
-  }
+  ControllerImplementation() = default;
 
   //! Default destructor
-  virtual ~ControllerImplementation()
-  {
-
-  }
+  ~ControllerImplementation() override = default;
 
   /*! Set state and command of the controller with according mutexes
    * @param state         the state of the robot.
@@ -94,11 +81,8 @@ class ControllerImplementation: public Controller_ {
    * @param command       the command container
    * @param mutexCommand  mutex of the command container
    */
-  virtual void setStateAndCommand(std::shared_ptr<State> state,
-                                  std::shared_ptr<boost::shared_mutex> mutexState,
-                                  std::shared_ptr<Command> command,
-                                  std::shared_ptr<boost::shared_mutex> mutexCommand)
-  {
+  void setStateAndCommand(std::shared_ptr<State> state, std::shared_ptr<boost::shared_mutex> mutexState, std::shared_ptr<Command> command,
+                          std::shared_ptr<boost::shared_mutex> mutexCommand) override {
     state_ = state;
     mutexState_ = mutexState;
     command_ = command;
@@ -106,16 +90,16 @@ class ControllerImplementation: public Controller_ {
   }
 
   //! @returns the state of the robot.
-  virtual const State& getState() const           { return *state_; }
+  const State& getState() const override { return *state_; }
   //! @returns a mutex to protect access to the state.
-  virtual boost::shared_mutex& getStateMutex()    { return *mutexState_; }
+  boost::shared_mutex& getStateMutex() override { return *mutexState_; }
 
   //! @returns the command.
-  virtual const Command& getCommand() const       { return *command_; }
+  const Command& getCommand() const override { return *command_; }
   //! @returns the command.
-  virtual Command& getCommand()                   { return *command_; }
+  Command& getCommand() override { return *command_; }
   //! @returns a mutex to protect access to the command.
-  virtual boost::shared_mutex& getCommandMutex()  { return *mutexCommand_; }
+  boost::shared_mutex& getCommandMutex() override { return *mutexCommand_; }
 
  private:
   //! Robot state container
@@ -126,7 +110,6 @@ class ControllerImplementation: public Controller_ {
   std::shared_ptr<Command> command_;
   //! Actuator command container mutex
   std::shared_ptr<boost::shared_mutex> mutexCommand_;
-
 };
 
-} /** namespace rocoma */
+}  // namespace rocoma

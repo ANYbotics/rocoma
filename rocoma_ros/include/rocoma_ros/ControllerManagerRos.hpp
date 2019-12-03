@@ -8,11 +8,11 @@
 #include "rocoma_plugin/rocoma_plugin.hpp"
 
 // rocoma msgs
-#include "rocoma_msgs/GetAvailableControllers.h"
-#include "rocoma_msgs/SwitchController.h"
-#include "rocoma_msgs/GetActiveController.h"
 #include "rocoma_msgs/ControllerManagerState.h"
 #include "rocoma_msgs/EmergencyStop.h"
+#include "rocoma_msgs/GetActiveController.h"
+#include "rocoma_msgs/GetAvailableControllers.h"
+#include "rocoma_msgs/SwitchController.h"
 
 // std msgs
 #include "std_msgs/String.h"
@@ -25,16 +25,15 @@
 
 // ros
 #include <pluginlib/class_loader.h>
-#include <ros/ros.h>
 #include <ros/console.h>
+#include <ros/ros.h>
 #include <std_srvs/Trigger.h>
 
 // stl
-#include <string>
-#include <vector>
 #include <map>
 #include <memory>
-
+#include <string>
+#include <vector>
 
 namespace rocoma_ros {
 
@@ -56,7 +55,6 @@ struct ManagedModuleOptions {
   bool isRos_;
 };
 
-
 //! Struct to simplify the adding of a controller pair
 struct ManagedControllerOptions : public ManagedModuleOptions {
   //! Default Constructor
@@ -71,10 +69,8 @@ struct ManagedControllerOptions : public ManagedModuleOptions {
 
 using ManagedControllerOptionsPair = std::pair<ManagedControllerOptions, ManagedControllerOptions>;
 
-
 //! Options struct to initialize controller manager ros
-struct ControllerManagerRosOptions : public rocoma::ControllerManagerOptions
-{
+struct ControllerManagerRosOptions : public rocoma::ControllerManagerOptions {
   //! Default Constructor
   ControllerManagerRosOptions() = default;
 
@@ -90,18 +86,15 @@ struct ControllerManagerRosOptions : public rocoma::ControllerManagerOptions
  *  Controllers can be loaded using the ros pluginlib.
  *
  */
-template<typename State_, typename Command_>
+template <typename State_, typename Command_>
 class ControllerManagerRos : public rocoma::ControllerManager {
-
  public:
-
   /*! Constructor
    * @param scopedStateName         Name of the robot state class, including namespaces  (e.g. "myStatePkg::State")
    * @param scopedCommandName       Name of the robot command class, including namespaces  (e.g. "myCommandPkg::Command")
    * @returns object of type ControllerManagerRos
    */
-  ControllerManagerRos( const std::string & scopedStateName,
-                        const std::string & scopedCommandName);
+  ControllerManagerRos(const std::string& scopedStateName, const std::string& scopedCommandName);
 
   /*! Constructor
    * @param options    Controller manager ros options
@@ -109,15 +102,14 @@ class ControllerManagerRos : public rocoma::ControllerManager {
    * @param scopedCommandName       Name of the robot command class, including namespaces  (e.g. "myCommandPkg::Command")
    * @returns object of type ControllerManagerRos
    */
-  ControllerManagerRos( const std::string & scopedStateName,
-                        const std::string & scopedCommandName,
-                        const ControllerManagerRosOptions & options);
+  ControllerManagerRos(const std::string& scopedStateName, const std::string& scopedCommandName,
+                       const ControllerManagerRosOptions& options);
 
   //! Default destructor
   ~ControllerManagerRos() override = default;
 
   //! Init Manager and ROS publishers and services.
-  virtual void init(const ControllerManagerRosOptions & options);
+  virtual void init(const ControllerManagerRosOptions& options);
 
   //! Shuts down ROS publishers and services.
   void shutdown();
@@ -130,11 +122,8 @@ class ControllerManagerRos : public rocoma::ControllerManager {
    * @param mutexCommand    mutex protecting robot command pointer
    * @returns true iff added controller pair successfully
    */
-  bool setupControllerPair(const ManagedControllerOptionsPair & options,
-                           std::shared_ptr<State_> state,
-                           std::shared_ptr<Command_> command,
-                           std::shared_ptr<boost::shared_mutex> mutexState,
-                           std::shared_ptr<boost::shared_mutex> mutexCommand);
+  bool setupControllerPair(const ManagedControllerOptionsPair& options, std::shared_ptr<State_> state, std::shared_ptr<Command_> command,
+                           std::shared_ptr<boost::shared_mutex> mutexState, std::shared_ptr<boost::shared_mutex> mutexCommand);
 
   /*! Add the failproof controller to the controller manager
    * @param controllerPluginName  name of the failproof controller
@@ -144,11 +133,8 @@ class ControllerManagerRos : public rocoma::ControllerManager {
    * @param mutexCommand          mutex protecting robot command pointer
    * @returns true iff the failproof controller was added successfully
    */
-  bool setupFailproofController(const std::string & controllerPluginName,
-                                std::shared_ptr<State_> state,
-                                std::shared_ptr<Command_> command,
-                                std::shared_ptr<boost::shared_mutex> mutexState,
-                                std::shared_ptr<boost::shared_mutex> mutexCommand);
+  bool setupFailproofController(const std::string& controllerPluginName, std::shared_ptr<State_> state, std::shared_ptr<Command_> command,
+                                std::shared_ptr<boost::shared_mutex> mutexState, std::shared_ptr<boost::shared_mutex> mutexCommand);
 
   /*! Add a vector of controller pairs and a failproof controller to the manager
    * @param failproofControllerName name of the failproof controller
@@ -159,18 +145,15 @@ class ControllerManagerRos : public rocoma::ControllerManager {
    * @param mutexCommand            mutex protecting robot command pointer
    * @returns true iff all controllers were added successfully
    */
-  bool setupControllers(const std::string & failproofControllerName,
-                        const std::vector<ManagedControllerOptionsPair> & controllerOptions,
-                        std::shared_ptr<State_> state,
-                        std::shared_ptr<Command_> command,
-                        std::shared_ptr<boost::shared_mutex> mutexState,
+  bool setupControllers(const std::string& failproofControllerName, const std::vector<ManagedControllerOptionsPair>& controllerOptions,
+                        std::shared_ptr<State_> state, std::shared_ptr<Command_> command, std::shared_ptr<boost::shared_mutex> mutexState,
                         std::shared_ptr<boost::shared_mutex> mutexCommand);
 
   /*! Add a vector of shared module pairs to the manager
    * @param sharedModuleOptions vector of shared module options
    * @returns true iff all shared modules were added successfully
    */
-  bool setupSharedModules(const std::vector<ManagedModuleOptions> & sharedModuleOptions);
+  bool setupSharedModules(const std::vector<ManagedModuleOptions>& sharedModuleOptions);
 
   /*! Loads the names of the controllers from the ros parameter server.
    * Pattern in yaml:
@@ -201,8 +184,7 @@ class ControllerManagerRos : public rocoma::ControllerManager {
    * @param mutexCommand            mutex protecting robot command pointer
    * @returns true iff all controllers were added successfully
    */
-  bool setupControllersFromParameterServer(std::shared_ptr<State_> state,
-                                           std::shared_ptr<Command_> command,
+  bool setupControllersFromParameterServer(std::shared_ptr<State_> state, std::shared_ptr<Command_> command,
                                            std::shared_ptr<boost::shared_mutex> mutexState,
                                            std::shared_ptr<boost::shared_mutex> mutexCommand);
 
@@ -211,51 +193,43 @@ class ControllerManagerRos : public rocoma::ControllerManager {
    * @param res   empty response
    * @return true iff successful
    */
-  bool emergencyStopService(std_srvs::Trigger::Request  &req,
-                            std_srvs::Trigger::Response &res);
+  bool emergencyStopService(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res);
 
   /*! Failproof stop service callback, triggers an emergency stop of the current controller
    * @param req   empty request
    * @param res   empty response
    * @return true iff successful
    */
-  bool failproofStopService(std_srvs::Trigger::Request  &req,
-                            std_srvs::Trigger::Response &res);
-
+  bool failproofStopService(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res);
 
   /*! Clear emergency stop service callback
    * @param req   empty request
    * @param res   empty response
    * @return true iff successful
    */
-  bool clearEmergencyStopService(std_srvs::Trigger::Request  &req,
-                                 std_srvs::Trigger::Response &res);
-
-
+  bool clearEmergencyStopService(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res);
 
   /*! Switch controller service callback, switches to a new controller
    * @param req   contains name of the new controller
    * @param res   contains the result of the switching
    * @return true iff successful
    */
-  bool switchControllerService(rocoma_msgs::SwitchController::Request  &req,
-                               rocoma_msgs::SwitchController::Response &res);
+  bool switchControllerService(rocoma_msgs::SwitchController::Request& req, rocoma_msgs::SwitchController::Response& res);
 
   /*! Get available controllers service callback, returns a list of all available controllers
    * @param req   empty request
    * @param res   contains vector of strings with the available controller names
    * @return true iff successful
    */
-  bool getAvailableControllersService(rocoma_msgs::GetAvailableControllers::Request &req,
-                                      rocoma_msgs::GetAvailableControllers::Response &res);
+  bool getAvailableControllersService(rocoma_msgs::GetAvailableControllers::Request& req,
+                                      rocoma_msgs::GetAvailableControllers::Response& res);
 
   /*! Get active controller service callback, returns the name of the currently active controller
    * @param req   empty request
    * @param res   contains name of the currently active controller
    * @return true iff successful
    */
-  bool getActiveControllerService(rocoma_msgs::GetActiveController::Request &req,
-                                  rocoma_msgs::GetActiveController::Response &res);
+  bool getActiveControllerService(rocoma_msgs::GetActiveController::Request& req, rocoma_msgs::GetActiveController::Response& res);
 
   /*! Inform other nodes (via message) when an emergency stop was triggered
    * @param type   type of the emergency stop
@@ -271,7 +245,7 @@ class ControllerManagerRos : public rocoma::ControllerManager {
   /*! Inform other nodes (via message) that the controller was switched
    * @param newControllerName   name of the "new" controller
    */
-  void notifyControllerChanged(const std::string & newControllerName) override;
+  void notifyControllerChanged(const std::string& newControllerName) override;
 
   /**
    * @brief Cleanup all controllers and ROS services and publishers.
@@ -328,21 +302,21 @@ class ControllerManagerRos : public rocoma::ControllerManager {
   rocoma_msgs::EmergencyStop emergencyStopStateMsg_;
 
   //! Failproof controller class loader
-  pluginlib::ClassLoader< rocoma_plugin::FailproofControllerPluginInterface<State_, Command_> > failproofControllerLoader_;
+  pluginlib::ClassLoader<rocoma_plugin::FailproofControllerPluginInterface<State_, Command_> > failproofControllerLoader_;
   //! Emergency controller class loader
-  pluginlib::ClassLoader< rocoma_plugin::EmergencyControllerPluginInterface<State_, Command_> > emergencyControllerLoader_;
+  pluginlib::ClassLoader<rocoma_plugin::EmergencyControllerPluginInterface<State_, Command_> > emergencyControllerLoader_;
   //! Emergency controller ROS class loader
-  pluginlib::ClassLoader< rocoma_plugin::EmergencyControllerRosPluginInterface<State_, Command_> > emergencyControllerRosLoader_;
+  pluginlib::ClassLoader<rocoma_plugin::EmergencyControllerRosPluginInterface<State_, Command_> > emergencyControllerRosLoader_;
   //! Controller class loader
-  pluginlib::ClassLoader< rocoma_plugin::ControllerPluginInterface<State_, Command_> > controllerLoader_;
+  pluginlib::ClassLoader<rocoma_plugin::ControllerPluginInterface<State_, Command_> > controllerLoader_;
   //! Controller ROS class loader
-  pluginlib::ClassLoader< rocoma_plugin::ControllerRosPluginInterface<State_, Command_> > controllerRosLoader_;
+  pluginlib::ClassLoader<rocoma_plugin::ControllerRosPluginInterface<State_, Command_> > controllerRosLoader_;
   //! Shared module class loader
-  pluginlib::ClassLoader< rocoma_plugin::SharedModulePluginInterface > sharedModuleLoader_;
+  pluginlib::ClassLoader<rocoma_plugin::SharedModulePluginInterface> sharedModuleLoader_;
   //! Shared module ROS class loader
-  pluginlib::ClassLoader< rocoma_plugin::SharedModuleRosPluginInterface > sharedModuleRosLoader_;
+  pluginlib::ClassLoader<rocoma_plugin::SharedModuleRosPluginInterface> sharedModuleRosLoader_;
 };
 
-}
+}  // namespace rocoma_ros
 
 #include <rocoma_ros/ControllerManagerRos.tpp>

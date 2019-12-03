@@ -54,12 +54,12 @@
  *   This macro is a wrapper to PLUGINLIB_EXPORT_CLASS, for templated classes.
  *   Protects typedefs in internal namespace.
  */
-#define ROCOMA_EXPORT_CONTROLLER_ROS(name, state, command, controller) 											\
-    namespace plugin_##name_internal{																												\
-      using name = rocoma_plugin::ControllerRosPlugin<controller , state , command>;		    \
-      using PluginBase = rocoma_plugin::ControllerRosPluginInterface<state , command>;			\
-      PLUGINLIB_EXPORT_CLASS(name, PluginBase)																						  \
-    }																																												\
+#define ROCOMA_EXPORT_CONTROLLER_ROS(name, state, command, controller)              \
+  namespace plugin_##name_internal {                                                \
+    using name = rocoma_plugin::ControllerRosPlugin<controller, state, command>;    \
+    using PluginBase = rocoma_plugin::ControllerRosPluginInterface<state, command>; \
+    PLUGINLIB_EXPORT_CLASS(name, PluginBase)                                        \
+  }
 
 namespace rocoma_plugin {
 
@@ -67,11 +67,8 @@ namespace rocoma_plugin {
 /*!
  *   Export your ros controller as a ControllerRosPlugin in order to load it as a plugin.
  */
-template<typename Controller_, typename State_, typename Command_>
-class ControllerRosPlugin: public rocoma::ControllerAdapter<Controller_, State_, Command_>,
-                           public rocoma_plugin::ControllerRosPluginInterface<State_, Command_>
-{
-
-};
+template <typename Controller_, typename State_, typename Command_>
+class ControllerRosPlugin : public rocoma::ControllerAdapter<Controller_, State_, Command_>,
+                            public rocoma_plugin::ControllerRosPluginInterface<State_, Command_> {};
 
 } /* namespace rocoma_plugin */

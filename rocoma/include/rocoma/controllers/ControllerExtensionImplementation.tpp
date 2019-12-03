@@ -40,36 +40,38 @@
  */
 
 #include <any_worker/Worker.hpp>
-#include <rocoma/common/WorkerWrapper.hpp>
 #include <message_logger/message_logger.hpp>
+#include <rocoma/common/WorkerWrapper.hpp>
 
 namespace rocoma {
 
-template<typename Controller_, typename State_, typename Command_>
-roco::WorkerHandle ControllerExtensionImplementation<Controller_, State_, Command_>::addWorker(const roco::WorkerOptions&  options) {
+template <typename Controller_, typename State_, typename Command_>
+roco::WorkerHandle ControllerExtensionImplementation<Controller_, State_, Command_>::addWorker(const roco::WorkerOptions& options) {
   std::unique_lock<std::mutex> lockWorkerManager(mutexWorkerManager_);
   WorkerWrapper wrapper(options);
-  workerManager_.addWorker(options.name_, 1.0/options.frequency_,
-                           std::bind(&WorkerWrapper::workerCallback, wrapper, std::placeholders::_1), options.priority_, options.autostart_);
+  workerManager_.addWorker(options.name_, 1.0 / options.frequency_,
+                           std::bind(&WorkerWrapper::workerCallback, wrapper, std::placeholders::_1), options.priority_,
+                           options.autostart_);
 
   MELO_INFO_STREAM("[Rocoma][" << this->getName() << "] Add worker " << options.name_ << "!");
   return roco::WorkerHandle(options.name_);
 }
 
-template<typename Controller_, typename State_, typename Command_>
+template <typename Controller_, typename State_, typename Command_>
 roco::WorkerHandle ControllerExtensionImplementation<Controller_, State_, Command_>::addWorker(roco::Worker& worker) {
   std::unique_lock<std::mutex> lockWorkerManager(mutexWorkerManager_);
   WorkerWrapper wrapper(worker.options_);
-  workerManager_.addWorker(worker.options_.name_, 1.0/worker.options_.frequency_,
-                           std::bind(&WorkerWrapper::workerCallback, wrapper, std::placeholders::_1), worker.options_.priority_, worker.options_.autostart_);
-  worker.workerStartCallback_ = boost::bind(&ControllerExtensionImplementation<Controller_,State_, Command_>::startWorker, this, _1);
-  worker.workerCancelCallback_ = boost::bind(&ControllerExtensionImplementation<Controller_,State_, Command_>::cancelWorker, this, _1, _2 );
+  workerManager_.addWorker(worker.options_.name_, 1.0 / worker.options_.frequency_,
+                           std::bind(&WorkerWrapper::workerCallback, wrapper, std::placeholders::_1), worker.options_.priority_,
+                           worker.options_.autostart_);
+  worker.workerStartCallback_ = boost::bind(&ControllerExtensionImplementation<Controller_, State_, Command_>::startWorker, this, _1);
+  worker.workerCancelCallback_ = boost::bind(&ControllerExtensionImplementation<Controller_, State_, Command_>::cancelWorker, this, _1, _2);
   worker.handle_.name_ = worker.options_.name_;
   MELO_INFO_STREAM("[Rocoma][" << this->getName() << "] Add worker " << worker.handle_.name_ << "!");
   return worker.handle_;
 }
 
-template<typename Controller_, typename State_, typename Command_>
+template <typename Controller_, typename State_, typename Command_>
 bool ControllerExtensionImplementation<Controller_, State_, Command_>::startWorker(const roco::WorkerHandle& workerHandle) {
   std::unique_lock<std::mutex> lockWorkerManager(mutexWorkerManager_);
   MELO_INFO_STREAM("[Rocoma][" << this->getName() << "] Start worker " << workerHandle.name_ << "!");
@@ -77,7 +79,7 @@ bool ControllerExtensionImplementation<Controller_, State_, Command_>::startWork
   return true;
 }
 
-template<typename Controller_, typename State_, typename Command_>
+template <typename Controller_, typename State_, typename Command_>
 bool ControllerExtensionImplementation<Controller_, State_, Command_>::stopWorker(const roco::WorkerHandle& workerHandle, bool block) {
   std::unique_lock<std::mutex> lockWorkerManager(mutexWorkerManager_);
   MELO_INFO_STREAM("[Rocoma][" << this->getName() << "] Stop worker " << workerHandle.name_ << "!");
@@ -85,7 +87,7 @@ bool ControllerExtensionImplementation<Controller_, State_, Command_>::stopWorke
   return true;
 }
 
-template<typename Controller_, typename State_, typename Command_>
+template <typename Controller_, typename State_, typename Command_>
 bool ControllerExtensionImplementation<Controller_, State_, Command_>::cancelWorker(const roco::WorkerHandle& workerHandle, bool block) {
   std::unique_lock<std::mutex> lockWorkerManager(mutexWorkerManager_);
   MELO_INFO_STREAM("[Rocoma][" << this->getName() << "] Cancel worker " << workerHandle.name_ << "!");
@@ -93,4 +95,4 @@ bool ControllerExtensionImplementation<Controller_, State_, Command_>::cancelWor
   return true;
 }
 
-} /** namespace rocoma */
+}  // namespace rocoma

@@ -9,13 +9,13 @@
 #include <message_logger/message_logger.hpp>
 #include <roco/model/CommandInterface.hpp>
 
-namespace rocoma_test {
+namespace rocoma {
 
 class RocoCommand : public roco::CommandInterface {
  public:
   bool limitCommand() override {
     if (value_ > maxValue_) {
-      MELO_INFO("[rocoma_test::RocoCommand]: Limiting Command Event. Value %f bigger than maximum allowed %f", value_, maxValue_);
+      MELO_INFO("[rocoma::RocoCommand]: Limiting Command Event. Value %f bigger than maximum allowed %f", value_, maxValue_);
       value_ = maxValue_;
     }
 
@@ -28,7 +28,7 @@ class RocoCommand : public roco::CommandInterface {
   static constexpr double maxValue_ = 2.0;
 
  private:
-  double value_;
+  double value_ = 0.0;
 };
 
-}  // namespace rocoma_test
+}  // namespace rocoma

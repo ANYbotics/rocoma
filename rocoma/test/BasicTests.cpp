@@ -6,67 +6,75 @@
 
 #include <gtest/gtest.h>
 
-#include "rocoma_test/TestControllerManager.hpp"
+#include "include/TestControllerManager.hpp"
 
-namespace rocoma_test {
+namespace rocoma {
 
-TEST_F(TestControllerManager, startsInFailproof) { checkActiveController(simpleFailProofController_); }
+TEST_F(TestControllerManager, startsInFailproof) {  // NOLINT
+  checkActiveController(simpleFailProofController_);
+}  // namespace rocoma
 
-TEST_F(TestControllerManager, updatesSuccessfully) { ASSERT_TRUE(controllerManager_.updateController()); }
+TEST_F(TestControllerManager, updatesSuccessfully) {  // NOLINT
+  ASSERT_TRUE(controllerManager_.updateController());
+}
 
-TEST_F(TestControllerManager, startsWithUnclearedEstop) { ASSERT_FALSE(controllerManager_.hasClearedEmergencyStop()); }
+TEST_F(TestControllerManager, startsWithUnclearedEstop) {  // NOLINT
+  ASSERT_FALSE(controllerManager_.hasClearedEmergencyStop());
+}
 
-TEST_F(TestControllerManager, doesNotAllowSwitchesWithUnclearedEstop) {
+TEST_F(TestControllerManager, doesNotAllowSwitchesWithUnclearedEstop) {  // NOLINT
   ASSERT_EQ(rocoma::ControllerManager::SwitchResponse::ERROR, controllerManager_.switchController(simpleControllerA_));
 }
 
-TEST_F(TestControllerManager, canSwitchFromFailproofToControllerA) { clearEstopAndSwitchController(simpleControllerA_); }
+TEST_F(TestControllerManager, canSwitchFromFailproofToControllerA) {  // NOLINT
+  clearEstopAndSwitchController(simpleControllerA_);
+}
 
-TEST_F(TestControllerManager, canSwitchFromControllerAToControllerB) {
+TEST_F(TestControllerManager, canSwitchFromControllerAToControllerB) {  // NOLINT
   clearEstopAndSwitchController(simpleControllerA_);
   switchController(simpleControllerB_);
 }
 
-TEST_F(TestControllerManager, doesNotLimitValidCommand) {
+TEST_F(TestControllerManager, doesNotLimitValidCommand) {  // NOLINT
   clearEstopAndSwitchController(simpleControllerA_);
-  double okValue = rocoma_test::RocoCommand::maxValue_ - 1.0;
+  double okValue = RocoCommand::maxValue_ - 1.0;
   command_->setValue(okValue);
   ASSERT_TRUE(controllerManager_.updateController());
   ASSERT_EQ(okValue, command_->getValue());
 }
 
-TEST_F(TestControllerManager, doesLimitInvalidCommand) {
+TEST_F(TestControllerManager, doesLimitInvalidCommand) {  // NOLINT
   clearEstopAndSwitchController(simpleControllerA_);
-  double failValue = rocoma_test::RocoCommand::maxValue_ + 1.0;
-  double limitedValue = rocoma_test::RocoCommand::maxValue_;
+  double failValue = RocoCommand::maxValue_ + 1.0;
+  double limitedValue = RocoCommand::maxValue_;
   command_->setValue(failValue);
   ASSERT_TRUE(controllerManager_.updateController());
   ASSERT_EQ(limitedValue, command_->getValue());
 }
 
-TEST_F(TestControllerManager, staysInFailproofOnEstop) {
+TEST_F(TestControllerManager, staysInFailproofOnEstop) {  // NOLINT
   emergencyStop();
   checkActiveController(simpleFailProofController_);
 }
 
-TEST_F(TestControllerManager, staysInFailproofOnFailproofStop) {
+TEST_F(TestControllerManager, staysInFailproofOnFailproofStop) {  // NOLINT
   failproofStop();
   checkActiveController(simpleFailProofController_);
 }
 
-TEST_F(TestControllerManager, switchesFromControllerAToFailproofOnEstop) {
+TEST_F(TestControllerManager, switchesFromControllerAToFailproofOnEstop) {  // NOLINT
   clearEstopAndSwitchController(simpleControllerA_);
   emergencyStop();
   checkActiveController(simpleFailProofController_);
 }
 
-TEST_F(TestControllerManager, switchesFromControllerAToFailproofOnFailproofStop) {
+TEST_F(TestControllerManager, switchesFromControllerAToFailproofOnFailproofStop) {  // NOLINT
   clearEstopAndSwitchController(simpleControllerA_);
   failproofStop();
   checkActiveController(simpleFailProofController_);
 }
 
-TEST_F(TestControllerManager, switchesFromControllerBToEmergencyOnEstop) {
+TEST_F(TestControllerManager, switchesFromControllerBToEmergencyOnEstop) {  // NOLINT
   clearEstopAndSwitchController(simpleControllerB_);
   emergencyStop();
   checkActiveController(simpleEmergencyController_);
@@ -74,34 +82,34 @@ TEST_F(TestControllerManager, switchesFromControllerBToEmergencyOnEstop) {
   checkActiveController(simpleFailProofController_);
 }
 
-TEST_F(TestControllerManager, switchesFromControllerBToFailproofOnFailproofStop) {
+TEST_F(TestControllerManager, switchesFromControllerBToFailproofOnFailproofStop) {  // NOLINT
   clearEstopAndSwitchController(simpleControllerB_);
   failproofStop();
   checkActiveController(simpleFailProofController_);
 }
 
-TEST_F(TestControllerManager, cannotSwitchFromEmergencyControllerToControllerAWithUnclearedEstop) {
+TEST_F(TestControllerManager, cannotSwitchFromEmergencyControllerToControllerAWithUnclearedEstop) {  // NOLINT
   clearEstopAndSwitchController(simpleControllerA_);
   emergencyStop();
   ASSERT_EQ(rocoma::ControllerManager::SwitchResponse::ERROR, controllerManager_.switchController(simpleControllerB_));
 }
 
-TEST_F(TestControllerManager, canSwitchFromEmergencyControllerToControllerA) {
+TEST_F(TestControllerManager, canSwitchFromEmergencyControllerToControllerA) {  // NOLINT
   clearEstopAndSwitchController(simpleControllerA_);
   emergencyStop();
   clearEstopAndSwitchController(simpleControllerB_);
 }
 
-TEST_F(TestControllerManager, doesNotSwitchIfControllerAlreadyRunning) {
+TEST_F(TestControllerManager, doesNotSwitchIfControllerAlreadyRunning) {  // NOLINT
   clearEstopAndSwitchController(simpleControllerA_);
   ASSERT_EQ(rocoma::ControllerManager::SwitchResponse::RUNNING, controllerManager_.switchController(simpleControllerA_));
   ASSERT_EQ(simpleControllerA_, controllerManager_.getActiveControllerName());
 }
 
-TEST_F(TestControllerManager, updatesSuccessfullyFor10ms) {
+TEST_F(TestControllerManager, updatesSuccessfullyFor10ms) {  // NOLINT
   clearEstopAndSwitchController(simpleControllerA_);
   runControllerManagerUpdateFor(0.01);
   cancelControllerManagerUpdate();
 }
 
-}  // namespace rocoma_test
+}  // namespace rocoma

@@ -33,16 +33,16 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 /*!
-* @file     ControllerPluginInterface.hpp
-* @author   Gabriel Hottiger
-* @date     Jul, 2016
-*/
+ * @file     ControllerPluginInterface.hpp
+ * @author   Gabriel Hottiger
+ * @date     Jul, 2016
+ */
 
 #pragma once
 
 // roco
-#include "roco/controllers/adapters/ControllerAdapterInterface.hpp"
 #include "roco/controllers/Controller.hpp"
+#include "roco/controllers/adapters/ControllerAdapterInterface.hpp"
 
 namespace rocoma_plugin {
 
@@ -51,11 +51,7 @@ namespace rocoma_plugin {
  *   Controller is needed for the initialization of state, command, name , ...
  *   ControllerAdapterInterface is used by the ControllerManager to interface with the controllers.
  */
-template<typename State_, typename Command_>
-class ControllerPluginInterface: virtual public roco::ControllerAdapterInterface,
-                                 virtual public roco::Controller<State_, Command_>
-{
-
-};
+template <typename State_, typename Command_>
+class ControllerPluginInterface : virtual public roco::ControllerAdapterInterface, virtual public roco::Controller<State_, Command_> {};
 
 } /* namespace rocoma_plugin */

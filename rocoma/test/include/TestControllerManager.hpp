@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include <thread>
 #include <future>
+#include <thread>
 
 #include <gtest/gtest.h>
 #include <boost/asio.hpp>
@@ -16,13 +16,13 @@
 #include <rocoma/ControllerManager.hpp>
 #include <rocoma/controllers/adapters.hpp>
 
-#include "rocoma_test/PreStopCheckController.hpp"
-#include "rocoma_test/EmergencyController.hpp"
-#include "rocoma_test/FailProofController.hpp"
-#include "rocoma_test/SimpleController.hpp"
-#include "rocoma_test/SleepyController.hpp"
+#include "EmergencyController.hpp"
+#include "FailProofController.hpp"
+#include "PreStopCheckController.hpp"
+#include "SimpleController.hpp"
+#include "SleepyController.hpp"
 
-namespace rocoma_test {
+namespace rocoma {
 
 class TestControllerManager : public ::testing::Test {
  protected:
@@ -110,9 +110,7 @@ class TestControllerManager : public ::testing::Test {
     usleep(threadStartupTimeInUS_);  // Give thread time to start
   }
 
-  bool isEmergencyStopRunning() {
-    return estopFuture_.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready;
-  }
+  bool isEmergencyStopRunning() { return estopFuture_.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready; }
 
   void cancelEmergencyStop() { estopFuture_.wait(); }
 
@@ -166,7 +164,7 @@ class TestControllerManager : public ::testing::Test {
     boost::asio::io_service io;
     unsigned int counter = 0;
     while ((counter * timeStep_) < seconds) {
-      boost::asio::deadline_timer t(io, boost::posix_time::microseconds(timeStep_ * 1000000));
+      boost::asio::deadline_timer t(io, boost::posix_time::microseconds(static_cast<boost::int64_t>(timeStep_ * 1000000)));
       ASSERT_TRUE(controllerManager_.updateController());
       t.wait();
       counter++;
@@ -198,7 +196,6 @@ class TestControllerManager : public ::testing::Test {
 
   // Constants
   const __useconds_t threadStartupTimeInUS_{1000};
-
 };
 
-}  // namespace rocoma_test
+}  // namespace rocoma

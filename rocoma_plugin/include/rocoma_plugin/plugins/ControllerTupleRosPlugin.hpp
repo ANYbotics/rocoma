@@ -54,9 +54,9 @@
  *   This macro is a wrapper to PLUGINLIB_EXPORT_CLASS, for templated classes.
  *   Protects typedefs in internal namespace.
  */
-#define ROCOMA_EXPORT_CONTROLLER_TUPLE_ROS(name, state, command, ...)                                                                  \
-  namespace plugin_##name_internal {                                                                                                   \
-      using name = rocoma_plugin::ControllerRosPlugin< roco_ros::ControllerTupleRos<state, command, __VA_ARGS__ > , state , command>;    \
-      using PluginBase = rocoma_plugin::ControllerRosPluginInterface<state , command>;                                                 \
-      PLUGINLIB_EXPORT_CLASS(name, PluginBase)                                                                                         \
+#define ROCOMA_EXPORT_CONTROLLER_TUPLE_ROS(name, state, command, ...)                                                           \
+  namespace plugin_##name_internal {                                                                                            \
+    using name = rocoma_plugin::ControllerRosPlugin<roco_ros::ControllerTupleRos<state, command, __VA_ARGS__>, state, command>; \
+    using PluginBase = rocoma_plugin::ControllerRosPluginInterface<state, command>;                                             \
+    PLUGINLIB_EXPORT_CLASS(name, PluginBase)                                                                                    \
   }

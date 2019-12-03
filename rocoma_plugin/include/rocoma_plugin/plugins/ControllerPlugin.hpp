@@ -54,24 +54,21 @@
  *   This macro is a wrapper to PLUGINLIB_EXPORT_CLASS, for templated classes.
  *   Protects typedefs in internal namespace.
  */
-#define ROCOMA_EXPORT_CONTROLLER(name, state, command, controller) 									\
-    namespace plugin_##name_internal {																							\
-      using name = rocoma_plugin::ControllerPlugin<controller , state , command>;		\
-      using PluginBase = rocoma_plugin::ControllerPluginInterface<state , command>;	\
-      PLUGINLIB_EXPORT_CLASS(name, PluginBase)																			\
-    }																																								\
-    
+#define ROCOMA_EXPORT_CONTROLLER(name, state, command, controller)               \
+  namespace plugin_##name_internal {                                             \
+    using name = rocoma_plugin::ControllerPlugin<controller, state, command>;    \
+    using PluginBase = rocoma_plugin::ControllerPluginInterface<state, command>; \
+    PLUGINLIB_EXPORT_CLASS(name, PluginBase)                                     \
+  }
+
 namespace rocoma_plugin {
 
 //!  Plugin based controller adapter.
 /*!
  *   Export your controller as a ControllerPlugin in order to load it as a plugin.
  */
-template<typename Controller_, typename State_, typename Command_>
-class ControllerPlugin: public rocoma::ControllerAdapter<Controller_, State_, Command_>,
-                        public rocoma_plugin::ControllerPluginInterface<State_, Command_>
-{
-
-};
+template <typename Controller_, typename State_, typename Command_>
+class ControllerPlugin : public rocoma::ControllerAdapter<Controller_, State_, Command_>,
+                         public rocoma_plugin::ControllerPluginInterface<State_, Command_> {};
 
 } /* namespace rocoma_plugin */

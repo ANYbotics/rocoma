@@ -8,25 +8,25 @@
 
 #include <roco/controllers/controllers.hpp>
 
-#include "rocoma_test/RocoCommand.hpp"
-#include "rocoma_test/RocoState.hpp"
+#include "RocoCommand.hpp"
+#include "RocoState.hpp"
 
-namespace rocoma_test {
+namespace rocoma {
 
-class SleepyController : virtual public roco::Controller<rocoma_test::RocoState, rocoma_test::RocoCommand> {
+class SleepyController : virtual public roco::Controller<RocoState, RocoCommand> {
  public:
-  using Base = roco::Controller<rocoma_test::RocoState, rocoma_test::RocoCommand>;
+  using Base = roco::Controller<RocoState, RocoCommand>;
   SleepyController() : Base() { setName("SleepyController"); }
   ~SleepyController() override = default;
 
  protected:
-  bool create(double dt) override { return true; }
-  bool initialize(double dt) override {
+  bool create(double /*dt*/) override { return true; }
+  bool initialize(double /*dt*/) override {
     usleep(sleepDuration_);
     return true;
   }
-  bool advance(double dt) override { return true; }
-  bool reset(double dt) override {
+  bool advance(double /*dt*/) override { return true; }
+  bool reset(double /*dt*/) override {
     usleep(sleepDuration_);
     return true;
   }
@@ -44,4 +44,4 @@ class SleepyController : virtual public roco::Controller<rocoma_test::RocoState,
   static constexpr int sleepDuration_ = 5000;
 };
 
-}  // namespace rocoma_test
+}  // namespace rocoma
