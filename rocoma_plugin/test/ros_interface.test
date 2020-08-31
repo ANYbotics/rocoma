@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<launch>
+
+  <!-- Launch the testing counterpart ROS node -->
+  <test pkg="rocoma_plugin" type="test_rocoma_plugin" test-name="test_rocoma_plugin"
+        time-limit="100.0"/>
+
+</launch>

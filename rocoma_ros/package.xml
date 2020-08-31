@@ -13,7 +13,7 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
-  <build_depend>cmake_clang_tools</build_depend>
+<!--   <build_depend>cmake_clang_tools</build_depend> -->
 
   <depend>roscpp</depend>
   <depend>roco</depend>
@@ -24,5 +24,8 @@
   <depend>roslib</depend>
   <depend>std_srvs</depend>
   <depend>std_msgs</depend>
+
+  <test_depend>rostest</test_depend>
+<!--   <test_depend>cmake_code_coverage</test_depend> -->
 
 </package>

@@ -13,11 +13,14 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
-  <build_depend>cmake_clang_tools</build_depend>
+<!--   <build_depend>cmake_clang_tools</build_depend> -->
 
   <depend>roco</depend>
   <depend>roco_ros</depend>
   <depend>rocoma</depend>
   <depend>pluginlib</depend>
+
+  <test_depend>rostest</test_depend>
+<!--   <test_depend>cmake_code_coverage</test_depend> -->
 
 </package>
